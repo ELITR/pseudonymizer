@@ -1,0 +1,11 @@
+Flask==1.1.2
+Bootstrap_Flask==1.5
+Flask_WTF==0.14.3
+Jinja2==2.11.2
+WTForms==2.3.3
+email_validator==1.1.1
+Flask_Babel==2.0.0
+Babel==2.8.0
+Werkzeug==1.0.1
+itsdangerous==1.1.0
+psycopg2-binary==2.8.6

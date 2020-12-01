@@ -1,0 +1,56 @@
+{% from 'bootstrap/utils.html' import render_messages %}
+{% from 'bootstrap/nav.html' import render_nav_item %}
+
+<!doctype html>
+<html lang="{{ g.lang }}">
+<head>
+    {% block head %}
+        <!-- Required meta tags -->
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+        {% block styles %}
+            <!-- Bootstrap CSS -->
+            {{ bootstrap.load_css() }}
+            <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+        {% endblock %}
+
+        <title>{% block title %}{% trans %}Pseudo-anonymize tool{% endtrans %}{% endblock %}</title>
+    {% endblock %}
+</head>
+<body>
+{# Render Navbar #}
+<nav class="navbar navbar-expand-sm navbar-light bg-light">
+    <a class="navbar-brand" href="{{ url_for("index") }}">{% trans %}Pseudo-anonymize tool{% endtrans %}</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <a href="{{ url_for("switch_lang") }}"
+           class="btn-sm btn-outline-secondary mr-auto">{{ _("cs") }}</a>
+        <div class="navbar-nav">
+            {%- if g.user %}
+                {{ render_nav_item("account.index", g.user["full_name"]) }}
+                <a href="{{ url_for("auth.logout") }}"
+                   class="btn btn-outline-primary my-2 my-sm-0 mr-auto">{{ _("Log out") }}</a>
+            {%- else %}
+                {{ render_nav_item("auth.register", _("Register")) }}
+                {{ render_nav_item("auth.login", _("Log in")) }}
+            {%- endif %}
+        </div>
+    </div>
+</nav>
+
+<main class="container pt-lg-5 pt-md-4 pt-3">
+    {{ render_messages(container=False, dismissible=True) }}
+    {% block content %}{% endblock %}
+</main>
+
+{% block scripts %}
+    <!-- Optional JavaScript -->
+    {{ bootstrap.load_js() }}
+{% endblock %}
+
+</body>
+</html>
