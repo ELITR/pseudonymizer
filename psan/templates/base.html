@@ -47,6 +47,11 @@
     {% block content %}{% endblock %}
 </main>
 
+<footer class="page-footer fixed-bottom">
+  <div class="text-muted text-center small py-3">{{ _("Revision:") }} {{ config["COMMIT_REV"] }}
+  </div>
+</footer>
+
 {% block scripts %}
     <!-- Optional JavaScript -->
     {{ bootstrap.load_js() }}

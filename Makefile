@@ -39,10 +39,12 @@ run: build
 	$(VENV); $(FLASK_FLAGS) flask run
 
 # Docker
-docker-debug:
+docker-debug: instance
+	echo "COMMIT_REV= \"bind-mount\""  > ./instance/config.py
 	docker-compose -f docker-compose.yaml -f docker-compose.debug.yaml up
 
-docker-build: translate
+docker-build: instance translate
+	echo "COMMIT_REV= \"$(shell git rev-parse HEAD)\""  > ./instance/config.py
 	docker-compose build
 
 docker-clean:
