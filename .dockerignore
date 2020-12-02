@@ -6,9 +6,8 @@ __pycache__/
 instance/
 .env
 
-# Translations
-*.mo
-psan/translations/base.pot
+# Translations sources
+*.pot
 
 # IDE
 .vscode/

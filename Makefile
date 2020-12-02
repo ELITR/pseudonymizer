@@ -32,7 +32,7 @@ translate: $(POT_HOME)/cs/LC_MESSAGES/messages.mo
 instance:
 	mkdir instance
 
-build: venv instance translate
+build: venv instance
 
 # Run web
 run: build
@@ -42,7 +42,7 @@ run: build
 docker-debug:
 	docker-compose -f docker-compose.yaml -f docker-compose.debug.yaml up
 
-docker-build:
+docker-build: translate
 	docker-compose build
 
 docker-clean:

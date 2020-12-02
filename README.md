@@ -20,7 +20,7 @@ Installation
  
 - make
 - docker and docker-compose
-
+- Python 3.6 or newer
 
 Configuration
 -------------
