@@ -4,7 +4,7 @@ FROM python:3.8
 COPY requirements.txt /srv
 COPY Makefile /srv
 WORKDIR /srv
-RUN make venv
+RUN make build
 
 # Copy app source
 COPY . /srv

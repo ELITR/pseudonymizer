@@ -1,6 +1,7 @@
 VENV=. venv/bin/activate
 
-FLASK_FLAGS=FLASK_APP=psan FLASK_ENV=debug FLASK_DEBUG=1 FLASK_RUN_HOST=0.0.0.0
+FLASK_FLAGS=FLASK_APP=psan FLASK_RUN_HOST=0.0.0.0
+POT_HOME=psan/translations
 
 # Python venv environment
 $(VENV): requirements.txt
@@ -27,17 +28,22 @@ $(POT_HOME)/cs/LC_MESSAGES/messages.po: $(POT_HOME)/base.pot venv
 
 translate: $(POT_HOME)/cs/LC_MESSAGES/messages.mo
 
-# Runtime
+# Build
 instance:
 	mkdir instance
 
+build: venv instance translate
+
 # Run web
-run: venv instance
+run: build
 	$(VENV); $(FLASK_FLAGS) flask run
 
 # Docker
 docker-debug:
 	docker-compose -f docker-compose.yaml -f docker-compose.debug.yaml up
+
+docker-build:
+	docker-compose build
 
 docker-clean:
 	docker-compose down -v
@@ -47,4 +53,4 @@ clean: docker-clean
 	rm -r venv
 	rm -r instance
 
-.PHONY: venv, run, docker-debug, docker-clean, clean
+.PHONY: venv, run, build, docker-debug, docker-build, docker-clean, clean
