@@ -2,7 +2,7 @@ version: "3.3"
 services:
   flask:
     volumes:
-      - .:/srv
+      - ./psan:/srv/psan
     environment:
       FLASK_ENV: debug 
       FLASK_DEBUG: 1
