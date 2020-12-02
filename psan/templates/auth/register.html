@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% from 'bootstrap/form.html' import render_form %}
+
+{% block title %}{% trans %}Register{% endtrans %}{% endblock %}
+
+{% block content %}
+    <div class="row">
+        <div class="col-md-6">
+            <h2>{% trans %}Create a new account{% endtrans %}</h2>
+            {% trans %}
+            <p>
+                There are two types of accounts. Administrator could upload file for processing and 
+                then download that file when it is done. Standart users have only permission to decede
+                what is sensitive and what is not.
+            </p><p>
+                <b>Password</b> will be send to provided e-mail address using password resset link.
+            </p>
+            {% endtrans %}
+        </div>
+        <div class="col-md-6">
+            {{ render_form(form, button_map={'submit': 'primary'}) }}
+        </div>
+    </div>
+{% endblock %}

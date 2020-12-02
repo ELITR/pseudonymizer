@@ -30,8 +30,8 @@
         <a href="{{ url_for("switch_lang") }}"
            class="btn-sm btn-outline-secondary mr-auto">{{ _("cs") }}</a>
         <div class="navbar-nav">
-            {%- if g.user %}
-                {{ render_nav_item("account.index", g.user["full_name"]) }}
+            {%- if g.account %}
+                {{ render_nav_item("account.index", g.account["full_name"]) }}
                 <a href="{{ url_for("auth.logout") }}"
                    class="btn btn-outline-primary my-2 my-sm-0 mr-auto">{{ _("Log out") }}</a>
             {%- else %}

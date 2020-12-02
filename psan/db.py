@@ -4,8 +4,8 @@ import os
 
 import psycopg2
 import psycopg2.extras
-from flask import current_app, Flask
 from flask import g
+from flask import Flask
 
 
 def get_db():
@@ -28,11 +28,18 @@ def close_db(e=None):
         db_proxy.close()
 
 
+def init_app(app: Flask) -> None:
+    """Register database functions with the Flask app. This is called by
+    the application factory.
+    """
+    app.teardown_appcontext(close_db)
+
+
 class PostgresProxy:
     def __init__(self):
-        self.db = psycopg2.connect(database=os.environ["DB_NAME"], 
-                                   user=os.environ["DB_USER"], 
-                                   password=os.environ["DB_PASSWORD"], 
+        self.db = psycopg2.connect(database=os.environ["DB_NAME"],
+                                   user=os.environ["DB_USER"],
+                                   password=os.environ["DB_PASSWORD"],
                                    host=os.environ["DB_HOST"],
                                    port="5432")
         self.cursor = self.db.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -41,7 +48,8 @@ class PostgresProxy:
         self.cursor.execute(sql, parameters)
 
     def fetchone(self, sql: str, parameters: Iterable) -> Optional[Dict]:
-        return self.cursor.execute(sql, parameters).fetchone()
+        self.cursor.execute(sql, parameters)
+        return self.cursor.fetchone()
 
     def commit(self) -> None:
         self.db.commit()

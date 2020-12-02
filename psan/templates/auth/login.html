@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% from 'bootstrap/form.html' import render_form %}
+
+{% block title %}{% trans %}Log in{% endtrans %}{% endblock %}
+
+{% block content %}
+    <div class="row">
+        <div class="col-md-6 mx-auto">
+            <h2>{% trans %}Log in{% endtrans %}</h2>
+            <div class="d-flex">
+                <a href="{{ url_for(".reset") }}" class="ml-auto small">{% trans %}Having trouble logging in?{% endtrans %}</a>
+            </div>
+            {{ render_form(form, button_map={'submit': 'primary'}) }}
+        </div>
+    </div>
+{% endblock %}

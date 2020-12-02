@@ -11,7 +11,7 @@ CREATE TABLE account (
     id                  SERIAL PRIMARY KEY,
     full_name           TEXT                        NOT NULL,
     type                account_type                NOT NULL,
-    login               TEXT                UNIQUE  NOT NULL,
+    email               TEXT                UNIQUE  NOT NULL,
     password            TEXT                        NOT NULL,
     created             TIMESTAMP                   NOT NULL DEFAULT CURRENT_TIMESTAMP
 );

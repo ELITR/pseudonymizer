@@ -1,4 +1,4 @@
-import os
+from psan import db
 
 from flask import Flask, render_template, request, g, redirect, after_this_request
 from flask_babel import Babel
@@ -26,14 +26,7 @@ def create_app(test_config=None) -> Flask:
     Bootstrap(app)
     init_translations(app)
 
-    # ensure the instance folder exists
-    try:
-        os.makedirs(app.instance_path)
-    except OSError:
-        pass
-
-    # db.init_app(app)
-    # logger.init_app(app)
+    db.init_app(app)
 
     @app.route("/")
     def index():
