@@ -9,6 +9,10 @@ RUN make build
 # Copy app source
 COPY . /srv
 
+# Run app as standard user
+RUN useradd flask
+USER flask
+
 # Run target
 EXPOSE 5000
 CMD ["make", "run"]
