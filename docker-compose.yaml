@@ -16,21 +16,6 @@ services:
     environment: 
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
-  adminer:
-    image: michalhosna/adminer:4.7.7-en_v1
-    environment:
-      ADMINER_DRIVER: pgsql
-      ADMINER_SERVER: ${DB_HOST} 
-      ADMINER_USERNAME: ${DB_USER}
-      ADMINER_PASSWORD: ${DB_PASSWORD}
-      ADMINER_AUTOLOGIN: 1
-      ADMINER_NAME: ${DB_NAME}
-    logging:
-      driver: "none"
-    links:
-      - db
-    ports:
-      - 5050:8080
 
 volumes:
   db_data:

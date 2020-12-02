@@ -31,17 +31,20 @@ translate: $(POT_HOME)/cs/LC_MESSAGES/messages.mo
 instance:
 	mkdir instance
 
-# Run
+# Run web
 run: venv instance
 	$(VENV); $(FLASK_FLAGS) flask run
 
+# Docker
+docker-debug:
+	docker-compose -f docker-compose.yaml -f docker-compose.debug.yaml up
 
-# Build (called by deploy scripts)
-build: venv 
+docker-clean:
+	docker-compose down -v
 
 # Standard staff
-clean:
+clean: docker-clean
 	rm -r venv
 	rm -r instance
 
-.PHONY: venv, run, build, clean
+.PHONY: venv, run, docker-debug, docker-clean, clean
