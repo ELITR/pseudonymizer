@@ -31,6 +31,7 @@ PsAn tool uses Flask framework and runs in Python's venv. The venv is usually au
 DB_USER=postgres
 DB_PASSWORD=postgres
 DB_NAME=psan_db
+DB_HOST=db
 APP_SECRET_KEY=USE_YOUR_SECRET_KEY
 ```
 
