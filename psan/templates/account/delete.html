@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% from 'bootstrap/form.html' import render_form %}
+
+{% block title %}{% trans %}Delete account{% endtrans %}{% endblock %}
+
+{% block content %}
+    <div class="row">
+        <div class="col-md-6 mx-auto">
+            <h2>{% trans %}Delete account{% endtrans %}</h2>
+            <p>
+                {% trans %}Account deletion is permanent and your data cannot be restored later. Do you really want to
+                    do it? {% endtrans %}
+            </p>
+            <p>
+                {{ render_form(form, button_map={'submit': 'danger'}) }}
+            </p>
+        </div>
+    </div>
+{% endblock %}

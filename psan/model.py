@@ -52,3 +52,19 @@ class PasswordResetForm(FlaskForm):
                         filters=[strip_whitespace],
                         render_kw={"autofocus": True})
     submit = SubmitField(_("Submit"))
+
+
+class DeleteAccountForm(FlaskForm):
+    password = PasswordField(_("Password"), [validators.DataRequired()])
+    submit = SubmitField(_("Delete account"))
+
+
+class ChangePasswordForm(FlaskForm):
+    old_password = PasswordField(
+        _("Old password"), [validators.DataRequired()])
+    new_password = PasswordField(_("New password"),
+                                 description=_("At least 8 characters long"),
+                                 validators=password_validators)
+    confirm = PasswordField(_("Repeat new password"), [
+                            validators.DataRequired()])
+    submit = SubmitField(_("Change password"))

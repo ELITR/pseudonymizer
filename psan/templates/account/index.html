@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% from 'bootstrap/form.html' import render_form, render_field %}
+
+{% block title %}{% trans %}Account{% endtrans %}{% endblock %}
+
+{% block content %}
+    <h2 class="mb-4">
+        {% trans %}Your account{% endtrans %}
+        {%- if g.account["type"] == AccountType.ADMIN.value %}
+            <sup><span class="badge badge-warning small">{% trans %}Admin{% endtrans %}</span></sup>
+        {% endif %}
+    </h2>
+
+    <div class="card-columns">
+
+        {# User #}
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">{{ g.account["full_name"] | escape }}</h5>
+                <div class="card-text">
+                    {%- if g.account["type"] == AccountType.USER.value %}
+                        <p class="mb-0">
+                            {% trans %}User account{% endtrans %}
+                        </p>
+                    {%- elif g.account["type"] == AccountType.ADMIN.value %}
+                        <p class="mb-0">
+                            {% trans %}Administrator account{% endtrans %}
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        {# Login #}
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">{% trans %}Login{% endtrans %}</h5>
+                <div class="card-text">
+                    {{ g.account["email"] | escape }}
+                    <div class="d-flex mt-3">
+                        <a href="{{ url_for(".delete_account") }}" class="btn btn-outline-danger mr-3">
+                            {% trans %}Delete account{% endtrans %}
+                        </a>
+                        <a href="{{ url_for(".change_password") }}" class="btn btn-outline-primary ml-auto">
+                            {% trans %}Change password{% endtrans %}
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+{% endblock %}
