@@ -1,4 +1,5 @@
 import functools
+from typing import Optional
 
 from flask import Blueprint
 from flask import flash
@@ -14,20 +15,28 @@ from werkzeug.security import generate_password_hash
 from werkzeug.utils import escape
 
 from psan.db import get_db
-from psan.model import AccountRegisterForm, LoginForm, PasswordResetForm
+from psan.model import AccountRegisterForm, AccountType, LoginForm, PasswordResetForm
 from psan.postman import password_reset
 
 bp = Blueprint("auth", __name__, url_prefix="/auth")
 _ = gettext
 
 
-def login_required(view):
+def login_required(view=None, role: Optional[AccountType] = None):
     """View decorator that redirects anonymous users to the login page."""
+
+    # Make it work for @f and @f(role=XYZ), see https://stackoverflow.com/a/36739863
+    if not view:
+        return functools.partial(login_required, role=role)
 
     @functools.wraps(view)
     def wrapped_view(**kwargs):
         if g.account is None:
+            flash(_("Log in needed"), category="info")
             return redirect(url_for("auth.login"))
+        elif role and g.account["type"] != role.value:
+            flash(_("Insufficient permission"), category="error")
+            return redirect(url_for("account.index"))
 
         return view(**kwargs)
 
