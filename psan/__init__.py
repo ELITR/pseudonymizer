@@ -40,6 +40,8 @@ def create_app(test_config=None) -> Flask:
     app.register_blueprint(auth.bp)
     from psan import account
     app.register_blueprint(account.bp)
+    from psan import submission
+    app.register_blueprint(submission.bp)
 
     return app
 

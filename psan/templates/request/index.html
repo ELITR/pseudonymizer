@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% from 'bootstrap/form.html' import render_form, render_field %}
+
+{% block title %}{% trans %}Submissions{% endtrans %}{% endblock %}
+
+{% block content %}
+    <h2 class="mb-4">
+        {% trans %}Pseudomize submissions{% endtrans %}
+    </h2>
+
+    <div class="card-columns">
+
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">{{ "Document name" | escape }}</h5>
+                <div class="card-text">
+                    Phase 2 / 3, annotated in 26 %
+                </div>
+            </div>
+        </div>
+
+    </div>
+{% endblock %}
