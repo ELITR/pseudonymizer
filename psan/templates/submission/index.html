@@ -12,15 +12,16 @@
     </div>
 
     <div class="card-columns">
-
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title">{{ "Document name" | escape }}</h5>
-                <div class="card-text">
-                    Phase 2 / 3, annotated in 26 %
+        {%for submission in submissions %}
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">{{ submission["name"] | escape }}</h5>
+                    <div class="card-text">
+                        Phase 2 / 3, annotated in 26 %
+                    </div>
                 </div>
             </div>
-        </div>
+        {% endfor %}
 
     </div>
 {% endblock %}

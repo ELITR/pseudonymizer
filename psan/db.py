@@ -1,5 +1,5 @@
 from collections import Iterable
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 import os
 
 import psycopg2
@@ -50,6 +50,10 @@ class PostgresProxy:
     def fetchone(self, sql: str, parameters: Iterable) -> Optional[Dict]:
         self.cursor.execute(sql, parameters)
         return self.cursor.fetchone()
+
+    def fetchall(self, sql: str, parameters: Iterable) -> Optional[List[Dict]]:
+        self.cursor.execute(sql, parameters)
+        return self.cursor.fetchall()
 
     def commit(self) -> None:
         self.db.commit()

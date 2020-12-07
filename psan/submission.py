@@ -22,7 +22,10 @@ bp = Blueprint("submission", __name__, url_prefix="/submission")
 @bp.route("/")
 @login_required(role=AccountType.ADMIN)
 def index():
-    return render_template("submission/index.html")
+    # Load data from db
+    db = get_db()
+    submissions = db.fetchall("SELECT * FROM submission", None)
+    return render_template("submission/index.html", submissions=submissions)
 
 
 @bp.route("/new", methods=['GET', 'POST'])
