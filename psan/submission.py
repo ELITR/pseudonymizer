@@ -10,4 +10,4 @@ bp = Blueprint("submission", __name__, url_prefix="/submission")
 @bp.route("/")
 @login_required(role=AccountType.ADMIN)
 def index():
-    return render_template("request/index.html")
+    return render_template("submission/index.html")
