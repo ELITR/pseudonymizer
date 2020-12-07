@@ -4,9 +4,12 @@
 {% block title %}{% trans %}Submissions{% endtrans %}{% endblock %}
 
 {% block content %}
-    <h2 class="mb-4">
-        {% trans %}Pseudomize submissions{% endtrans %}
-    </h2>
+    <div class="d-flex justify-content-between align-items-center">
+        <h2 class="mb-4">
+            {% trans %}Pseudomize submissions{% endtrans %}
+        </h2>
+        <a class="btn btn-outline-primary" href="{{ url_for("submission.new") }}">{{ render_icon("upload") }}{% trans %}New submission{% endtrans %}</a>
+    </div>
 
     <div class="card-columns">
 

@@ -15,3 +15,9 @@ CREATE TABLE account (
     password            TEXT                        NOT NULL,
     created             TIMESTAMP                   NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE submission (
+    id                  SERIAL PRIMARY KEY,
+    name                TEXT                        NOT NULL,
+    uid                 UUID                UNIQUE  NOT NULL
+);

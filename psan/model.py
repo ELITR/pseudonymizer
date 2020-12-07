@@ -4,6 +4,9 @@ from flask_babel import lazy_gettext
 from flask_wtf import FlaskForm
 from wtforms import SubmitField, StringField, PasswordField, SelectField, validators
 from wtforms.fields.html5 import EmailField
+from wtforms.fields.simple import TextAreaField
+from flask_wtf import FlaskForm
+from flask_wtf.file import FileField, FileAllowed
 
 _ = lazy_gettext
 
@@ -68,3 +71,11 @@ class ChangePasswordForm(FlaskForm):
     confirm = PasswordField(_("Repeat new password"), [
                             validators.DataRequired()])
     submit = SubmitField(_("Change password"))
+
+
+class UploadForm(FlaskForm):
+    name = StringField(_("Submission name"))
+    text = TextAreaField(_("Text submission"))
+    file = FileField(_("Text file submission"), validators=[
+                     FileAllowed(["txt"], _("*.txt files only"))])
+    submit = SubmitField(_("Upload"))

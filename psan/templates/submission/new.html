@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% from 'bootstrap/form.html' import render_field, render_form_row %}
+
+{% block title %}{% trans %}New submission{% endtrans %}{% endblock %}
+
+{% block content %}
+    <h2 class="mb-4">
+        {% trans %}New submission{% endtrans %}
+    </h2>
+
+    <form method="post" enctype="multipart/form-data">
+        {{ form.csrf_token }}
+
+        {{ render_form_row([form.name]) }}
+
+        <p>
+            {% trans %}You can either submit a text or upload a txt file...{% endtrans %}
+        </p>
+
+        <div class="form-row">
+            <div class="form-group col-md-12">
+                {{ render_field(form.text, style="resize:vertical; height: 30em") }}
+            </div>
+        </div>
+
+        {{ render_form_row([form.file]) }}
+
+        <div class="form-row d-flex">
+            {{ render_field(form.submit, class="btn btn-primary ml-auto") }}
+        </div>
+
+{% endblock %}
