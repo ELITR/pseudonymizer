@@ -4,6 +4,7 @@ services:
     volumes:
       - ./psan:/srv/psan
       - ./instance:/srv/instance
+      - ./config:/srv/config
     environment:
       FLASK_ENV: debug 
       FLASK_DEBUG: 1
