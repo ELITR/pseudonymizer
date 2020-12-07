@@ -1,5 +1,6 @@
 {% from 'bootstrap/utils.html' import render_messages %}
 {% from 'bootstrap/nav.html' import render_nav_item %}
+{% from 'bootstrap/utils.html' import render_icon %}
 
 <!doctype html>
 <html lang="{{ g.lang }}">
@@ -31,6 +32,9 @@
            class="btn-sm btn-outline-secondary mr-auto">{{ _("cs") }}</a>
         <div class="navbar-nav">
             {%- if g.account %}
+                <a class="nav-item nav-link" href="{{ url_for("submission.index") }}">
+                    {{ render_icon("file-text", size="24px") }}{% trans %}Submissions{% endtrans %}
+                </a>
                 {{ render_nav_item("account.index", g.account["full_name"]) }}
                 <a href="{{ url_for("auth.logout") }}"
                    class="btn btn-outline-primary my-2 my-sm-0 mr-auto">{{ _("Log out") }}</a>
