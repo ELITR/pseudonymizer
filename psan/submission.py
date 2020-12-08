@@ -53,10 +53,13 @@ def new():
                 "INSERT INTO submission (uid, name) VALUES (%s, %s)", (uid, name))
             db.commit()
             # Save file
-            file_data = form.file.data
             folder = os.path.join(current_app.config["DATA_FOLDER"], uid)
             os.mkdir(folder)
-            file_data.save(os.path.join(folder, "input.txt"))
+            if form.file.data:
+                form.file.data.save(os.path.join(folder, "input.txt"))
+            else:
+                with open(os.path.join(folder, "input.txt"), "w") as file:
+                    file.write(form.text.data)
             return redirect(url_for(".index"))
     else:
         form.name.render_kw = {"placeholder": default_name}
