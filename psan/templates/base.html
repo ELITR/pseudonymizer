@@ -19,7 +19,7 @@
         <title>{% block title %}{% trans %}Pseudo-anonymize tool{% endtrans %}{% endblock %}</title>
     {% endblock %}
 </head>
-<body>
+<body class="d-flex flex-column min-vh-100">
 {# Render Navbar #}
 <nav class="navbar navbar-expand-sm navbar-light bg-light">
     <a class="navbar-brand" href="{{ url_for("index") }}">{% trans %}Pseudo-anonymize tool{% endtrans %}</a>
@@ -51,7 +51,7 @@
     {% block content %}{% endblock %}
 </main>
 
-<footer class="page-footer fixed-bottom">
+<footer class="page-footer mt-auto">
   <div class="text-muted text-center small py-3">{{ _("Revision:") }} {{ config["COMMIT_REV"] }}
   </div>
 </footer>
