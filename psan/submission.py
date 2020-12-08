@@ -60,6 +60,10 @@ def new():
             else:
                 with open(os.path.join(folder, "input.txt"), "w") as file:
                     file.write(form.text.data)
+            # Register background task
+            from psan import worker
+            worker.recognize_submission.delay(uid)
+
             return redirect(url_for(".index"))
     else:
         form.name.render_kw = {"placeholder": default_name}

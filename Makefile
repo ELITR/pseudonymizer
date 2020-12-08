@@ -35,8 +35,11 @@ instance:
 build: venv instance
 
 # Run web
-run: build
+run: build worker
 	$(VENV); $(FLASK_FLAGS) flask run
+
+worker: build
+	($(VENV); $(FLASK_FLAGS) celery -A psan.celery worker)&
 
 # Docker
 docker-debug: instance

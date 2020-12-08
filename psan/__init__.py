@@ -1,14 +1,14 @@
+import os
+from typing import Tuple
 from psan import db
 
 from flask import Flask, render_template, request, g, redirect, after_this_request
 from flask_babel import Babel
 from flask_bootstrap import Bootstrap
+from celery import Celery
 
 
-def create_app(test_config=None) -> Flask:
-    """
-    Create and configure an instance of the Flask application.
-    """
+def build_app() -> Tuple[Flask, Celery]:
     app = Flask(__name__, instance_relative_config=True)
 
     # Configs
@@ -23,10 +23,11 @@ def create_app(test_config=None) -> Flask:
     else:
         app.config.from_object("config.production")
 
+    celery = init_celery(app)
+    db.init_app(app)
+
     Bootstrap(app)
     init_translations(app)
-
-    db.init_app(app)
 
     @app.route("/")
     def index():
@@ -43,7 +44,7 @@ def create_app(test_config=None) -> Flask:
     from psan import submission
     app.register_blueprint(submission.bp)
 
-    return app
+    return app, celery
 
 
 def init_translations(app: Flask) -> None:
@@ -90,3 +91,25 @@ def init_translations(app: Flask) -> None:
     @babel.localeselector
     def get_locale():
         return g.lang
+
+
+def init_celery(app: Flask) -> Celery:
+    celery = Celery(
+        app.name,
+        backend=os.environ["CELERY_REDIS"],
+        broker=os.environ["CELERY_REDIS"],
+        include=["psan.worker"]
+    )
+    celery.conf.update(app.config)
+
+    class ContextTask(celery.Task):
+        def __call__(self, *args, **kwargs):
+            with app.app_context():
+                return self.run(*args, **kwargs)
+
+    celery.Task = ContextTask
+
+    return celery
+
+
+app, celery = build_app()

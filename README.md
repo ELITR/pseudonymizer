@@ -25,14 +25,18 @@ Installation
 Configuration
 -------------
 
-PsAn tool uses Flask framework and runs in Python's venv. The venv is usually auto created by make, but you can also create it manually using `make venv`. The app needs PostgreSQL to work correctly, a connection details has to be provided in env variables:
+PsAn tool uses Flask framework and runs in Python's venv. The venv is usually auto created by make, but you can also create it manually using `make venv`. The app needs PostgreSQL and redis to work correctly, a connection details has to be provided in env variables:
 
-```
+```bash
+# Required params
 DB_USER=postgres
 DB_PASSWORD=postgres
-DB_NAME=psan_db
-DB_HOST=db
 APP_SECRET_KEY=USE_YOUR_SECRET_KEY
+DB_NAME=psan_db
+# Optional params, not recommended with docker-compose (or make)
+DB_HOST=db
+CELERY_REDIS=redis://localhost:6379
+
 ```
 
 Runtime

@@ -4,18 +4,24 @@ services:
     build: .
     links:
       - db
+      - redis
+    environment: 
+      DB_HOST: db
+      CELERY_REDIS: redis://redis:6379
     env_file: 
       - .env
     ports:
       - 5000:5000
   db:
-    image: postgres:13.1
+    image: postgres:13.1-alpine
     volumes:
       - db_data:/var/lib/postgresql/data
       - ./db:/docker-entrypoint-initdb.d
     environment: 
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
+  redis:
+    image: redis:6.0.9-alpine
 
 volumes:
   db_data:
