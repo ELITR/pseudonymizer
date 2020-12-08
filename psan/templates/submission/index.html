@@ -20,9 +20,15 @@
                     <div class="card-text">
                         Phase 2 / 3, annotated in 26 %
                     </div>
+                    <form method="post" action="{{ url_for("submission.remove") }}">
+                        {{ remove_form.csrf_token }}
+                        {{ remove_form.uid(value=submission["uid"]) }}
+                        <div class="d-flex">
+                            <button type="submit" name="submit" class="btn btn-outline-danger ml-auto">{{ render_icon("trash") }}</button>
+                        </div>
+                    </form> 
                 </div>
             </div>
         {% endfor %}
-
     </div>
 {% endblock %}
