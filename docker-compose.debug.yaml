@@ -12,11 +12,11 @@ services:
     image: michalhosna/adminer:4.7.7-en_v1
     environment:
       ADMINER_DRIVER: pgsql
-      ADMINER_SERVER: ${DB_HOST} 
+      ADMINER_SERVER: db 
       ADMINER_USERNAME: ${DB_USER}
       ADMINER_PASSWORD: ${DB_PASSWORD}
       ADMINER_AUTOLOGIN: 1
-      ADMINER_NAME: ${DB_NAME}
+      ADMINER_NAME: ${DB_NAME-psan_db}
     logging:
       driver: "none" # Don't log anything
     links:

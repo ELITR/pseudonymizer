@@ -32,9 +32,9 @@ PsAn tool uses Flask framework and runs in Python's venv. The venv is usually au
 DB_USER=postgres
 DB_PASSWORD=postgres
 APP_SECRET_KEY=USE_YOUR_SECRET_KEY
-DB_NAME=psan_db
 # Optional params, not recommended with docker-compose (or make)
 DB_HOST=db
+DB_NAME=psan_db
 CELERY_REDIS=redis://localhost:6379
 
 ```
