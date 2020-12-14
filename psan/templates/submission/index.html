@@ -18,7 +18,11 @@
                     <h5 class="card-title">{{ submission["name"] | escape }}</h5>
                     <h6 class="card-subtitle mb-2 text-muted">{{ submission["uid"] }}</h6>
                     <div class="card-text">
-                        Phase 2 / 3, annotated in 26 %
+                        {% if submission["status"]==SubmissionStatus.NEW.value %}
+                            {% trans %}Phase 1 / 3, parsing... {% endtrans %}
+                        {% elif submission["status"]==SubmissionStatus.RECOGNIZED.value %}
+                            Phase 2 / 3, annotated in 26 % 
+                        {% endif %}
                     </div>
                     <form method="post" action="{{ url_for("submission.remove") }}">
                         {{ remove_form.csrf_token }}
@@ -30,5 +34,10 @@
                 </div>
             </div>
         {% endfor %}
+        {% if not submissions %}
+            <div class="text-muted">
+                {% trans %}No data found...{% endtrans %}
+            </div>
+        {% endif %}
     </div>
 {% endblock %}

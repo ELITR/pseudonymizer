@@ -1,11 +1,9 @@
 -- Initialize the PostgreSQL database.
 
--- Database
-CREATE DATABASE psan_db;
-\c psan_db;
-
 -- Table
 CREATE TYPE account_type AS ENUM ('USER', 'ADMIN');
+
+CREATE TYPE submission_status AS ENUM ('NEW', 'RECOGNIZED', 'ANNOTATED', 'DONE');
 
 CREATE TABLE account (
     id                  SERIAL PRIMARY KEY,
@@ -17,7 +15,8 @@ CREATE TABLE account (
 );
 
 CREATE TABLE submission (
-    id                  SERIAL PRIMARY KEY,
-    name                TEXT                        NOT NULL,
-    uid                 UUID                UNIQUE  NOT NULL
+    id          SERIAL PRIMARY KEY,
+    name        TEXT                        NOT NULL,
+    uid         UUID                UNIQUE  NOT NULL,
+    status      submission_status           NOT NULL 
 );

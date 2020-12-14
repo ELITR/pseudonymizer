@@ -1,19 +1,21 @@
+import datetime
 import gettext
 import os
 import shutil
-
-from flask_babel import gettext
-from flask.helpers import flash
-from werkzeug.utils import secure_filename
-from psan.db import get_db
 import uuid
-import datetime
-from flask import current_app, url_for, request, redirect
-from werkzeug.datastructures import CombinedMultiDict
-from psan.model import AccountType, RemoveSubmissionForm, UploadForm
+
+from flask import current_app, redirect, request, url_for
 from flask.blueprints import Blueprint
-from psan.auth import login_required
+from flask.helpers import flash
 from flask.templating import render_template
+from flask_babel import gettext
+from werkzeug.datastructures import CombinedMultiDict
+from werkzeug.utils import secure_filename
+
+from psan.auth import login_required
+from psan.db import get_db
+from psan.model import (AccountType, RemoveSubmissionForm, SubmissionStatus,
+                        UploadForm)
 
 _ = gettext
 
@@ -29,7 +31,8 @@ def index():
     # Remove button
     remove_form = RemoveSubmissionForm(request.form)
 
-    return render_template("submission/index.html", submissions=submissions, remove_form=remove_form)
+    return render_template("submission/index.html", submissions=submissions, remove_form=remove_form,
+                           SubmissionStatus=SubmissionStatus)
 
 
 @bp.route("/new", methods=['GET', 'POST'])
@@ -54,7 +57,8 @@ def new():
             # Save uuid to db
             db = get_db()
             db.execute(
-                "INSERT INTO submission (uid, name) VALUES (%s, %s)", (uid, name))
+                "INSERT INTO submission (uid, name, status) VALUES (%s, %s, %s)",
+                (uid, name, SubmissionStatus.NEW.value))
             db.commit()
             # Save file
             folder = os.path.join(current_app.config["DATA_FOLDER"], uid)

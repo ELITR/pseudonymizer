@@ -2,11 +2,11 @@ from enum import Enum
 
 from flask_babel import lazy_gettext
 from flask_wtf import FlaskForm
-from wtforms import SubmitField, StringField, PasswordField, SelectField, validators
+from flask_wtf.file import FileAllowed, FileField
+from wtforms import (PasswordField, SelectField, StringField, SubmitField,
+                     validators)
 from wtforms.fields.html5 import EmailField
 from wtforms.fields.simple import HiddenField, TextAreaField
-from flask_wtf import FlaskForm
-from flask_wtf.file import FileField, FileAllowed
 
 _ = lazy_gettext
 
@@ -14,6 +14,13 @@ _ = lazy_gettext
 class AccountType(Enum):
     USER = "USER"
     ADMIN = "ADMIN"
+
+
+class SubmissionStatus(Enum):
+    NEW = "NEW"
+    RECOGNIZED = "RECOGNIZED"
+    ANNOTATED = "ANNOTATED"
+    DONE = "DONE"
 
 
 def strip_whitespace(text: str):
