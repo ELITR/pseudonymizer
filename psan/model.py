@@ -20,12 +20,6 @@ def strip_whitespace(text: str):
     return text.strip()
 
 
-password_validators = [
-    validators.DataRequired(),
-    validators.length(8),
-    validators.EqualTo("confirm", message=_("Passwords must match"))
-]
-
 email_validators = [validators.DataRequired(),
                     validators.length(max=255),
                     validators.regexp(r".+@.+", message=_("E-mail must contains @ inside text"))]
@@ -40,6 +34,11 @@ class AccountRegisterForm(FlaskForm):
     email = EmailField(_("E-mail address"),
                        validators=email_validators,
                        filters=[strip_whitespace])
+    password = StringField(_("Password"),
+                           description=_("At least 8 characters long"),
+                           validators=[validators.DataRequired(),
+                                       validators.length(8)],
+                           filters=[strip_whitespace])
     submit = SubmitField(_("Register"))
 
 
@@ -67,7 +66,9 @@ class ChangePasswordForm(FlaskForm):
         _("Old password"), [validators.DataRequired()])
     new_password = PasswordField(_("New password"),
                                  description=_("At least 8 characters long"),
-                                 validators=password_validators)
+                                 validators=[validators.DataRequired(),
+                                             validators.length(8),
+                                             validators.EqualTo("confirm", message=_("Passwords must match"))])
     confirm = PasswordField(_("Repeat new password"), [
                             validators.DataRequired()])
     submit = SubmitField(_("Change password"))

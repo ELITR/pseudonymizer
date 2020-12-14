@@ -1,5 +1,7 @@
 import functools
 from typing import Optional
+import string
+import secrets
 
 from flask import Blueprint
 from flask import flash
@@ -82,7 +84,7 @@ def register():
                 "INSERT INTO account (full_name, type, email, password) "
                 "VALUES (%s, %s, %s, %s)",
                 (form.full_name.data, form.type.data, form.email.data,
-                 generate_password_hash("TODO")),
+                 generate_password_hash(form.password.data)),
             )
             db.commit()
             session.clear()
@@ -90,6 +92,8 @@ def register():
             return redirect(url_for("auth.login"))
         else:
             form.email.errors.append(_("Value is already taken."))
+    else:
+        form.password.data = ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(8))
 
     return render_template("auth/register.html", form=form)
 
