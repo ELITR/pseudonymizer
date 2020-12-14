@@ -18,5 +18,6 @@ CREATE TABLE submission (
     id          SERIAL PRIMARY KEY,
     name        TEXT                        NOT NULL,
     uid         UUID                UNIQUE  NOT NULL,
-    status      submission_status           NOT NULL 
+    status      submission_status           NOT NULL,
+    candidates  integer
 );

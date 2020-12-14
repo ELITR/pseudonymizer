@@ -19,7 +19,13 @@ from psan.model import (AccountType, RemoveSubmissionForm, SubmissionStatus,
 
 _ = gettext
 
+INPUT_FILENAME = "input.txt"
+
 bp = Blueprint("submission", __name__, url_prefix="/submission")
+
+
+def get_submission_folder(uid: str) -> str:
+    return os.path.join(current_app.config["DATA_FOLDER"], uid)
 
 
 @bp.route("/")
@@ -61,12 +67,12 @@ def new():
                 (uid, name, SubmissionStatus.NEW.value))
             db.commit()
             # Save file
-            folder = os.path.join(current_app.config["DATA_FOLDER"], uid)
+            folder = get_submission_folder(uid)
             os.mkdir(folder)
             if form.file.data:
-                form.file.data.save(os.path.join(folder, "input.txt"))
+                form.file.data.save(os.path.join(folder, INPUT_FILENAME))
             else:
-                with open(os.path.join(folder, "input.txt"), "w") as file:
+                with open(os.path.join(folder, INPUT_FILENAME), "w") as file:
                     file.write(form.text.data)
             # Register background task
             from psan import worker

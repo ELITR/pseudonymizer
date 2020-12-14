@@ -21,7 +21,7 @@
                         {% if submission["status"]==SubmissionStatus.NEW.value %}
                             {% trans %}Phase 1 / 3, parsing... {% endtrans %}
                         {% elif submission["status"]==SubmissionStatus.RECOGNIZED.value %}
-                            Phase 2 / 3, annotated in 26 % 
+                            Phase 2 / 3, {{ submission["candidates"] }} candidates
                         {% endif %}
                     </div>
                     <form method="post" action="{{ url_for("submission.remove") }}">
