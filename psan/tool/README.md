@@ -13,20 +13,20 @@ NER interface
 Application supports two NER algorithms:
 
 - Regex NER
-- Binary NER
+- NameTag2 NER
+- External tool NER
 - or any class that implements `Ner` from `psan.tool` package
 
-### Binary NER ###
+### NameTag2 NER ###
 
-Binary named entity recognizer is designed to support [NameTag 2](https://ufal.mff.cuni.cz/nametag/2).
+NameTag2 adapter uses `ufal.nametag` Python bindings to [NameTag library](https://ufal.mff.cuni.cz/nametag/2).
 
 > Straková Jana, Straka Milan, Hajič Jan: Neural Architectures for Nested NER through Linearization. In: Proceedings of the 57th Annual Meeting of the Association for Computational Linguistics, Copyright © Association for Computational Linguistics, Stroudsburg, PA, USA, ISBN 978-1-950737-48-2, pp. 5326-5331, 2019
 
 #### Configuration ####
 
-You have to add these variables to `.env` file.
+You have to add this variable to `.env` file.
 
 ```
-NER_BIN=./run_ner # Location of run_ner executable
-NER_MODEL=:/model.ner # Location of NER language model
+NER_MODEL=./model.ner # Location of NER language model
 ```
