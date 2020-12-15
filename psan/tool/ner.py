@@ -1,9 +1,10 @@
 """Named entity recognizer module."""
 
+import functools
 import re
 import subprocess
 from abc import ABC, abstractclassmethod
-from typing import List
+from typing import List, Match
 
 from ufal.nametag import Forms, NamedEntities, Ner, TokenRanges
 
@@ -21,20 +22,29 @@ class RegexNer(NerInterface):
 
     TWO_UPPERCASE_WORDS = r"[A-Z][a-z]+\s[A-Z][a-z]+"
 
+    class ReplaceStatus:
+        def __init__(self, next_id: int) -> None:
+            self.next_id = next_id
+
     def __init__(self, pattern: str) -> None:
         self._pattern = re.compile(f"({pattern})")
 
+    @staticmethod
+    def status_sub(match: Match, status: ReplaceStatus) -> str:
+        new = f"<ne type=\"re\" id={status.next_id}>{match.group(1)}</ne>"
+        status.next_id += 1
+        return new
+
     def recognize_file(self, input_filename: str, output_filename: str) -> int:
-        N = 0
+        status = RegexNer.ReplaceStatus(0)
+        status_sub_fn = functools.partial(RegexNer.status_sub, status=status)
         with open(input_filename, mode="r") as input, open(output_filename, mode="w") as output:
             for line in input.readlines():
-                parsed, n = self._pattern.subn(
-                    r"<ne type=\"re\">\1</ne>", line)
+                parsed = self._pattern.sub(status_sub_fn, line)
                 output.write(parsed)
                 output.write('\n')
-                N += n
 
-        return N
+        return status.next_id
 
 
 class BinaryNer(NerInterface):
