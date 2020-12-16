@@ -41,7 +41,7 @@ class RegexNer(NerInterface):
         status = RegexNer.ReplaceStatus(next_id)
         status_sub_fn = functools.partial(RegexNer.status_sub, status=status)
         with open(input_filename, mode="r") as input, open(output_filename, mode="w") as output:
-            for line in input.readlines():
+            for line in input:
                 parsed = self._pattern.sub(status_sub_fn, line)
                 output.write(parsed)
                 output.write('\n')
@@ -65,7 +65,7 @@ class BinaryNer(NerInterface):
         # Count found entries
         N = 0
         with open(output_filename, mode="r") as output:
-            for line in output.readlines():
+            for line in output:
                 N += len(BinaryNer.XML_TAG_PATTERN.findall(line))
 
         return N
@@ -98,7 +98,7 @@ class NameTag(NerInterface):
         entities = NamedEntities()
 
         with open(input_filename, mode="r") as input, open(output_filename, mode="w") as output:
-            for line in input.readlines():
+            for line in input:
                 # Tokenize line
                 self._tokenizer.setText(line)
 
