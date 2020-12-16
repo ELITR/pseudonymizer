@@ -19,13 +19,23 @@ from psan.model import (AccountType, RemoveSubmissionForm, SubmissionStatus,
 
 _ = gettext
 
-INPUT_FILENAME = "input.txt"
+_INPUT_FILENAME = "01-input.txt"
+_RECOGNIZED_FILENAME = "02-recognized.txt"
 
 bp = Blueprint("submission", __name__, url_prefix="/submission")
 
 
 def get_submission_folder(uid: str) -> str:
     return os.path.join(current_app.config["DATA_FOLDER"], uid)
+
+
+def get_submission_file(uid: str, status: SubmissionStatus) -> str:
+    if status == SubmissionStatus.NEW:
+        return os.path.join(current_app.config["DATA_FOLDER"], uid, _INPUT_FILENAME)
+    elif status == SubmissionStatus.RECOGNIZED:
+        return os.path.join(current_app.config["DATA_FOLDER"], uid, _RECOGNIZED_FILENAME)
+    else:
+        raise NotImplementedError(f"Unsupported status {status}")
 
 
 @bp.route("/")
@@ -70,9 +80,9 @@ def new():
             folder = get_submission_folder(uid)
             os.mkdir(folder)
             if form.file.data:
-                form.file.data.save(os.path.join(folder, INPUT_FILENAME))
+                form.file.data.save(os.path.join(folder, _INPUT_FILENAME))
             else:
-                with open(os.path.join(folder, INPUT_FILENAME), "w") as file:
+                with open(os.path.join(folder, _INPUT_FILENAME), "w") as file:
                     file.write(form.text.data)
             # Register background task
             from psan import worker

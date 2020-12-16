@@ -3,7 +3,7 @@ import os
 from psan import celery
 from psan.db import get_db
 from psan.model import SubmissionStatus
-from psan.submission import INPUT_FILENAME, get_submission_folder
+from psan.submission import get_submission_file
 from psan.tool import recognize_file
 
 
@@ -12,9 +12,8 @@ def recognize_submission(uid: str) -> None:
     db = get_db()
 
     # Run autorecognition
-    folder = get_submission_folder(uid)
-    input_file = os.path.join(folder, INPUT_FILENAME)
-    output_file = os.path.join(folder, "01.txt")
+    input_file = get_submission_file(uid, SubmissionStatus.NEW)
+    output_file = get_submission_file(uid, SubmissionStatus.RECOGNIZED)
     num_candidates = recognize_file(input_file, output_file)
 
     # Update db with candidates
