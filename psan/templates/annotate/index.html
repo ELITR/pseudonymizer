@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% from 'bootstrap/form.html' import render_form, render_field %}
+
+{% block title %}{% trans %}Annotatation interface{% endtrans %}{% endblock %}
+
+{% block content %}
+    <div class="d-flex">
+        <div class="row">
+            <div class="col-12 col-lg-8 col-xl-9">
+                <h2 class="mb-4">
+                    {% trans %}Annotatation interface{% endtrans %}
+                </h2>
+                Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean placerat. Etiam quis quam. Nam libero tempore, cum soluta nobis est eligendi optio cumque nihil impedit quo minus id quod maxime placeat facere possimus, omnis voluptas assumenda est, omnis dolor repellendus. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt. Suspendisse nisl. Duis bibendum, lectus ut viverra rhoncus, dolor nunc faucibus libero, eget facilisis enim ipsum id lacus. Maecenas lorem. Etiam quis quam. Proin pede metus, vulputate nec, fermentum fringilla, vehicula vitae, justo. Integer malesuada. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos hymenaeos. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos hymenaeos. 
+            </div>
+
+            {# Lemma #}
+            <div class="col-12 col-lg-4 col-xl-3">
+                <div class="card my-2">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            {{ render_icon("vr", size="1.5em") }}{% trans %}By lemma{% endtrans %}
+                        </h5>
+                        <h6 class="card-subtitle mb-2 text-muted">John Black</h6>
+                        <div class="card-text d-flex justify-content-around">
+                            <button type="submit" name="submit" class="btn btn-outline-success my-2">
+                                {{ render_icon("globe", size="1.5em") }}{% trans %}Public{% endtrans %}
+                            </button>
+                            <button type="submit" name="submit" class="btn btn-outline-danger my-2">
+                                {{ render_icon("lock", size="1.5em") }}{% trans %}Secret{% endtrans %}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                {# Context #}
+                <div class="card my-2">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            {{ render_icon("text-paragraph", size="1.5em") }}{% trans %}By context{% endtrans %}
+                        </h5>
+                        <div class="card-text d-flex justify-content-around">
+                            <button type="submit" name="submit" class="btn btn-outline-success my-2">
+                                {{ render_icon("globe", size="1.5em") }}{% trans %}Public{% endtrans %}
+                            </button>
+                            <button type="submit" name="submit" class="btn btn-outline-danger my-2">
+                                {{ render_icon("lock", size="1.5em") }}{% trans %}Secret{% endtrans %}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                {# Category #}
+                <div class="card my-2">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            {{ render_icon("tag", size="1.5em") }}{% trans %}By category{% endtrans %}
+                        </h5>
+                        <h6 class="card-subtitle mb-2 text-muted">Address</h6>
+                        <div class="card-text d-flex justify-content-around">
+                            <button type="submit" name="submit" class="btn btn-outline-success my-2">
+                                {{ render_icon("globe", size="1.5em") }}{% trans %}Public{% endtrans %}
+                            </button>
+                            <button type="submit" name="submit" class="btn btn-outline-danger my-2">
+                                {{ render_icon("lock", size="1.5em") }}{% trans %}Secret{% endtrans %}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

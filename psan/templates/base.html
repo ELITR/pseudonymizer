@@ -32,9 +32,10 @@
            class="btn-sm btn-outline-secondary mr-auto">{{ _("cs") }}</a>
         <div class="navbar-nav">
             {%- if g.account %}
-                <a class="nav-item nav-link" href="{{ url_for("submission.index") }}">
-                    {{ render_icon("file-text", size="24px") }}{% trans %}Submissions{% endtrans %}
-                </a>
+                {% if g.account["type"]=="ADMIN" %}
+                    {{ render_nav_item("submission.index", render_icon("file-text", size="1.5em") +_("Submissions")) }}
+                {% endif %}
+                {{ render_nav_item("annotate.index", render_icon("pencil-square", size="1.5em") +_("Annotate")) }}
                 {{ render_nav_item("account.index", g.account["full_name"]) }}
                 <a href="{{ url_for("auth.logout") }}"
                    class="btn btn-outline-primary my-2 my-sm-0 mr-auto">{{ _("Log out") }}</a>

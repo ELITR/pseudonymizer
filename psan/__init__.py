@@ -1,11 +1,13 @@
 import os
 from typing import Tuple
-from psan import db
 
-from flask import Flask, render_template, request, g, redirect, after_this_request
+from celery import Celery
+from flask import (Flask, after_this_request, g, redirect, render_template,
+                   request)
 from flask_babel import Babel
 from flask_bootstrap import Bootstrap
-from celery import Celery
+
+from psan import db
 
 
 def build_app() -> Tuple[Flask, Celery]:
@@ -43,6 +45,8 @@ def build_app() -> Tuple[Flask, Celery]:
     app.register_blueprint(account.bp)
     from psan import submission
     app.register_blueprint(submission.bp)
+    from psan import annotate
+    app.register_blueprint(annotate.bp)
 
     return app, celery
 
