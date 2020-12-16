@@ -13,7 +13,9 @@ class NerInterface(ABC):
     """Named entity recognizer abstract class."""
 
     @abstractclassmethod
-    def recognize_file(self, input_filename: str, output_filename: str) -> int:
+    def recognize_file(self, input_filename: str, output_filename: str,  next_id=0) -> int:
+        """Finds named entities in the input file and save the results to the output file. 
+        Each entity has an ID that starts with next_id."""
         pass
 
 
@@ -35,8 +37,8 @@ class RegexNer(NerInterface):
         status.next_id += 1
         return new
 
-    def recognize_file(self, input_filename: str, output_filename: str) -> int:
-        status = RegexNer.ReplaceStatus(0)
+    def recognize_file(self, input_filename: str, output_filename: str, next_id=0) -> int:
+        status = RegexNer.ReplaceStatus(next_id)
         status_sub_fn = functools.partial(RegexNer.status_sub, status=status)
         with open(input_filename, mode="r") as input, open(output_filename, mode="w") as output:
             for line in input.readlines():
@@ -56,7 +58,7 @@ class BinaryNer(NerInterface):
         self._bin_loc = binary_location
         self._model_loc = model_location
 
-    def recognize_file(self, input_filename: str, output_filename: str) -> int:
+    def recognize_file(self, input_filename: str, output_filename: str, next_id=0) -> int:
         # Call binary
         subprocess.call([self._bin_loc, self._model_loc,
                          f"{input_filename}:{output_filename}"])
@@ -90,12 +92,11 @@ class NameTag(NerInterface):
         """Escapes XML entities to safe variants (`&` to `&amp;`)"""
         return text.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;').replace('"', '&quot;')
 
-    def recognize_file(self, input_filename: str, output_filename: str) -> int:
+    def recognize_file(self, input_filename: str, output_filename: str, next_id=0) -> int:
         forms = Forms()
         tokens = TokenRanges()
         entities = NamedEntities()
 
-        N = 0
         with open(input_filename, mode="r") as input, open(output_filename, mode="w") as output:
             for line in input.readlines():
                 # Tokenize line
@@ -118,11 +119,11 @@ class NameTag(NerInterface):
                         # Open entities starting at current token
                         while (e < len(sortedEntities) and sortedEntities[e].start == i):
                             output.write(
-                                f"<ne type=\"{NameTag.encode_entities(sortedEntities[e].type)}\" id={N}>")
+                                f"<ne type=\"{NameTag.encode_entities(sortedEntities[e].type)}\" id={next_id}>")
                             openEntities.append(
                                 sortedEntities[e].start + sortedEntities[e].length - 1)
                             e = e + 1
-                            N += 1
+                            next_id += 1
 
                         # The token itself
                         output.write(NameTag.encode_entities(
@@ -136,4 +137,4 @@ class NameTag(NerInterface):
                 # Write rest of the text
                 output.write(NameTag.encode_entities(line[t:]))
 
-        return N
+        return next_id
