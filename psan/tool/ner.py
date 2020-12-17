@@ -119,7 +119,7 @@ class NameTag(NerInterface):
                         # Open entities starting at current token
                         while (e < len(sortedEntities) and sortedEntities[e].start == i):
                             output.write(
-                                f"<ne type=\"{NameTag.encode_entities(sortedEntities[e].type)}\" id={next_id}>")
+                                f"<ne type=\"{NameTag.encode_entities(sortedEntities[e].type)}\" id=\"{next_id}\">")
                             openEntities.append(
                                 sortedEntities[e].start + sortedEntities[e].length - 1)
                             e = e + 1

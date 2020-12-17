@@ -10,7 +10,7 @@
                 <h2 class="mb-4">
                     {% trans %}Annotatation interface{% endtrans %}
                 </h2>
-                {{ candidate | safe }}
+                {{ context_html | safe }}
             </div>
 
             {# Lemma #}
@@ -55,7 +55,7 @@
                         <h5 class="card-title">
                             {{ render_icon("tag", size="1.5em") }}{% trans %}By category{% endtrans %}
                         </h5>
-                        <h6 class="card-subtitle mb-2 text-muted">Address</h6>
+                        <h6 class="card-subtitle mb-2 text-muted">{{ type }}</h6>
                         <div class="card-text d-flex justify-content-around">
                             <button type="submit" name="submit" class="btn btn-outline-success my-2">
                                 {{ render_icon("globe", size="1.5em") }}{% trans %}Public{% endtrans %}
