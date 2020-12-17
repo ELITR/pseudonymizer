@@ -5,13 +5,13 @@ from xml import sax
 from xml.sax import make_parser
 from xml.sax.saxutils import XMLFilterBase, XMLGenerator
 
-from flask import Blueprint, render_template
+from flask import Blueprint, g, render_template, request
 from flask_babel import gettext
 from werkzeug.exceptions import InternalServerError
 
 from psan.auth import login_required
 from psan.db import get_db
-from psan.model import SubmissionStatus
+from psan.model import AccountType, SubmissionStatus
 from psan.submission import get_submission_file
 
 _ = gettext
@@ -33,6 +33,14 @@ def index():
         return render_template("annotate/index.html", candidate=_("No document found..."))
 
 
+@bp.route("/show")
+@login_required(role=AccountType.ADMIN)
+def show():
+    doc_uid = request.args.get("doc_uid", type=str)
+    ne_id = request.args.get("ne_id", type=int)
+    return show_candidate(doc_uid, ne_id)
+
+
 def show_candidate(submission_uid: str, name_entity_id: int):
     # Find line of named entity (NE)
     ne_line = None
@@ -50,7 +58,7 @@ def show_candidate(submission_uid: str, name_entity_id: int):
     # Transform line for UI
     output = StringIO()
     generator = XMLGenerator(output)
-    filter = NeTagFilter(name_entity_id, make_parser())
+    filter = NeTagFilter(submission_uid, name_entity_id, make_parser())
     filter.setContentHandler(generator)
     # Line has to be surrounded with XML tags
     sax.parseString(f"<p>{ne_line}</p>", filter)
@@ -61,20 +69,28 @@ def show_candidate(submission_uid: str, name_entity_id: int):
 class NeTagFilter(XMLFilterBase):
     """Transform `ne` tags to `mark` tags. Highlight tag with `id==candidate_id`."""
 
-    def __init__(self, candidate_id: int, parent=None):
+    def __init__(self, uid: str, candidate_id: int, parent=None):
         super().__init__(parent)
 
         # Tag to highlight
+        self._uid = uid
         self._candidate_id = candidate_id
         self.entity_type = None
 
     def startElement(self, name, attrs):
         if name == "ne":
+            # Test it for candidate
             if int(attrs.get("id")) == self._candidate_id:
                 self.entity_type = attrs.get("type")
-                super().startElement("mark", {"class": "mark-candidate"})
+                new_attrs = {"class": "ne-candidate"}
             else:
-                super().startElement("mark", {})
+                new_attrs = {"class": "ne"}
+            # Update UI for administrator
+            if(g.account["type"] == AccountType.ADMIN.name):
+                new_attrs["onClick"] = "showNameEntryId(event, \"%s\", %d)" % (
+                    self._uid, int(attrs["id"]))
+            # Pass updated element
+            super().startElement("mark", new_attrs)
         else:
             super().startElement(name, attrs)
 

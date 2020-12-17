@@ -14,10 +14,16 @@
     }
 }
 
-.mark {
-    background-color:rgba(255, 253, 107, 0.315);
+.ne {
+    background-color:rgb(255, 253, 163,0.5);
 }
 
-.mark-candidate {
+.ne-candidate {
     background-color:rgb(222, 206, 135);
+    text-decoration: underline;
+}
+
+.ne:hover {
+    background-color:rgb(222, 206, 135);
+    cursor:pointer;
 }

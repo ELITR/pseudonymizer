@@ -70,3 +70,14 @@
         </div>
     </div>
 {% endblock %}
+
+{% block scripts %}
+    {{ super() }}
+
+     <script>
+        function showNameEntryId(event, doc_uid, ne_id) {
+            event.stopPropagation();
+            window.location =  "{{ url_for(".show") }}?doc_uid="+doc_uid+"&ne_id="+ne_id;
+        }       
+    </script> 
+{% endblock %}
