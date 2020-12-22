@@ -2,6 +2,7 @@ VENV=. venv/bin/activate
 
 FLASK_FLAGS=FLASK_APP=psan FLASK_RUN_HOST=0.0.0.0
 POT_HOME=psan/translations
+FLAKE_BIN=venv/bin/flake8
 
 # Python venv environment
 $(VENV): requirements.txt
@@ -9,7 +10,13 @@ $(VENV): requirements.txt
 	$(VENV); pip install -Ur requirements.txt
 	touch venv/bin/activate
 
+$(FLAKE_BIN): $(VENV)
+	$(VENV); pip install flake8
+	touch $(FLAKE_BIN)
+
 venv: $(VENV)
+
+venv-debug: $(VENV) $(FLAKE_BIN)
 
 # Translations
 # Extract strings for translation
@@ -53,9 +60,13 @@ docker-build: instance translate
 docker-clean:
 	docker-compose down -v
 
+# Debug
+lint: $(FLAKE_BIN)
+	$(VENV); flake8 . --exclude=venv,__pycache__ --count --select=E9,F63,F7,F82,H306,H301 --show-source --statistics
+
 # Standard staff
 clean: docker-clean
 	rm -r venv
 	rm -r instance
 
-.PHONY: venv, run, build, docker-debug, docker-build, docker-clean, clean
+.PHONY: venv, venv-debug, run, build, docker-debug, docker-build, docker-clean, lint, clean
