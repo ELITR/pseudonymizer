@@ -28,4 +28,4 @@ jobs:
     - name: Lint sources
       run: |
         # stop the build if there are Python syntax errors or undefined names
-        make lint
+        make -s lint

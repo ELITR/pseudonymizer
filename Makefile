@@ -63,6 +63,7 @@ docker-clean:
 # Debug
 lint: $(FLAKE_BIN)
 	$(VENV); flake8 . --exclude=venv,__pycache__ --count --select=E9,F63,F7,F82,H306,H301 --show-source --statistics
+	$(VENV); flake8 . --exclude=venv,__pycache__ --count --exit-zero --max-complexity=10 --max-line-length=120 --statistics
 
 # Standard staff
 clean: docker-clean
