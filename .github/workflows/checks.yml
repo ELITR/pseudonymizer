@@ -1,28 +1,27 @@
-name: Lints with flake8
+name: Basic checks
 
 on: [push]
 
 jobs:
   lint:
-    name: "Python lint"
+    name: "Lint"
     runs-on: ubuntu-latest
     strategy:
       matrix:
         python-version: [3.6]
-
     steps:
-    - uses: actions/checkout@v2
+    - name: Checkout repository
+      uses: actions/checkout@v2
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
-    - uses: actions/cache@v2
+    - name: Set up cache for pip
+      uses: actions/cache@v2
       with:
         path: ~/.cache/pip
         key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
         restore-keys: |
           ${{ runner.os }}-pip-
-    - name: Install dependencies
-      run: |
-        make venv-debug
-    - uses: TrueBrain/actions-flake8@master
+    - name: flake8
+      uses: TrueBrain/actions-flake8@master
