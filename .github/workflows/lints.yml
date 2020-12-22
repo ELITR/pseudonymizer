@@ -25,16 +25,8 @@ jobs:
     - name: Install dependencies
       run: |
         make venv-debug
-    - name: Lint using make
-      run: |
-        # stop the build if there are Python syntax errors or undefined names
-        make -s lint
-    - name: Install flake8 globally
-      run: pip install flake8
-    - name: Lint using github action
-      uses: julianwachholz/flake8-action@v1.1.0
+    - uses: liskin/gh-problem-matcher-wrap@v1
       with:
-        checkName: "Python lint"
-        path: .
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        action: add
+        linters: flake8
+        run: make -s lint
