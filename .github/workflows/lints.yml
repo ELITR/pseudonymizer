@@ -25,8 +25,4 @@ jobs:
     - name: Install dependencies
       run: |
         make venv-debug
-    - uses: liskin/gh-problem-matcher-wrap@v1
-      with:
-        action: add
-        linters: flake8
-        run: make -s lint
+    - uses: TrueBrain/actions-flake8@master
