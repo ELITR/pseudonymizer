@@ -1,5 +1,3 @@
-import os
-
 from psan import celery
 from psan.db import get_db
 from psan.model import SubmissionStatus

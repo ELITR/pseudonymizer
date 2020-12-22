@@ -1,4 +1,4 @@
 [flake8]
 exclude = venv,__pycache__
-max-line-length = 120
+max-line-length = 130
 max-complexity = 10

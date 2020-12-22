@@ -1,4 +1,5 @@
-from flask import Blueprint, render_template, request, g, redirect, url_for, flash, session
+from flask import (Blueprint, flash, g, redirect, render_template, request,
+                   session, url_for)
 from flask_babel import gettext
 from itsdangerous import BadSignature, BadTimeSignature
 from werkzeug.exceptions import BadRequest
@@ -6,8 +7,8 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 from psan.auth import login_required
 from psan.db import get_db
-from psan.model import AccountType, DeleteAccountForm, ChangePasswordForm
-from psan.postman import read_email_token, read_reset_token
+from psan.model import AccountType, ChangePasswordForm, DeleteAccountForm
+from psan.postman import read_reset_token
 
 _ = gettext
 

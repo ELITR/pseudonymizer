@@ -1,5 +1,4 @@
 import datetime
-import gettext
 import os
 import shutil
 import uuid
