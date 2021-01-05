@@ -1,31 +1,31 @@
 Pseudonymization tool
 =====================
 
-Installation
--------------
+Requirements
+------------
 
 ### Windows
 
 - [Install WSL](https://docs.microsoft.com/en-us/windows/wsl/install-win10)
-- Install Windows Terminal (optional, needs Windows 10.0.18362.0 or higher)
-    - [Download latest msixbundle](https://github.com/microsoft/terminal/releases)
-    - `Add-AppxPackage xyz.msixbundle`
+- Install [Windows Terminal](https://github.com/microsoft/terminal) (optional, needs Windows 10.0.18362.0 or higher)
 - Install Python 3.9 (to Windows)
-- Install IDE
+- Install IDE (optional)
     - VSCode
-    - [Configure WSL interpret in PyCharm](https://www.jetbrains.com/help/pycharm/using-wsl-as-a-remote-interpreter.html) (optional, works only in PyCharm Professional)
+    - [PyCharm with WSL interpret](https://www.jetbrains.com/help/pycharm/using-wsl-as-a-remote-interpreter.html) (works only in PyCharm Professional)
 - Install Docker on [WSL 2](https://docs.docker.com/docker-for-windows/wsl/)
 
-### Requirements
- 
+### Dependencies
+
 - make
 - docker and docker-compose
 - Python 3.6 or newer
 
+PsAn tool uses Flask framework and runs in Python's venv. The venv is usually auto created by make, but you can also create it manually using `make venv`.
+
 Configuration
 -------------
 
-PsAn tool uses Flask framework and runs in Python's venv. The venv is usually auto created by make, but you can also create it manually using `make venv`. The app needs PostgreSQL and redis to work correctly, a connection details has to be provided in env variables:
+The app needs PostgreSQL and Redis to work correctly, a connection details has to be provided in env variables:
 
 ```bash
 # Required params
@@ -42,12 +42,13 @@ CELERY_REDIS=redis://localhost:6379
 Runtime
 -------
 
-You can start application (with PostreSQL) in Docker containers using `docker-compose up` in project root. The _docker-compose_ expects an `.env` file in project root that contains env variables.
+### Production
+
+You can start application (with PostreSQL and Redis) in Docker containers using `docker-compose up` in project root. The _docker-compose_ expects an `.env` file in project root that contains env variables.
 
 - PSAN tool is available on http://localhost:5000/
 
-
-You can also start the app without using docker with `make run`.
+You can also start the app without using docker (in _venv_) using `make run`.
 
 ### Debug
 
