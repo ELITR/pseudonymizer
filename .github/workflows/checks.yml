@@ -1,4 +1,4 @@
-name: Basic checks
+name: Code tests
 
 on: [push]
 
@@ -16,12 +16,31 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
+    - name: flake8
+      uses: TrueBrain/actions-flake8@master
+  pytest:
+    name: "pytest"
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.6]
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
     - name: Set up cache for pip
       uses: actions/cache@v2
       with:
-        path: ~/.cache/pip
+        path: ~/venv
         key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
         restore-keys: |
           ${{ runner.os }}-pip-
-    - name: flake8
-      uses: TrueBrain/actions-flake8@master
+    - name: Add test config
+      run: echo -n -e "DB_USER=testuser\nDB_PASSWORD=testpass\nAPP_SECRET_KEY=testpass\n" > .env
+    - name: Build test docker image
+      run: make docker-build
+    - name: Run test in docker image
+      run: make docker-test
