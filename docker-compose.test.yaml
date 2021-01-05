@@ -1,0 +1,20 @@
+version: "3.3"
+services:
+  flask:
+    volumes:
+      - ./psan:/srv/psan
+      - ./instance:/srv/instance
+      - ./config:/srv/config
+      - ./tests:/srv/tests
+      - .pytest_cache/:/srv/.pytest_cache/
+    environment:
+      DB_NAME: ${DB_NAME:-psan_db_test}
+    command: /srv/run_tests.sh
+  db:
+    logging:
+      driver: "none" # Don't log anything
+    environment:
+      POSTGRES_DB: ${DB_NAME:-psan_db_test}
+  redis:
+    logging:
+      driver: "none" # Don't log anything

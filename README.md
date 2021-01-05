@@ -44,16 +44,19 @@ CELERY_REDIS=redis://localhost:6379
 Runtime
 -------
 
-### Production
-
-You can start application (with PostreSQL and Redis) in Docker containers using `docker-compose up` in project root. The _docker-compose_ expects an `.env` file in project root that contains env variables.
+The application expects an `.env` file in project root that contains configuration.
 
 - PSAN tool is available on http://localhost:5000/
+- SQL adminer is available on http://localhost:5050/ (only in debug)
 
-You can also start the app without using docker (in _venv_) using `make run`.
+### Debug runtime
 
-### Debug
+You can start application in debug mode (with PostreSQL and Redis) in Docker containers using `make docker-debug`. This configuration enables debug mode in flask and sets runtime code updates using bind mount.
 
-Debug mode is started using `make docker-debug`. This configuration enables debug mode on flask and sets runtime code updates using bind mount.
+### Tests
 
-- SQL adminer is available on http://localhost:5050/
+Repository has some unit tests in folder `tests`. These tests could be executed using `make docker-test` or without docker (in _venv_) using `run_tests.sh` in project root.
+
+### Production
+
+You can start application (with PostreSQL and Redis) in Docker containers using `docker-compose up` in project root. You can also start the app without using docker (in _venv_) using `run_web.sh`.

@@ -47,7 +47,11 @@ run: setup translate
 # Docker
 docker-debug: instance
 	echo "COMMIT_REV = \"bind-mount\""  > ./instance/config.py
-	docker-compose -f docker-compose.yaml -f docker-compose.debug.yaml up
+	docker-compose -f docker-compose.yaml -f docker-compose.debug.yaml up --abort-on-container-exit
+	
+docker-test: instance
+	echo "COMMIT_REV = \"bind-mount-testing\""  > ./instance/config.py
+	docker-compose -f docker-compose.yaml -f docker-compose.test.yaml up --abort-on-container-exit --exit-code-from flask
 
 docker-build: instance translate
 	echo "COMMIT_REV= \"$(shell git rev-parse HEAD)\""  > ./instance/config.py
@@ -66,4 +70,4 @@ clean: docker-clean
 	rm -r venv
 	rm -r instance
 
-.PHONY: venv, venv-debug, run, setup, docker-debug, docker-build, docker-clean, lint, clean
+.PHONY: venv, venv-debug, run, setup, docker-debug, docker-build, docker-test, docker-clean, lint, clean
