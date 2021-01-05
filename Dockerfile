@@ -4,15 +4,15 @@ FROM python:3.7
 COPY requirements.txt /srv
 COPY Makefile /srv
 WORKDIR /srv
-RUN make build
+RUN make setup
 
 # Copy app source
 COPY . /srv
 
 # Run app as standard user
-RUN useradd flask
+RUN useradd flask && chown flask instance
 USER flask
 
 # Run target
 EXPOSE 5000
-CMD ["make", "run"]
+CMD ["./run_web.sh"]

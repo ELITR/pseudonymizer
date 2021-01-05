@@ -1,6 +1,5 @@
 VENV=. venv/bin/activate
 
-FLASK_FLAGS=FLASK_APP=psan FLASK_RUN_HOST=0.0.0.0
 POT_HOME=psan/translations
 FLAKE_BIN=venv/bin/flake8
 
@@ -39,14 +38,11 @@ translate: $(POT_HOME)/cs/LC_MESSAGES/messages.mo
 instance:
 	mkdir instance
 
-build: venv instance
+setup: venv instance
 
 # Run web
-run: build worker
-	$(VENV); $(FLASK_FLAGS) flask run
-
-worker: build
-	($(VENV); $(FLASK_FLAGS) celery -A psan.celery worker)&
+run: setup translate
+	./run_web.sh
 
 # Docker
 docker-debug: instance
@@ -70,4 +66,4 @@ clean: docker-clean
 	rm -r venv
 	rm -r instance
 
-.PHONY: venv, venv-debug, run, build, docker-debug, docker-build, docker-clean, lint, clean
+.PHONY: venv, venv-debug, run, setup, docker-debug, docker-build, docker-clean, lint, clean
