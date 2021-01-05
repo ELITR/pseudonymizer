@@ -1,6 +1,8 @@
 Pseudonymization tool
 =====================
 
+Web-based tool for data de-identification.
+
 Requirements
 ------------
 
