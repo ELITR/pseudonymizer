@@ -1,23 +1,17 @@
 import functools
-from typing import Optional
-import string
 import secrets
+import string
+from typing import Optional
 
-from flask import Blueprint
-from flask import flash
-from flask import g
-from flask import redirect
-from flask import render_template
-from flask import request
-from flask import session
-from flask import url_for
+from flask import (Blueprint, flash, g, redirect, render_template, request,
+                   session, url_for)
 from flask_babel import gettext
-from werkzeug.security import check_password_hash
-from werkzeug.security import generate_password_hash
+from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.utils import escape
 
 from psan.db import get_db
-from psan.model import AccountRegisterForm, AccountType, LoginForm, PasswordResetForm
+from psan.model import (AccountRegisterForm, AccountType, LoginForm,
+                        PasswordResetForm)
 from psan.postman import password_reset
 
 bp = Blueprint("auth", __name__, url_prefix="/auth")
@@ -72,10 +66,10 @@ def register():
     """Register a new account.
     Validates that the email is not already taken. Handles password for security.
     """
-    db = get_db()
 
     form = AccountRegisterForm(request.form)
     if request.method == "POST":
+        db = get_db()
 
         if not form.validate():
             flash(_("Form content is not valid."), category="error")

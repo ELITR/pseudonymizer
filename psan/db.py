@@ -1,11 +1,10 @@
-from collections import Iterable
-from typing import Dict, List, Optional
 import os
+from collections.abc import Iterable
+from typing import Dict, List, Optional
 
 import psycopg2
 import psycopg2.extras
-from flask import g
-from flask import Flask
+from flask import Flask, g
 
 
 def get_db():
