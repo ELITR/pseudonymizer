@@ -21,7 +21,7 @@ CREATE TABLE submission (
     name        TEXT                        NOT NULL,
     uid         UUID                UNIQUE  NOT NULL,
     status      submission_status           NOT NULL,
-    candidates  integer
+    candidates  INT
 );
 
 CREATE TABLE annotation (
