@@ -9,7 +9,7 @@ from flask_babel import gettext
 from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.utils import escape
 
-from psan.db import get_db
+from psan.db import commit, get_cursor
 from psan.model import (AccountRegisterForm, AccountType, LoginForm,
                         PasswordResetForm)
 from psan.postman import password_reset
@@ -47,13 +47,14 @@ def load_logged_in_account():
 
     g.account = None
     if account_id:
-        g.account = (
-            get_db().fetchone("SELECT * FROM account WHERE id = %s", (account_id,))
-        )
+        with get_cursor() as cursor:
+            cursor.execute("SELECT * FROM account WHERE id = %s", (account_id,))
+            g.account = cursor.fetchone()
 
 
-def is_email_unique(db, email: str) -> bool:
-    if db.fetchone("SELECT id FROM account WHERE email = %s", (email,)) is not None:
+def is_email_unique(cursor, email: str) -> bool:
+    cursor.execute("SELECT id FROM account WHERE email = %s", (email,))
+    if cursor.fetchone() is not None:
         flash(_("E-mail %(value)s is already taken.", value=escape(email)),
               category="error")
         return False
@@ -69,22 +70,25 @@ def register():
 
     form = AccountRegisterForm(request.form)
     if request.method == "POST":
-        db = get_db()
-
+        # Prepare cursor for db access
+        cursor = get_cursor()
+        # Check form data
         if not form.validate():
             flash(_("Form content is not valid."), category="error")
-        elif is_email_unique(db, form.email.data):
-            db.execute(
+        elif is_email_unique(cursor, form.email.data):
+            cursor.execute(
                 "INSERT INTO account (full_name, type, email, password) "
                 "VALUES (%s, %s, %s, %s)",
                 (form.full_name.data, form.type.data, form.email.data,
                  generate_password_hash(form.password.data)),
             )
-            db.commit()
+            commit()
+            cursor.close()
             session.clear()
             flash(_("Registration was successful."), category="message")
             return redirect(url_for("auth.login"))
         else:
+            cursor.close()
             form.email.errors.append(_("Value is already taken."))
     else:
         form.password.data = ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(8))
@@ -102,9 +106,9 @@ def login():
         if not form.validate():
             flash(_("Form content is not valid."), category="error")
         else:
-            db = get_db()
-            account = db.fetchone(
-                "SELECT * FROM account WHERE email = %s", (form.email.data,))
+            with get_cursor() as cursor:
+                cursor.execute("SELECT * FROM account WHERE email = %s", (form.email.data,))
+                account = cursor.fetchone()
 
             if account is None:
                 flash(_("Incorrect e-mail."), category="error")
@@ -137,9 +141,9 @@ def reset():
         if not form.validate():
             flash(_("Form content is not valid."), category="error")
         else:
-            db = get_db()
-            account = db.fetchone(
-                "SELECT * FROM account WHERE email = %s", (form.email.data,))
+            with get_cursor() as cursor:
+                cursor.execute("SELECT * FROM account WHERE email = %s", (form.email.data,))
+                account = cursor.fetchone()
 
             if account is None:
                 flash(_("Unknown e-mail."), category="error")

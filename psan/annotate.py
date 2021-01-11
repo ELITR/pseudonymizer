@@ -10,7 +10,7 @@ from flask_babel import gettext
 from werkzeug.exceptions import InternalServerError
 
 from psan.auth import login_required
-from psan.db import get_db
+from psan.db import get_cursor
 from psan.model import AccountType, SubmissionStatus
 from psan.submission import get_submission_file
 
@@ -37,9 +37,9 @@ NE_CODES = {"ah": "street numbers", "at": "phone/fax numbers", "az": "zip codes"
 @login_required()
 def index():
     # Find longest submission from db
-    db = get_db()
-    document = db.fetchone(
-        "SELECT uid, candidates FROM submission ORDER BY candidates DESC LIMIT 1", ())
+    with get_cursor() as cursor:
+        cursor.execute("SELECT uid, candidates FROM submission ORDER BY candidates DESC LIMIT 1")
+        document = cursor.fetchone()
     if document:
         # Show first candadate of submission
         return show_candidate(document["uid"], random.randrange(0, document["candidates"]))

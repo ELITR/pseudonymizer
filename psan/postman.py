@@ -6,7 +6,7 @@ from flask import current_app, url_for
 from flask_babel import gettext
 from itsdangerous import URLSafeTimedSerializer
 
-from psan import db
+from psan.db import get_cursor
 
 _ = gettext
 
@@ -59,7 +59,9 @@ def verify_email(account_id: int, new_email: str) -> None:
 
 def password_reset(client_ip: str, account_id: int) -> None:
     # Account info
-    account = db.get_db().fetchone("SELECT * FROM account WHERE id = %s", (account_id,))
+    with get_cursor() as cursor:
+        cursor.execute("SELECT * FROM account WHERE id = %s", (account_id,))
+        account = cursor.fetchone()
     reset_url = url_for("account.change_password", token=build_token(
         (account_id,), "reset"), _external=True)
     # Email message

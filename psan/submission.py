@@ -12,7 +12,7 @@ from werkzeug.datastructures import CombinedMultiDict
 from werkzeug.utils import secure_filename
 
 from psan.auth import login_required
-from psan.db import get_db
+from psan.db import commit, get_cursor
 from psan.model import (AccountType, RemoveSubmissionForm, SubmissionStatus,
                         UploadForm)
 
@@ -41,8 +41,9 @@ def get_submission_file(uid: str, status: SubmissionStatus) -> str:
 @login_required(role=AccountType.ADMIN)
 def index():
     # Load data from db
-    db = get_db()
-    submissions = db.fetchall("SELECT * FROM submission", None)
+    with get_cursor() as cursor:
+        cursor.execute("SELECT * FROM submission")
+        submissions = cursor.fetchall()
     # Remove button
     remove_form = RemoveSubmissionForm(request.form)
 
@@ -70,11 +71,11 @@ def new():
                 else:
                     name = default_name
             # Save uuid to db
-            db = get_db()
-            db.execute(
-                "INSERT INTO submission (uid, name, status) VALUES (%s, %s, %s)",
-                (uid, name, SubmissionStatus.NEW.value))
-            db.commit()
+            with get_cursor() as cursor:
+                cursor.execute(
+                    "INSERT INTO submission (uid, name, status) VALUES (%s, %s, %s)",
+                    (uid, name, SubmissionStatus.NEW.value))
+                commit()
             # Save file
             folder = get_submission_folder(uid)
             os.mkdir(folder)
@@ -103,10 +104,10 @@ def remove():
         shutil.rmtree(os.path.join(
             current_app.config["DATA_FOLDER"], remove_form.uid.data))
         # Remove data from db
-        db = get_db()
-        db.execute("DELETE FROM submission WHERE uid = %s",
-                   (remove_form.uid.data,))
-        db.commit()
+        with get_cursor() as cursor:
+            cursor.execute("DELETE FROM submission WHERE uid = %s",
+                           (remove_form.uid.data,))
+            commit()
         # Notify user
         flash(_("Submission removed."))
 

@@ -6,7 +6,7 @@ from werkzeug.exceptions import BadRequest
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from psan.auth import login_required
-from psan.db import get_db
+from psan.db import commit, get_cursor
 from psan.model import AccountType, ChangePasswordForm, DeleteAccountForm
 from psan.postman import read_reset_token
 
@@ -28,9 +28,9 @@ def delete_account():
 
     if delete_form.validate_on_submit():
         if check_password_hash(g.account["password"], delete_form.password.data):
-            db = get_db()
-            db.execute("DELETE FROM account WHERE id = %s", (g.account["id"],))
-            db.commit()
+            with get_cursor() as cursor:
+                cursor.execute("DELETE FROM account WHERE id = %s", (g.account["id"],))
+                commit()
             session.clear()
             # Show confirmation UI
             flash(_("Account was deleted."), category="message")
@@ -65,10 +65,10 @@ def change_password():
     if form.validate_on_submit():
         if token or check_password_hash(g.account["password"], form.old_password.data):
             # Update db
-            db = get_db()
-            db.execute("UPDATE account SET password = %s WHERE id = %s",
-                       (generate_password_hash(form.new_password.data), account_id))
-            db.commit()
+            with get_cursor() as cursor:
+                cursor.execute("UPDATE account SET password = %s WHERE id = %s",
+                               (generate_password_hash(form.new_password.data), account_id))
+                commit()
             # Notify user
             flash(_("Password was changed."), category="message")
             return redirect(url_for(".index"))
