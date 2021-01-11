@@ -18,6 +18,20 @@ _ = gettext
 
 bp = Blueprint("annotate", __name__, url_prefix="/annotate")
 
+NE_CODES = {"ah": "street numbers", "at": "phone/fax numbers", "az": "zip codes",
+            "gc": "states", "gh": "hydronyms", "gl": "nature areas / objects", "gq": "urban parts",
+            "gr": "territorial names", "gs": "streets, squares", "gt": "continents", "gu": "cities/towns",
+            "g_": "underspecified geographical name", "ia": "conferences/contests", "ic": "cult./educ./scient. inst.",
+            "if": "companies, concerns...", "io": "government/political inst.", "i_": "underspecified institutions",
+            "me": "email address", "mi": "internet links", "mn": "periodical", "ms": "radio and TV stations",
+            "na": "age", "nb": "vol./page/chap./sec./fig. numbers", "nc": "cardinal numbers",
+            "ni": "itemizer", "no": "ordinal numbers", "ns": "sport score", "n_": "underspecified number expression",
+            "oa": "cultural artifacts (books, movies)", "oe": "measure units", "om": "currency units",
+            "op": "products", "or": "directives, norms", "o_": "underspecified artifact name", "pc": "inhabitant names",
+            "pd": "(academic) titles", "pf": "first names", "pm": "second names", "pp": "relig./myth persons",
+            "ps": "surnames", "p_": "underspecified personal name", "td": "days", "tf": "feasts", "th": "hours",
+            "tm": "months", "ty": "years"}
+
 
 @bp.route("/")
 @login_required()
@@ -63,7 +77,13 @@ def show_candidate(submission_uid: str, name_entity_id: int):
     # Line has to be surrounded with XML tags
     sax.parseString(f"<p>{ne_line}</p>", filter)
 
-    return render_template("annotate/index.html", context_html=output.getvalue(), type=filter.entity_type)
+    # Show correct NE type string
+    if filter.entity_type in NE_CODES:
+        type_str = NE_CODES[filter.entity_type]
+    else:
+        type_str = filter.entity_type
+
+    return render_template("annotate/index.html", context_html=output.getvalue(), type=type_str)
 
 
 class NeTagFilter(XMLFilterBase):
