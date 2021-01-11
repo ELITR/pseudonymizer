@@ -23,6 +23,14 @@ class SubmissionStatus(Enum):
     DONE = "DONE"
 
 
+class AnnotationDecision(Enum):
+    CONTEXT_SECRET = "CTX_SECRET"
+    CONTEXT_PUBLIC = "CTX_PUBLIC"
+    RULE_SECRET = "RULE_SECRET"
+    RULE_PUBLIC = "RULE_PUBLIC"
+    UNDECIDED = "UNDECIDED"
+
+
 def strip_whitespace(text: str):
     return text.strip()
 

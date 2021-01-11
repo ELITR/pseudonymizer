@@ -5,6 +5,8 @@ CREATE TYPE account_type AS ENUM ('USER', 'ADMIN');
 
 CREATE TYPE submission_status AS ENUM ('NEW', 'RECOGNIZED', 'ANNOTATED', 'DONE');
 
+CREATE TYPE annotation_decision AS ENUM ('CTX_SECRET', 'CTX_PUBLIC', 'RULE_SECRET', 'RULE_PUBLIC', 'UNDECIDED');
+
 CREATE TABLE account (
     id                  SERIAL PRIMARY KEY,
     full_name           TEXT                        NOT NULL,
@@ -20,4 +22,10 @@ CREATE TABLE submission (
     uid         UUID                UNIQUE  NOT NULL,
     status      submission_status           NOT NULL,
     candidates  integer
+);
+
+CREATE TABLE annotation (
+    id          SERIAL PRIMARY KEY,
+    submission  INT REFERENCES submission(id)   NOT NULL,
+    decision    annotation_decision             NOT NULL DEFAULT 'UNDECIDED'
 );
