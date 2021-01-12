@@ -1,10 +1,10 @@
-name: Code tests
+name: Static checks
 
 on: [push]
 
 jobs:
   lint:
-    name: "Lint"
+    name: "Lint - flake8"
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -18,29 +18,27 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: flake8
       uses: TrueBrain/actions-flake8@master
-  pytest:
-    name: "pytest"
+
+  bandit:
+    name: "Security check - Bandit"
     runs-on: ubuntu-latest
     strategy:
       matrix:
         python-version: [3.6]
+
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v2
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
+    - uses: actions/checkout@v2
+
+    - name: Security check - Bandit
+      uses: Joel-hanson/bandit-report-artifacts@V1
       with:
-        python-version: ${{ matrix.python-version }}
-    - name: Set up cache for pip
-      uses: actions/cache@v2
+        python_version: ${{ matrix.python-version }}
+        project_path: .
+        ignore_failure: false
+
+    - name: Security check report artifacts
+      uses: actions/upload-artifact@v1
+      if: failure()
       with:
-        path: ~/venv
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-
-    - name: Add test config
-      run: echo -n -e "DB_USER=testuser\nDB_PASSWORD=testpass\nAPP_SECRET_KEY=testpass\n" > .env
-    - name: Build test docker image
-      run: make docker-build
-    - name: Run test in docker image
-      run: make docker-test
+        name: Security report
+        path: output/security_report.txt
