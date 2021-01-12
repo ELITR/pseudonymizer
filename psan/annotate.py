@@ -38,13 +38,14 @@ NE_CODES = {"ah": "street numbers", "at": "phone/fax numbers", "az": "zip codes"
 def index():
     # Find longest submission from db
     with get_cursor() as cursor:
-        cursor.execute("SELECT uid, candidates FROM submission ORDER BY candidates DESC LIMIT 1")
+        cursor.execute("SELECT uid, candidates FROM submission WHERE status = %s ORDER BY candidates DESC LIMIT 1",
+                       (SubmissionStatus.RECOGNIZED.value,))
         document = cursor.fetchone()
     if document:
         # Show first candadate of submission
         return show_candidate(document["uid"], random.randrange(0, document["candidates"]))
     else:
-        return render_template("annotate/index.html", candidate=_("No document found..."))
+        return render_template("annotate/index.html", candidate=_("No document ready for annotation found..."))
 
 
 @bp.route("/show")
