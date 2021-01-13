@@ -12,8 +12,20 @@ def recognize_submission(uid: str) -> None:
     output_file = get_submission_file(uid, SubmissionStatus.RECOGNIZED)
     num_candidates = recognize_file(input_file, output_file)
 
-    # Update db with candidates
+    # Prepare annotation tracking
     with get_cursor() as cursor:
-        cursor.execute("UPDATE submission SET status = %s, candidates = %s WHERE uid = %s",
-                       (SubmissionStatus.RECOGNIZED.value, num_candidates, uid))
+        # Get document ID
+        cursor.execute("SELECT id FROM submission WHERE uid = %s", (uid,))
+        id = cursor.fetchone()["id"]
+
+        # Insert annotation entries
+        for i in range(num_candidates):
+            cursor.execute("INSERT INTO annotation (submission, candidate_id) VALUES (%s, %s)", (id, i))
+
+        commit()
+
+    # Update document status
+    with get_cursor() as cursor:
+        cursor.execute("UPDATE submission SET status = %s WHERE uid = %s",
+                       (SubmissionStatus.RECOGNIZED.value, uid))
         commit()

@@ -20,12 +20,13 @@ CREATE TABLE submission (
     id          SERIAL PRIMARY KEY,
     name        TEXT                        NOT NULL,
     uid         UUID                UNIQUE  NOT NULL,
-    status      submission_status           NOT NULL,
-    candidates  INT
+    status      submission_status           NOT NULL
 );
 
 CREATE TABLE annotation (
-    id          SERIAL PRIMARY KEY,
-    submission  INT REFERENCES submission(id)   NOT NULL,
-    decision    annotation_decision             NOT NULL DEFAULT 'UNDECIDED'
+    id           SERIAL PRIMARY KEY,
+    submission   INT REFERENCES submission(id) ON DELETE CASCADE    NOT NULL,
+    candidate_id INT                                                NOT NULL,
+    decision     annotation_decision                                NOT NULL DEFAULT 'UNDECIDED',
+    UNIQUE (submission, candidate_id)
 );

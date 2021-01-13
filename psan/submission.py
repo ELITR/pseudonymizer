@@ -42,7 +42,11 @@ def get_submission_file(uid: str, status: SubmissionStatus) -> str:
 def index():
     # Load data from db
     with get_cursor() as cursor:
-        cursor.execute("SELECT * FROM submission")
+        cursor.execute(
+            "SELECT name, uid, status, COUNT(annotation.id) AS candidates, "
+            "SUM(CASE WHEN annotation.decision <> 'UNDECIDED' THEN 1 ELSE 0 END) as decided "
+            "FROM submission JOIN annotation ON submission.id=annotation.submission "
+            "GROUP BY submission.id")
         submissions = cursor.fetchall()
     # Remove button
     remove_form = RemoveSubmissionForm(request.form)
