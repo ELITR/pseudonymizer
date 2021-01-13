@@ -30,10 +30,9 @@ jobs:
     - uses: actions/checkout@v2
 
     - name: Security check - Bandit
-      uses: Joel-hanson/bandit-report-artifacts@V1
+      uses: ioggstream/bandit-report-artifacts@v0.0.2
       with:
-        python_version: ${{ matrix.python-version }}
-        project_path: .
+        project_path: psan
         ignore_failure: false
 
     - name: Security check report artifacts
