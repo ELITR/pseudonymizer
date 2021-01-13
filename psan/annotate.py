@@ -1,9 +1,9 @@
 import random
 import re
 from io import StringIO
-from xml import sax
-from xml.sax import make_parser
-from xml.sax.saxutils import XMLFilterBase, XMLGenerator
+from xml import sax  # nosec
+from xml.sax import make_parser  # nosec
+from xml.sax.saxutils import XMLFilterBase, XMLGenerator  # nosec
 
 from flask import Blueprint, g, render_template, request
 from flask_babel import gettext
@@ -43,7 +43,7 @@ def index():
         document = cursor.fetchone()
     if document:
         # Show first candadate of submission
-        return show_candidate(document["uid"], random.randrange(0, document["candidates"]))
+        return show_candidate(document["uid"], random.randrange(0, document["candidates"]))  # nosec
     else:
         return render_template("annotate/index.html", candidate=_("No document ready for annotation found..."))
 

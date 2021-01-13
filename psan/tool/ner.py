@@ -2,7 +2,7 @@
 
 import functools
 import re
-import subprocess
+import subprocess  # nosec
 from abc import ABC, abstractclassmethod
 from typing import List, Match
 
@@ -60,7 +60,7 @@ class BinaryNer(NerInterface):
 
     def recognize_file(self, input_filename: str, output_filename: str, next_id=0) -> int:
         # Call binary
-        subprocess.call([self._bin_loc, self._model_loc,
+        subprocess.call([self._bin_loc, self._model_loc,  # nosec
                          f"{input_filename}:{output_filename}"])
         # Count found entries
         N = 0

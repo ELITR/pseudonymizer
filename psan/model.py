@@ -24,9 +24,9 @@ class SubmissionStatus(Enum):
 
 
 class AnnotationDecision(Enum):
-    CONTEXT_SECRET = "CTX_SECRET"
+    CONTEXT_SECRET = "CTX_SECRET"  # nosec
     CONTEXT_PUBLIC = "CTX_PUBLIC"
-    RULE_SECRET = "RULE_SECRET"
+    RULE_SECRET = "RULE_SECRET"  # nosec
     RULE_PUBLIC = "RULE_PUBLIC"
     UNDECIDED = "UNDECIDED"
 
