@@ -4,13 +4,13 @@ POT_HOME=psan/translations
 FLAKE_BIN=venv/bin/flake8
 
 # Python venv environment
-$(VENV): requirements.txt
+venv/bin/activate: requirements.txt
 	test -d venv || python3 -m venv venv
 	$(VENV); pip install -Ur requirements.txt
 	touch venv/bin/activate
 
-$(FLAKE_BIN): $(VENV)
-	$(VENV); pip install flake8
+$(FLAKE_BIN): requirements-debug.txt venv
+	$(VENV); pip install -Ur requirements-debug.txt
 	touch $(FLAKE_BIN)
 
 venv: $(VENV)
@@ -44,6 +44,9 @@ setup: venv instance
 run: setup translate
 	./run_web.sh
 
+test: setup
+	./run_web.sh
+
 # Docker
 docker-debug: instance
 	echo "COMMIT_REV = \"bind-mount\""  > ./instance/config.py
@@ -61,13 +64,16 @@ docker-clean:
 	docker-compose down -v
 
 # Debug
-lint: $(FLAKE_BIN)
+lint: venv-debug
 	$(VENV); flake8 . --count --select=E9,F63,F7,F82,H306,H301 --show-source --statistics
 	$(VENV); flake8 . --exit-zero --statistics
+
+bandit: venv-debug
+	$(VENV); bandit psan -r
 
 # Standard staff
 clean: docker-clean
 	rm -r venv
 	rm -r instance
 
-.PHONY: venv, venv-debug, run, setup, docker-debug, docker-build, docker-test, docker-clean, lint, clean
+.PHONY: venv, venv-debug, setup, run, test, docker-debug, docker-build, docker-test, docker-clean, lint, bandit, clean
