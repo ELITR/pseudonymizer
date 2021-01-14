@@ -19,9 +19,9 @@
                     <h6 class="card-subtitle mb-2 text-muted">{{ submission["uid"] }}</h6>
                     <div class="card-text">
                         {% if submission["status"]==SubmissionStatus.NEW.value %}
-                            {% trans %}Phase 1 / 3, parsing... {% endtrans %}
+                            {% trans %}Parsing... {% endtrans %}
                         {% elif submission["status"]==SubmissionStatus.RECOGNIZED.value %}
-                            Phase 2 / 3, {{ submission["candidates"] }} candidates
+                            {{ submission["decided"] / submission["candidates"] }} % annotated <small> ({{ submission["decided"] }} / {{ submission["candidates"] }}) </small>
                         {% endif %}
                     </div>
                     <form method="post" action="{{ url_for("submission.remove") }}">
