@@ -1,4 +1,4 @@
-from psan import celery
+from psan import celery, submission
 from psan.db import commit, get_cursor
 from psan.model import SubmissionStatus
 from psan.submission import get_submission_file
@@ -16,11 +16,11 @@ def recognize_submission(uid: str) -> None:
     with get_cursor() as cursor:
         # Get document ID
         cursor.execute("SELECT id FROM submission WHERE uid = %s", (uid,))
-        id = cursor.fetchone()["id"]
+        submission = cursor.fetchone()["id"]
 
         # Insert annotation entries
-        for i in range(num_candidates):
-            cursor.execute("INSERT INTO annotation (submission, candidate_id) VALUES (%s, %s)", (id, i))
+        for ne_id in range(num_candidates):
+            cursor.execute("INSERT INTO annotation (submission, ne_id) VALUES (%s, %s)", (submission, ne_id))
 
         commit()
 

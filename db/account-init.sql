@@ -26,7 +26,7 @@ CREATE TABLE submission (
 CREATE TABLE annotation (
     id           SERIAL PRIMARY KEY,
     submission   INT REFERENCES submission(id) ON DELETE CASCADE    NOT NULL,
-    candidate_id INT                                                NOT NULL,
+    ne_id        INT                                                NOT NULL,
     decision     annotation_decision                                NOT NULL DEFAULT 'UNDECIDED',
     UNIQUE (submission, candidate_id)
 );
