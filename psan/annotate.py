@@ -41,13 +41,13 @@ NE_CODES = {"ah": "street numbers", "at": "phone/fax numbers", "az": "zip codes"
 def index():
     # Find longest submission from db
     with get_cursor() as cursor:
-        cursor.execute("SELECT uid, COUNT(annotation.id) AS candidates FROM submission "
+        cursor.execute("SELECT submission.id, COUNT(annotation.id) AS candidates FROM submission "
                        "JOIN annotation ON submission.id=annotation.submission WHERE status = %s "
                        "GROUP BY submission.id", (SubmissionStatus.RECOGNIZED.value,))
         document = cursor.fetchone()
     if document:
         # Show first candadate of submission
-        return show_candidate(document["uid"], random.randrange(0, document["candidates"]))  # nosec
+        return show_candidate(document["id"], random.randrange(0, document["candidates"]))  # nosec
     else:
         return render_template("annotate/index.html", candidate=_("No document ready for annotation found..."))
 
@@ -55,12 +55,17 @@ def index():
 @bp.route("/show")
 @login_required(role=AccountType.ADMIN)
 def show():
-    doc_uid = request.args.get("doc_uid", type=str)
+    doc_id = request.args.get("doc_id", type=int)
     ne_id = request.args.get("ne_id", type=int)
-    return show_candidate(doc_uid, ne_id)
+    return show_candidate(doc_id, ne_id)
 
 
-def show_candidate(submission_uid: str, name_entity_id: int):
+def show_candidate(submission_id: int, name_entity_id: int):
+    # Find UID
+    with get_cursor() as cursor:
+        cursor.execute("SELECT uid FROM submission WHERE id = %s", (submission_id,))
+        submission_uid = cursor.fetchone()["uid"]
+
     # Find line of named entity (NE)
     ne_line = None
     with open(get_submission_file(submission_uid, SubmissionStatus.RECOGNIZED), "r") as input:
@@ -77,7 +82,7 @@ def show_candidate(submission_uid: str, name_entity_id: int):
     # Transform line for UI
     output = StringIO()
     generator = XMLGenerator(output)
-    filter = NeTagFilter(submission_uid, name_entity_id, make_parser())
+    filter = NeTagFilter(submission_id, name_entity_id, make_parser())
     filter.setContentHandler(generator)
     # Line has to be surrounded with XML tags
     sax.parseString(f"<p>{ne_line}</p>", filter)
@@ -91,7 +96,7 @@ def show_candidate(submission_uid: str, name_entity_id: int):
     form = AnnotateForm(request.form)
 
     return render_template("annotate/index.html", context_html=output.getvalue(), type=type_str,
-                           form=form, submission_uid=submission_uid, name_entity_id=name_entity_id)
+                           form=form, submission_id=submission_id, name_entity_id=name_entity_id)
 
 
 @bp.route("/set", methods=['POST'])
@@ -113,43 +118,57 @@ def set():
 
         # Save result to db
         with get_cursor() as cursor:
-            cursor.execute("UPDATE annotation SET decision = %s FROM submission "
-                           "WHERE submission.uid = %s and submission.id = annotation.submission and "
-                           "ne_id = %s", (decision.value, form.submission_uid.data, form.ne_id.data))
+            cursor.execute("UPDATE annotation SET decision = %s WHERE submission = %s and ne_id = %s",
+                           (decision.value, form.submission_id.data, form.ne_id.data))
             commit()
 
         # Show another tag
         if g.account["type"] != AccountType.ADMIN.value:
             return redirect(url_for(".index"))
         else:
-            return redirect(url_for(".show", doc_uid=form.submission_uid.data, ne_id=form.ne_id.data))
+            return redirect(url_for(".show", doc_id=form.submission_id.data, ne_id=form.ne_id.data))
     else:
         return redirect(url_for(".index"))
+
+
+def _get_candidate_decision(submission_id: int, candidate_id: int) -> str:
+    with get_cursor() as cursor:
+        cursor.execute("SELECT decision FROM annotation WHERE submission = %s and ne_id = %s", (submission_id, candidate_id))
+        return cursor.fetchone()["decision"]
 
 
 class NeTagFilter(XMLFilterBase):
     """Transform `ne` tags to `mark` tags. Highlight tag with `id==candidate_id`."""
 
-    def __init__(self, uid: str, candidate_id: int, parent=None):
+    def __init__(self, doc_id: int, candidate_id: int, parent=None):
         super().__init__(parent)
 
         # Tag to highlight
-        self._uid = uid
+        self._submission_id = doc_id
         self._candidate_id = candidate_id
         self.entity_type = None
 
     def startElement(self, name, attrs):
         if name == "ne":
             # Test it for candidate
-            if int(attrs.get("id")) == self._candidate_id:
+            attr_id = int(attrs.get("id"))
+            if attr_id == self._candidate_id:
                 self.entity_type = attrs.get("type")
-                new_attrs = {"class": "ne-candidate"}
+                new_attrs = {"class": "candidate candidate-active"}
             else:
-                new_attrs = {"class": "ne"}
+                decision = _get_candidate_decision(self._submission_id, attr_id)
+                if decision in {AnnotationDecision.CONTEXT_PUBLIC.value, AnnotationDecision.RULE_PUBLIC.value}:
+                    new_attrs = {"class": "candidate candidate-public"}
+                elif decision in {AnnotationDecision.CONTEXT_SECRET.value, AnnotationDecision.RULE_SECRET.value}:
+                    new_attrs = {"class": "candidate candidate-secret"}
+                elif decision == AnnotationDecision.UNDECIDED.value:
+                    new_attrs = {"class": "candidate"}
+                else:
+                    raise NotImplementedError(f"Unknown decision {decision}")
             # Update UI for administrator
             if(g.account["type"] == AccountType.ADMIN.name):
                 new_attrs["onClick"] = "showNameEntryId(event, \"%s\", %d)" % (
-                    self._uid, int(attrs["id"]))
+                    self._submission_id, int(attrs["id"]))
             # Pass updated element
             super().startElement("mark", new_attrs)
         else:

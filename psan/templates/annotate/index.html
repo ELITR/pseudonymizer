@@ -17,7 +17,7 @@
             <div class="col-12 col-lg-4 col-xl-3">
                 <form method="POST" action="{{ url_for(".set")}}">
                     {{ form.csrf_token }}
-                    {{ form.submission_uid(value=submission_uid) }}
+                    {{ form.submission_id(value=submission_id) }}
                     {{ form.ne_id(value=name_entity_id) }}
                     
                     {# Lemma #}
@@ -82,9 +82,9 @@
     {{ super() }}
 
      <script>
-        function showNameEntryId(event, doc_uid, ne_id) {
+        function showNameEntryId(event, doc_id, ne_id) {
             event.stopPropagation();
-            window.location =  "{{ url_for(".show") }}?doc_uid="+doc_uid+"&ne_id="+ne_id;
+            window.location =  "{{ url_for(".show") }}?doc_id="+doc_id+"&ne_id="+ne_id;
         }       
     </script> 
 {% endblock %}
