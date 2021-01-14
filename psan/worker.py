@@ -1,4 +1,4 @@
-from psan import celery, submission
+from psan import celery
 from psan.db import commit, get_cursor
 from psan.model import SubmissionStatus
 from psan.submission import get_submission_file
