@@ -41,8 +41,9 @@ NE_CODES = {"ah": "street numbers", "at": "phone/fax numbers", "az": "zip codes"
 def index():
     # Find longest submission from db
     with get_cursor() as cursor:
-        cursor.execute("SELECT uid, candidates FROM submission WHERE status = %s ORDER BY candidates DESC LIMIT 1",
-                       (SubmissionStatus.RECOGNIZED.value,))
+        cursor.execute("SELECT uid, COUNT(annotation.id) AS candidates FROM submission "
+                       "JOIN annotation ON submission.id=annotation.submission WHERE status = %s "
+                       "GROUP BY submission.id", (SubmissionStatus.RECOGNIZED.value,))
         document = cursor.fetchone()
     if document:
         # Show first candadate of submission

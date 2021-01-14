@@ -28,5 +28,5 @@ CREATE TABLE annotation (
     submission   INT REFERENCES submission(id) ON DELETE CASCADE    NOT NULL,
     ne_id        INT                                                NOT NULL,
     decision     annotation_decision                                NOT NULL DEFAULT 'UNDECIDED',
-    UNIQUE (submission, candidate_id)
+    UNIQUE (submission, ne_id)
 );
