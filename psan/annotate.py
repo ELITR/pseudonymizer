@@ -6,12 +6,15 @@ from xml.sax import make_parser  # nosec
 from xml.sax.saxutils import XMLFilterBase, XMLGenerator  # nosec
 
 from flask import Blueprint, g, render_template, request
+from flask.helpers import url_for
 from flask_babel import gettext
 from werkzeug.exceptions import InternalServerError
+from werkzeug.utils import redirect
 
 from psan.auth import login_required
-from psan.db import get_cursor
-from psan.model import AccountType, SubmissionStatus
+from psan.db import commit, get_cursor
+from psan.model import (AccountType, AnnotateForm, AnnotationDecision,
+                        SubmissionStatus)
 from psan.submission import get_submission_file
 
 _ = gettext
@@ -84,7 +87,43 @@ def show_candidate(submission_uid: str, name_entity_id: int):
     else:
         type_str = filter.entity_type
 
-    return render_template("annotate/index.html", context_html=output.getvalue(), type=type_str)
+    form = AnnotateForm(request.form)
+
+    return render_template("annotate/index.html", context_html=output.getvalue(), type=type_str,
+                           form=form, submission_uid=submission_uid, name_entity_id=name_entity_id)
+
+
+@bp.route("/set", methods=['POST'])
+@login_required()
+def set():
+    form = AnnotateForm(request.form)
+    if form.validate():
+        # Process request
+        if form.ctx_public.data:
+            decision = AnnotationDecision.CONTEXT_PUBLIC
+        elif form.ctx_secret.data:
+            decision = AnnotationDecision.CONTEXT_SECRET
+        elif form.lemma_public.data or form.category_public.data:
+            decision = AnnotationDecision.RULE_PUBLIC
+        elif form.lemma_secret.data or form.category_secret.data:
+            decision = AnnotationDecision.RULE_SECRET
+        else:
+            raise InternalServerError(f"Unknown annotation {request.form}")
+
+        # Save result to db
+        with get_cursor() as cursor:
+            cursor.execute("UPDATE annotation SET decision = %s FROM submission "
+                           "WHERE submission.uid = %s and submission.id = annotation.submission and "
+                           "ne_id = %s", (decision.value, form.submission_uid.data, form.ne_id.data))
+            commit()
+
+        # Show another tag
+        if g.account["type"] != AccountType.ADMIN.value:
+            return redirect(url_for(".index"))
+        else:
+            return redirect(url_for(".show", doc_uid=form.submission_uid.data, ne_id=form.ne_id.data))
+    else:
+        return redirect(url_for(".index"))
 
 
 class NeTagFilter(XMLFilterBase):

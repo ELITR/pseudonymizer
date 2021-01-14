@@ -100,3 +100,14 @@ class UploadForm(FlaskForm):
 class RemoveSubmissionForm(FlaskForm):
     uid = HiddenField(validators=[validators.UUID()])
     submit = SubmitField(_("Remove"))
+
+
+class AnnotateForm(FlaskForm):
+    submission_uid = HiddenField(validators=[validators.UUID()])
+    ne_id = HiddenField(validators=[validators.regexp(r"^\d+$")])
+    ctx_public = SubmitField()
+    ctx_secret = SubmitField()
+    lemma_public = SubmitField()
+    lemma_secret = SubmitField()
+    category_public = SubmitField()
+    category_secret = SubmitField()

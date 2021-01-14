@@ -13,59 +13,66 @@
                 {{ context_html | safe }}
             </div>
 
-            {# Lemma #}
+            {# Annotation UI #}
             <div class="col-12 col-lg-4 col-xl-3">
-                <div class="card my-2">
-                    <div class="card-body">
-                        <h5 class="card-title">
-                            {{ render_icon("vr", size="1.5em") }}{% trans %}By lemma{% endtrans %}
-                        </h5>
-                        <h6 class="card-subtitle mb-2 text-muted">John Black</h6>
-                        <div class="card-text d-flex justify-content-around">
-                            <button type="submit" name="submit" class="btn btn-outline-success my-2">
-                                {{ render_icon("globe", size="1.5em") }}{% trans %}Public{% endtrans %}
-                            </button>
-                            <button type="submit" name="submit" class="btn btn-outline-danger my-2">
-                                {{ render_icon("lock", size="1.5em") }}{% trans %}Secret{% endtrans %}
-                            </button>
+                <form method="POST" action="{{ url_for(".set")}}">
+                    {{ form.csrf_token }}
+                    {{ form.submission_uid(value=submission_uid) }}
+                    {{ form.ne_id(value=name_entity_id) }}
+                    
+                    {# Lemma #}
+                    <div class="card my-2">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                {{ render_icon("vr", size="1.5em") }}{% trans %}By lemma{% endtrans %}
+                            </h5>
+                            <h6 class="card-subtitle mb-2 text-muted">John Black</h6>
+                            <div class="card-text d-flex justify-content-around">
+                                <button type="submit" name="lemma_public" class="btn btn-outline-success my-2" value="True">
+                                    {{ render_icon("globe", size="1.5em") }}{% trans %}Public{% endtrans %}
+                                </button>
+                                <button type="submit" name="lemma_secret" class="btn btn-outline-danger my-2" value="True">
+                                    {{ render_icon("lock", size="1.5em") }}{% trans %}Secret{% endtrans %}
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                {# Context #}
-                <div class="card my-2">
-                    <div class="card-body">
-                        <h5 class="card-title">
-                            {{ render_icon("text-paragraph", size="1.5em") }}{% trans %}By context{% endtrans %}
-                        </h5>
-                        <div class="card-text d-flex justify-content-around">
-                            <button type="submit" name="submit" class="btn btn-outline-success my-2">
-                                {{ render_icon("globe", size="1.5em") }}{% trans %}Public{% endtrans %}
-                            </button>
-                            <button type="submit" name="submit" class="btn btn-outline-danger my-2">
-                                {{ render_icon("lock", size="1.5em") }}{% trans %}Secret{% endtrans %}
-                            </button>
+                    {# Context #}
+                    <div class="card my-2">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                {{ render_icon("text-paragraph", size="1.5em") }}{% trans %}By context{% endtrans %}
+                            </h5>
+                            <div class="card-text d-flex justify-content-around">
+                                <button type="submit" name="ctx_public" class="btn btn-outline-success my-2" value="True">
+                                    {{ render_icon("globe", size="1.5em") }}{% trans %}Public{% endtrans %}
+                                </button>
+                                <button type="submit" name="ctx_secret" class="btn btn-outline-danger my-2" value="True">
+                                    {{ render_icon("lock", size="1.5em") }}{% trans %}Secret{% endtrans %}
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
-                
-                {# Category #}
-                <div class="card my-2">
-                    <div class="card-body">
-                        <h5 class="card-title">
-                            {{ render_icon("tag", size="1.5em") }}{% trans %}By category{% endtrans %}
-                        </h5>
-                        <h6 class="card-subtitle mb-2 text-muted">{{ type }}</h6>
-                        <div class="card-text d-flex justify-content-around">
-                            <button type="submit" name="submit" class="btn btn-outline-success my-2">
-                                {{ render_icon("globe", size="1.5em") }}{% trans %}Public{% endtrans %}
-                            </button>
-                            <button type="submit" name="submit" class="btn btn-outline-danger my-2">
-                                {{ render_icon("lock", size="1.5em") }}{% trans %}Secret{% endtrans %}
-                            </button>
+                    
+                    {# Category #}
+                    <div class="card my-2">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                {{ render_icon("tag", size="1.5em") }}{% trans %}By category{% endtrans %}
+                            </h5>
+                            <h6 class="card-subtitle mb-2 text-muted">{{ type }}</h6>
+                            <div class="card-text d-flex justify-content-around">
+                                <button type="submit" name="category_public" class="btn btn-outline-success my-2" value="True">
+                                    {{ render_icon("globe", size="1.5em") }}{% trans %}Public{% endtrans %}
+                                </button>
+                                <button type="submit" name="category_secret" class="btn btn-outline-danger my-2" value="True">
+                                    {{ render_icon("lock", size="1.5em") }}{% trans %}Secret{% endtrans %}
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
+                </form>
             </div>
         </div>
     </div>
