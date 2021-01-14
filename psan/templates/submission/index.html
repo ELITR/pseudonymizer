@@ -21,7 +21,7 @@
                         {% if submission["status"]==SubmissionStatus.NEW.value %}
                             {% trans %}Parsing... {% endtrans %}
                         {% elif submission["status"]==SubmissionStatus.RECOGNIZED.value %}
-                            {{ submission["decided"] / submission["candidates"] }} % annotated <small> ({{ submission["decided"] }} / {{ submission["candidates"] }}) </small>
+                            {{ (submission["decided"] / submission["candidates"]) | round(2) }} % annotated <small> ({{ submission["decided"] }} / {{ submission["candidates"] }}) </small>
                         {% endif %}
                     </div>
                     <form method="post" action="{{ url_for("submission.remove") }}">
