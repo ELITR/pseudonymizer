@@ -21,7 +21,12 @@
                         {% if submission["status"]==SubmissionStatus.NEW.value %}
                             {% trans %}Parsing... {% endtrans %}
                         {% elif submission["status"]==SubmissionStatus.RECOGNIZED.value %}
-                            {{ (submission["decided"] / submission["candidates"]) | round(2) }} % annotated <small> ({{ submission["decided"] }} / {{ submission["candidates"] }}) </small>
+                            {% if submission["candidates"] > 0 %}
+                                {% trans percent=((submission["decided"] / submission["candidates"] *100) | round(2)) %}{{ percent  }} % annotated{% endtrans %}
+                            {% else %}
+                                {% trans %}No candidates found... {% endtrans %}
+                            {% endif %}
+                            <small> ({{ submission["decided"] }} / {{ submission["candidates"] }}) </small>
                         {% endif %}
                     </div>
                     <form method="post" action="{{ url_for("submission.remove") }}">
