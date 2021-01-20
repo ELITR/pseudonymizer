@@ -46,7 +46,7 @@ def index():
             "SELECT name, uid, status, COUNT(annotation.id) AS candidates, "
             "SUM(CASE WHEN annotation.decision <> 'UNDECIDED' THEN 1 ELSE 0 END) as decided "
             "FROM submission LEFT JOIN annotation ON submission.id=annotation.submission "
-            "GROUP BY submission.id")
+            "GROUP BY submission.id ORDER BY submission.id")
         submissions = cursor.fetchall()
     # Remove button
     remove_form = RemoveSubmissionForm(request.form)
