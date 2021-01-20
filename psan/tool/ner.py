@@ -92,7 +92,7 @@ class NameTag(NerInterface):
         """Escapes XML entities to safe variants (`&` to `&amp;`)"""
         return text.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;').replace('"', '&quot;')
 
-    def recognize_file(self, input_filename: str, output_filename: str, next_id=0) -> int:
+    def recognize_file(self, input_filename: str, output_filename: str, token_id=0) -> int:
         forms = Forms()
         tokens = TokenRanges()
         entities = NamedEntities()
@@ -102,7 +102,7 @@ class NameTag(NerInterface):
                 # Tokenize line
                 self._tokenizer.setText(line)
 
-                t = 0
+                text_position = 0
                 while self._tokenizer.nextSentence(forms, tokens):
                     # Recognize named entities
                     self._ner.recognize(forms, entities)
@@ -111,30 +111,43 @@ class NameTag(NerInterface):
                     openEntities: List[int] = []
 
                     # Write entities to output
-                    e = 0
-                    for i in range(len(tokens)):
+                    ne_index = 0
+                    for token_index in range(len(tokens)):
                         output.write(NameTag.encode_entities(
-                            line[t:tokens[i].start]))
+                            line[text_position:tokens[token_index].start]))
+                        if (token_index == 0):
+                            output.write("<sentence>")
 
                         # Open entities starting at current token
-                        while (e < len(sortedEntities) and sortedEntities[e].start == i):
+                        while (ne_index < len(sortedEntities) and sortedEntities[ne_index].start == token_index):
+                            # Count name entry tokens index range
+                            start_token_index = sortedEntities[ne_index].start
+                            end_token_index = sortedEntities[ne_index].start + sortedEntities[ne_index].length - 1
+                            # Count name entry tokens id range
+                            start_token_id = token_id - token_index + start_token_index
+                            end_token_id = token_id - token_index + end_token_index
+                            # Write XML entry
                             output.write(
-                                f"<ne type=\"{NameTag.encode_entities(sortedEntities[e].type)}\" id=\"{next_id}\">")
-                            openEntities.append(
-                                sortedEntities[e].start + sortedEntities[e].length - 1)
-                            e = e + 1
-                            next_id += 1
+                                f"<ne type=\"{NameTag.encode_entities(sortedEntities[ne_index].type)}\""
+                                f" start=\"{start_token_id}\" end=\"{end_token_id}\">")
+                            openEntities.append(end_token_index)
+                            ne_index = ne_index + 1
 
                         # The token itself
+                        output.write(f"<token id=\"{token_id}\">")
+                        token_id += 1
                         output.write(NameTag.encode_entities(
-                            line[tokens[i].start: tokens[i].start + tokens[i].length]))
+                            line[tokens[token_index].start: tokens[token_index].start + tokens[token_index].length]))
+                        output.write(f"</token>")
 
                         # Close entities ending after current token
-                        while openEntities and openEntities[-1] == i:
-                            output.write('</ne>')
+                        while openEntities and openEntities[-1] == token_index:
+                            output.write("</ne>")
                             openEntities.pop()
-                        t = tokens[i].start + tokens[i].length
+                        if (token_index + 1 == len(tokens)):
+                            output.write("</sentence>")
+                        text_position = tokens[token_index].start + tokens[token_index].length
                 # Write rest of the text
-                output.write(NameTag.encode_entities(line[t:]))
+                output.write(NameTag.encode_entities(line[text_position:]))
 
-        return next_id
+        return token_id
