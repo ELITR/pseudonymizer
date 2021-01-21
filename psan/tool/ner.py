@@ -98,6 +98,9 @@ class NameTag(NerInterface):
         entities = NamedEntities()
 
         with open(input_filename, mode="r") as input, open(output_filename, mode="w") as output:
+            # Write document header
+            output.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
+            output.write("<submission>\n")
             for line in input:
                 # Tokenize line
                 self._tokenizer.setText(line)
@@ -138,7 +141,7 @@ class NameTag(NerInterface):
                         token_id += 1
                         output.write(NameTag.encode_entities(
                             line[tokens[token_index].start: tokens[token_index].start + tokens[token_index].length]))
-                        output.write(f"</token>")
+                        output.write("</token>")
 
                         # Close entities ending after current token
                         while openEntities and openEntities[-1] == token_index:
@@ -149,5 +152,6 @@ class NameTag(NerInterface):
                         text_position = tokens[token_index].start + tokens[token_index].length
                 # Write rest of the text
                 output.write(NameTag.encode_entities(line[text_position:]))
+            output.write("\n</submission>")
 
         return token_id
