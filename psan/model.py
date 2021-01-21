@@ -28,7 +28,13 @@ class AnnotationDecision(Enum):
     CONTEXT_PUBLIC = "CTX_PUBLIC"
     RULE_SECRET = "RULE_SECRET"  # nosec
     RULE_PUBLIC = "RULE_PUBLIC"
+    NESTED = "NESTED"
     UNDECIDED = "UNDECIDED"
+
+
+class ReferenceType(Enum):
+    NAME_ENTRY = "NAME_ENTRY"
+    USER = "USER"
 
 
 def strip_whitespace(text: str):
