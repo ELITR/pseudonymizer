@@ -160,11 +160,13 @@ class RecognizedTagFilter(XMLFilterBase):
         self._highlight_start = highlight_start
         self._highlight_end = highlight_end
         self._token_id = -1
+        self._nested_depth = 0
         self.entity_type = None
         self.tokens = []
 
     def startElement(self, name, attrs):
         if name == "ne":
+            self._nested_depth += 1
             # Check known decision
             start = int(attrs.get("start"))
             end = int(attrs.get("end"))
@@ -179,17 +181,19 @@ class RecognizedTagFilter(XMLFilterBase):
             if start == self._highlight_start and end == self._highlight_end:
                 self.entity_type = attrs.get("type")
                 new_attrs["class"] += " highlight"
+            # Mouse events
+            new_attrs["onClick"] = f"showAnnotation(event, {self._submission_id}, {start},  {end})"
             # Return span element
             super().startElement("span", new_attrs)
         elif name == "token":
-            # Test it for candidate
             self._token_id = int(attrs.get("id"))
-            new_attrs = {"class": "token"}
-            # Update UI for administrator
-            if(g.account["type"] == AccountType.ADMIN.name):
+            # Check if token isn't nested insede another annotation
+            if (self._nested_depth == 0):
+                new_attrs = {"class": "token"}
+                # Mouse event
                 new_attrs["onClick"] = f"showAnnotation(event, {self._submission_id}, {self._token_id},  {self._token_id})"
-            # Pass updated element
-            super().startElement("span", new_attrs)
+                # Pass updated element
+                super().startElement("span", new_attrs)
         elif name == "sentence":
             pass
         else:
@@ -204,9 +208,11 @@ class RecognizedTagFilter(XMLFilterBase):
 
     def endElement(self, name):
         if name == "ne":
+            self._nested_depth -= 1
             super().endElement("span")
         elif name == "token":
-            super().endElement("span")
+            if self._nested_depth == 0:
+                super().endElement("span")
         elif name == "sentence":
             pass
         else:

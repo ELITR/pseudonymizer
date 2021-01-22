@@ -30,6 +30,11 @@
     display: inline-block;
 }
 
+.candidate:hover {
+    background-color:rgb(255, 253, 163, 0.5);
+    cursor:pointer;
+}
+
 .candidate-public {
     background-color:rgb(81, 228, 62, 0.5);
 }
