@@ -18,7 +18,8 @@
                 <form method="POST" action="{{ url_for(".set")}}">
                     {{ form.csrf_token }}
                     {{ form.submission_id(value=submission_id) }}
-                    {{ form.ne_id(value=name_entity_id) }}
+                    {{ form.ref_start(value=ref_start) }}
+                    {{ form.ref_end(value=ref_end) }}
                     
                     {# Lemma #}
                     <div class="card my-2">
@@ -26,7 +27,7 @@
                             <h5 class="card-title">
                                 {{ render_icon("vr", size="1.5em") }}{% trans %}By lemma{% endtrans %}
                             </h5>
-                            <h6 class="card-subtitle mb-2 text-muted">John Black</h6>
+                            <h6 class="card-subtitle mb-2 text-muted">{{token_str}}</h6>
                             <div class="card-text d-flex justify-content-around">
                                 <button type="submit" name="lemma_public" class="btn btn-outline-success my-2" value="True">
                                     {{ render_icon("globe", size="1.5em") }}{% trans %}Public{% endtrans %}
@@ -82,9 +83,9 @@
     {{ super() }}
 
      <script>
-        function showNameEntryId(event, doc_id, ne_id) {
+        function showAnnotation(event, doc_id, ref_start, ref_end) {
             event.stopPropagation();
-            window.location =  "{{ url_for(".show") }}?doc_id="+doc_id+"&ne_id="+ne_id;
+            window.location =  "{{ url_for(".show") }}?doc_id="+doc_id+"&ref_start="+ref_start+"&ref_end="+ref_end;
         }       
     </script> 
 {% endblock %}

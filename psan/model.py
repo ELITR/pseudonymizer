@@ -110,7 +110,8 @@ class RemoveSubmissionForm(FlaskForm):
 
 class AnnotateForm(FlaskForm):
     submission_id = HiddenField(validators=[validators.regexp(r"^\d+$")])
-    ne_id = HiddenField(validators=[validators.regexp(r"^\d+$")])
+    ref_start = HiddenField(validators=[validators.regexp(r"^\d+$")])
+    ref_end = HiddenField(validators=[validators.regexp(r"^\d+$")])
     ctx_public = SubmitField()
     ctx_secret = SubmitField()
     lemma_public = SubmitField()

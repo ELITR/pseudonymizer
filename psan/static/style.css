@@ -14,18 +14,20 @@
     }
 }
 
-.candidate {
+.token:hover {
     background-color:rgb(255, 253, 163, 0.5);
-}
-
-.candidate:hover {
-    background-color:rgb(222, 206, 135);
     cursor:pointer;
 }
 
-.candidate-active {
+.highlight {
     background-color:rgb(222, 206, 135);
-    text-decoration: underline;
+}
+
+.candidate {
+    font-weight: bold;
+    border-bottom: 1px solid;
+    margin-bottom: 1px;
+    display: inline-block;
 }
 
 .candidate-public {
