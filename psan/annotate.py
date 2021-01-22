@@ -183,7 +183,7 @@ class RecognizedTagFilter(XMLFilterBase):
                 self.entity_type = attrs.get("type")
                 new_attrs["class"] += " highlight"
             # Mouse events
-            new_attrs["onClick"] = f"showAnnotation(event, {self._submission_id}, {start},  {end})"
+            new_attrs["onClick"] = f"showAnnotation(event, {start}, {end})"
             # Return span element
             super().startElement("span", new_attrs)
         elif name == "token":
@@ -193,12 +193,12 @@ class RecognizedTagFilter(XMLFilterBase):
                 # Check for custom annotation from user
                 if self._token_id == self._highlight_start:
                     new_attrs = {"class": "token highlight",
-                                 "onClick": f"showAnnotation(event, {self._submission_id}, {self._highlight_start},  {self._highlight_end})"}
+                                 "onClick": f"showAnnotation(event, {self._highlight_start},  {self._highlight_end})"}
                     self._nested_depth += 1
                     self._user_highlight = True
                 else:
                     new_attrs = {"class": "token",
-                                 "onClick": f"showAnnotation(event, {self._submission_id}, {self._token_id},  {self._token_id})"}
+                                 "onClick": f"onTokenClick(event, {self._token_id})"}
                 # Pass updated element
                 super().startElement("span", new_attrs)
         elif name == "sentence":

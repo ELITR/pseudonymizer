@@ -83,9 +83,25 @@
     {{ super() }}
 
      <script>
-        function showAnnotation(event, doc_id, ref_start, ref_end) {
+        function showAnnotation(event, ref_start, ref_end) {
             event.stopPropagation();
-            window.location =  "{{ url_for(".show") }}?doc_id="+doc_id+"&ref_start="+ref_start+"&ref_end="+ref_end;
-        }       
+            window.location =  "{{ url_for(".show") }}?doc_id={{ submission_id }}&ref_start="+ref_start+"&ref_end="+ref_end;
+        }
+
+        function onTokenClick(event, token_id) {
+            curent_start = {{ ref_start }};
+            curent_end = {{ ref_end }};
+
+            // Extend interval with shift key
+            if (event.shiftKey) {
+                if(token_id < curent_start) {
+                    showAnnotation(event, token_id, curent_end);
+                } else {
+                    showAnnotation(event, curent_start, token_id);
+                }
+            } else {
+                showAnnotation(event, token_id, token_id);
+            }
+        }
     </script> 
 {% endblock %}
