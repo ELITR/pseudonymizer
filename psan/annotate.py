@@ -159,6 +159,7 @@ class RecognizedTagFilter(XMLFilterBase):
         self._submission_id = doc_id
         self._highlight_start = highlight_start
         self._highlight_end = highlight_end
+        self._user_highlight = False
         self._token_id = -1
         self._nested_depth = 0
         self.entity_type = None
@@ -167,7 +168,7 @@ class RecognizedTagFilter(XMLFilterBase):
     def startElement(self, name, attrs):
         if name == "ne":
             self._nested_depth += 1
-            # Check known decision
+            # Check for known decision
             start = int(attrs.get("start"))
             end = int(attrs.get("end"))
             decision = _get_candidate_decision(self._submission_id, start, end)
@@ -189,9 +190,15 @@ class RecognizedTagFilter(XMLFilterBase):
             self._token_id = int(attrs.get("id"))
             # Check if token isn't nested insede another annotation
             if (self._nested_depth == 0):
-                new_attrs = {"class": "token"}
-                # Mouse event
-                new_attrs["onClick"] = f"showAnnotation(event, {self._submission_id}, {self._token_id},  {self._token_id})"
+                # Check for custom annotation from user
+                if self._token_id == self._highlight_start:
+                    new_attrs = {"class": "token highlight",
+                                 "onClick": f"showAnnotation(event, {self._submission_id}, {self._highlight_start},  {self._highlight_end})"}
+                    self._nested_depth += 1
+                    self._user_highlight = True
+                else:
+                    new_attrs = {"class": "token",
+                                 "onClick": f"showAnnotation(event, {self._submission_id}, {self._token_id},  {self._token_id})"}
                 # Pass updated element
                 super().startElement("span", new_attrs)
         elif name == "sentence":
@@ -208,11 +215,15 @@ class RecognizedTagFilter(XMLFilterBase):
 
     def endElement(self, name):
         if name == "ne":
-            self._nested_depth -= 1
             super().endElement("span")
+            self._nested_depth -= 1
         elif name == "token":
             if self._nested_depth == 0:
                 super().endElement("span")
+            elif self._user_highlight and self._highlight_end == self._token_id:
+                super().endElement("span")
+                self._nested_depth -= 1
+                self._user_highlight = False
         elif name == "sentence":
             pass
         else:
