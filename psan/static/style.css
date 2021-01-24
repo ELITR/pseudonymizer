@@ -19,10 +19,6 @@
     cursor:pointer;
 }
 
-.highlight {
-    background-color:rgb(222, 206, 135);
-}
-
 .candidate {
     font-weight: bold;
     border-bottom: 1px solid;
@@ -41,4 +37,8 @@
 
 .candidate-secret {
     background-color:rgba(240, 80, 80, 0.5);
+}
+
+.highlight {
+    background-color:rgb(222, 206, 135);
 }

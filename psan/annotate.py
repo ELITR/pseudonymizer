@@ -1,6 +1,6 @@
 import re
 from io import StringIO
-from typing import Optional
+from typing import Hashable, List
 from xml import sax  # nosec
 from xml.sax import make_parser  # nosec
 from xml.sax.saxutils import XMLFilterBase, XMLGenerator  # nosec
@@ -97,7 +97,7 @@ def show_candidate(submission_id: int, ref_start: int, ref_end: int):
         type_str = NE_CODES[filter.entity_type]
     else:
         type_str = filter.entity_type
-    tokens_str = " ".join(filter.tokens)
+    tokens_str = " ".join(filter.highlight_tokens)
 
     form = AnnotateForm(request.form)
 
@@ -139,16 +139,6 @@ def set():
         return redirect(url_for(".index"))
 
 
-def _get_candidate_decision(submission_id: int, ref_start: int, ref_end: int) -> Optional[str]:
-    with get_cursor() as cursor:
-        cursor.execute("SELECT decision FROM annotation WHERE submission = %s and ref_start = %s and ref_end = %s",
-                       (submission_id, ref_start, ref_end))
-        if cursor.rowcount == 1:
-            return cursor.fetchone()["decision"]
-        else:
-            return None
-
-
 class RecognizedTagFilter(XMLFilterBase):
     """Transform `ne` tags to `mark` tags. Highlight tag with `id==candidate_id`."""
 
@@ -156,51 +146,93 @@ class RecognizedTagFilter(XMLFilterBase):
         super().__init__(parent)
 
         # Tag to highlight
-        self._submission_id = doc_id
+        self._window_start = highlight_start - 200
+        self._window_end = highlight_end + 200
+        self._annotations = RecognizedTagFilter._get_decisions(doc_id, self._window_start, self._window_end)
         self._highlight_start = highlight_start
         self._highlight_end = highlight_end
-        self._user_highlight = False
+        self.highlight_tokens = []
+        self._user_cadidate_end = -1
         self._token_id = -1
         self._nested_depth = 0
         self.entity_type = None
-        self.tokens = []
+
+    @ staticmethod
+    def _get_decisions(submission_id: int, window_start, window_end) -> List[Hashable]:
+        """Returns decision in defined interval. Returns `decision[ref_start - window_start][len] = decision_str´ """
+        decisions = [{} for _ in range(window_end - window_start)]
+        with get_cursor() as cursor:
+            cursor.execute("SELECT ref_start, ref_end, decision FROM annotation WHERE submission = %s and"
+                           " (ref_start > %s and ref_end < %s) or (ref_end > %s and ref_start < %s) ORDER BY ref_start",
+                           (submission_id, window_start, window_end, window_start, window_end))
+            for row in cursor:
+                decisions[row["ref_start"] - window_start][row["ref_end"] - row["ref_start"]] = row["decision"]
+        return decisions
+
+    def _startCandidate(self, ref_start, ref_end, is_highlighted) -> None:
+        annotation = self._annotations[ref_start - self._window_start].get(ref_end-ref_start)
+        if annotation in {AnnotationDecision.CONTEXT_PUBLIC.value, AnnotationDecision.RULE_PUBLIC.value}:
+            new_attrs = {"class": "candidate candidate-public"}
+        elif annotation in {AnnotationDecision.CONTEXT_SECRET.value, AnnotationDecision.RULE_SECRET.value}:
+            new_attrs = {"class": "candidate candidate-secret"}
+        else:
+            new_attrs = {"class": "candidate"}
+        # Check highlight
+        if is_highlighted:
+            new_attrs["class"] += " highlight"
+        # Mouse events
+        new_attrs["onClick"] = f"showAnnotation(event, {ref_start}, {ref_end})"
+        # Return span element
+        self._nested_depth += 1
+        super().startElement("span", new_attrs)
+
+    def _endCandidate(self) -> None:
+        super().endElement("span")
+        self._nested_depth -= 1
+
+    def _startToken(self) -> None:
+        new_attrs = {"class": "token"}
+        # Check for user highlight
+        if self._token_id == self._highlight_start:
+            new_attrs["class"] += " highlight"
+            assert self._user_cadidate_end == -1  # nosec
+            self._user_cadidate_end = self._highlight_end
+        else:
+            # Check for known decision
+            for length, decision in self._annotations[self._token_id - self._window_start].items():
+                if decision in {AnnotationDecision.CONTEXT_PUBLIC.value, AnnotationDecision.RULE_PUBLIC.value}:
+                    new_attrs = {"class": "token candidate-public"}
+                    self._user_cadidate_end = self._token_id + length
+                    break
+                elif decision in {AnnotationDecision.CONTEXT_SECRET.value, AnnotationDecision.RULE_SECRET.value}:
+                    new_attrs = {"class": "token candidate-secret"}
+                    self._user_cadidate_end = self._token_id + length
+                    break
+        # If we have to transform token to candidate
+        if self._user_cadidate_end != -1:
+            new_attrs["onClick"] = f"showAnnotation(event, {self._token_id},  {self._user_cadidate_end})"
+            self._nested_depth += 1
+        else:
+            new_attrs["onClick"] = f"onTokenClick(event, {self._token_id})"
+        # Pass updated element
+        super().startElement("span", new_attrs)
 
     def startElement(self, name, attrs):
         if name == "ne":
-            self._nested_depth += 1
-            # Check for known decision
+            # Get params from XML
             start = int(attrs.get("start"))
             end = int(attrs.get("end"))
-            decision = _get_candidate_decision(self._submission_id, start, end)
-            if decision in {AnnotationDecision.CONTEXT_PUBLIC.value, AnnotationDecision.RULE_PUBLIC.value}:
-                new_attrs = {"class": "candidate candidate-public"}
-            elif decision in {AnnotationDecision.CONTEXT_SECRET.value, AnnotationDecision.RULE_SECRET.value}:
-                new_attrs = {"class": "candidate candidate-secret"}
-            else:
-                new_attrs = {"class": "candidate"}
-            # Check highlight
-            if start == self._highlight_start and end == self._highlight_end:
+            highlighted = start == self._highlight_start and end == self._highlight_end
+            # Get name entity type
+            if highlighted:
                 self.entity_type = attrs.get("type")
-                new_attrs["class"] += " highlight"
-            # Mouse events
-            new_attrs["onClick"] = f"showAnnotation(event, {start}, {end})"
-            # Return span element
-            super().startElement("span", new_attrs)
+            # Transfroms to HTML
+            self._startCandidate(start, end, highlighted)
         elif name == "token":
             self._token_id = int(attrs.get("id"))
             # Check if token isn't nested insede another annotation
             if (self._nested_depth == 0):
-                # Check for custom annotation from user
-                if self._token_id == self._highlight_start:
-                    new_attrs = {"class": "token highlight",
-                                 "onClick": f"showAnnotation(event, {self._highlight_start},  {self._highlight_end})"}
-                    self._nested_depth += 1
-                    self._user_highlight = True
-                else:
-                    new_attrs = {"class": "token",
-                                 "onClick": f"onTokenClick(event, {self._token_id})"}
-                # Pass updated element
-                super().startElement("span", new_attrs)
+                self._startToken()
         elif name == "sentence":
             pass
         else:
@@ -209,21 +241,20 @@ class RecognizedTagFilter(XMLFilterBase):
     def characters(self, content):
         # Save highlighted tokens
         if self._highlight_start <= self._token_id <= self._highlight_end:
-            self.tokens.append(content)
+            self.highlight_tokens.append(content)
 
         return super().characters(content)
 
     def endElement(self, name):
         if name == "ne":
-            super().endElement("span")
-            self._nested_depth -= 1
+            self._endCandidate()
         elif name == "token":
             if self._nested_depth == 0:
                 super().endElement("span")
-            elif self._user_highlight and self._highlight_end == self._token_id:
+            elif self._user_cadidate_end == self._token_id:
                 super().endElement("span")
                 self._nested_depth -= 1
-                self._user_highlight = False
+                self._user_cadidate_end = -1
         elif name == "sentence":
             pass
         else:
