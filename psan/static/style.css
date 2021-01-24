@@ -21,7 +21,7 @@
 
 .candidate {
     font-weight: bold;
-    border-bottom: 1px solid;
+    border-bottom: 1px dotted;
     margin-bottom: 1px;
     display: inline-block;
 }
@@ -29,6 +29,7 @@
 .candidate:hover {
     background-color:rgb(255, 253, 163, 0.5);
     cursor:pointer;
+    border-bottom: 1px solid;
 }
 
 .candidate-public {

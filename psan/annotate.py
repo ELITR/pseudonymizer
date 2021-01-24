@@ -51,7 +51,7 @@ def index():
             cursor.execute("SELECT * FROM annotation WHERE submission = %s and decision = %s LIMIT 1",
                            (document["id"], AnnotationDecision.UNDECIDED.value))
             candidate = cursor.fetchone()
-            return show_candidate(candidate["id"], candidate["ref_start"], candidate["ref_end"])
+            return show_candidate(candidate["submission"], candidate["ref_start"], candidate["ref_end"])
         else:
             return render_template("annotate/index.html", candidate=_("No document ready for annotation found..."))
 
@@ -181,7 +181,7 @@ class RecognizedTagFilter(XMLFilterBase):
         if is_highlighted:
             new_attrs["class"] += " highlight"
         # Mouse events
-        new_attrs["onClick"] = f"showAnnotation(event, {ref_start}, {ref_end})"
+        new_attrs["onClick"] = f"onTokenIntervalClick(event, {ref_start}, {ref_end})"
         # Return span element
         self._nested_depth += 1
         super().startElement("span", new_attrs)
@@ -210,7 +210,7 @@ class RecognizedTagFilter(XMLFilterBase):
                     break
         # If we have to transform token to candidate
         if self._user_cadidate_end != -1:
-            new_attrs["onClick"] = f"showAnnotation(event, {self._token_id},  {self._user_cadidate_end})"
+            new_attrs["onClick"] = f"onTokenIntervalClick(event, {self._token_id},  {self._user_cadidate_end})"
             self._nested_depth += 1
         else:
             new_attrs["onClick"] = f"onTokenClick(event, {self._token_id})"

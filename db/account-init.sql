@@ -24,7 +24,8 @@ CREATE TABLE submission (
     uid         UUID                UNIQUE  NOT NULL,
     status      submission_status           NOT NULL,
     num_tokens  INT,
-    created     TIMESTAMP                   NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created     TIMESTAMP                   NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CHECK (0 <= num_tokens)
 );
 
 CREATE TABLE annotation (
@@ -34,5 +35,6 @@ CREATE TABLE annotation (
     ref_type        reference_type                                     NOT NULL DEFAULT 'NAME_ENTRY',
     ref_start       INT                                                NOT NULL,
     ref_end         INT                                                NOT NULL,    
-    UNIQUE (submission, ref_start, ref_end)
+    UNIQUE (submission, ref_start, ref_end),
+    CHECK (ref_start <= ref_end)
 );
