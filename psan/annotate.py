@@ -14,7 +14,7 @@ from werkzeug.utils import redirect
 from psan.auth import login_required
 from psan.db import commit, get_cursor
 from psan.model import (AccountType, AnnotateForm, AnnotationDecision,
-                        ReferenceType, SubmissionStatus)
+                        ReferenceType, RuleType, SubmissionStatus)
 from psan.submission import get_submission_file
 
 _ = gettext
@@ -94,16 +94,17 @@ def show_candidate(submission_id: int, ref_start: int, ref_end: int):
     sax.parseString(token_line, filter)
 
     # Show correct NE type string
+    ne_type_code = filter.entity_type
     if filter.entity_type in NE_CODES:
-        type_str = NE_CODES[filter.entity_type]
+        ne_type_str = NE_CODES[ne_type_code]
     else:
-        type_str = filter.entity_type if filter.entity_type else ""
+        ne_type_str = ne_type_code if ne_type_code else ""
     tokens_str = " ".join(filter.highlight_tokens)
 
     form = AnnotateForm(request.form)
 
-    return render_template("annotate/index.html", context_html=output.getvalue(), ne_type=type_str,
-                           token_str=tokens_str, form=form, submission_id=submission_id,
+    return render_template("annotate/index.html", context_html=output.getvalue(), ne_type_str=ne_type_str,
+                           ne_type_code=ne_type_code, token_str=tokens_str, form=form, submission_id=submission_id,
                            ref_start=ref_start, ref_end=ref_end)
 
 
@@ -112,33 +113,43 @@ def show_candidate(submission_id: int, ref_start: int, ref_end: int):
 def set():
     form = AnnotateForm(request.form)
     if form.validate():
-        # Process request
-        if form.ctx_public.data:
-            decision = AnnotationDecision.CONTEXT_PUBLIC
-        elif form.ctx_secret.data:
-            decision = AnnotationDecision.CONTEXT_SECRET
-        elif form.lemma_public.data or form.category_public.data:
-            decision = AnnotationDecision.RULE_PUBLIC
-        elif form.lemma_secret.data or form.category_secret.data:
-            decision = AnnotationDecision.RULE_SECRET
+        # Process decision
+        if form.ctx_public.data or form.lemma_public.data or form.ne_type_public.data:
+            decision = AnnotationDecision.PUBLIC
+        elif form.ctx_secret.data or form.lemma_secret.data or form.ne_type_secret.data:
+            decision = AnnotationDecision.SECRET
+        # Process decision condition
+        if form.lemma_public.data or form.lemma_secret.data:
+            rule = RuleType.LEMMA
+            rule_condition = "LEMMAS"  # TODO
+        elif form.ne_type_public.data or form.ne_type_secret.data:
+            rule = RuleType.NE_TYPE
+            rule_condition = form.ne_type.data
         else:
-            raise InternalServerError(f"Unknown annotation {request.form}")
+            rule = None
 
         # Save result to db
-        if form.ne_type.data:
-            with get_cursor() as cursor:
-                cursor.execute("UPDATE annotation SET decision = %s WHERE submission = %s and ref_start = %s and ref_end = %s",
-                               (decision.value, form.submission_id.data, form.ref_start.data, form.ref_end.data))
-                commit()
-        else:
-            with get_cursor() as cursor:
+        rule_id = None
+        with get_cursor() as cursor:
+            if rule:
+                cursor.execute("INSERT INTO rule(type, condition, decision) VALUES(%s, %s, %s)"
+                               " ON CONFLICT(type, condition) DO UPDATE SET decision=excluded.decision RETURNING id",
+                               (rule.value, rule_condition, decision.value))
+                rule_id = cursor.fetchone()[0]
+                decision = AnnotationDecision.RULE
+
+            if form.ne_type.data:
+                cursor.execute("UPDATE annotation SET decision = %s, rule = %s WHERE submission = %s and ref_start = %s and ref_end = %s",
+                               (decision.value, rule_id, form.submission_id.data, form.ref_start.data, form.ref_end.data))
+
+            else:
                 cursor.execute("DELETE FROM annotation WHERE submission = %s and %s <= ref_start and ref_end <= %s and ref_type = %s",
                                (form.submission_id.data, form.ref_start.data, form.ref_end.data, ReferenceType.USER.value))
-                cursor.execute("INSERT INTO annotation (decision, submission, ref_start, ref_end, ref_type) VALUES (%s, %s, %s, %s, %s)",
-                               (decision.value, form.submission_id.data, form.ref_start.data, form.ref_end.data, ReferenceType.USER.value))
+                cursor.execute("INSERT INTO annotation (decision, submission, ref_start, ref_end, ref_type, rule) VALUES (%s, %s, %s, %s, %s, %s)",
+                               (decision.value, form.submission_id.data, form.ref_start.data, form.ref_end.data, ReferenceType.USER.value, rule_id))
                 cursor.execute("UPDATE annotation SET decision = %s WHERE submission = %s and %s <= ref_start and ref_end <= %s and ref_type = %s",
                                (AnnotationDecision.NESTED.value, form.submission_id.data, form.ref_start.data, form.ref_end.data, ReferenceType.NAME_ENTRY.value))
-                commit()
+            commit()
 
         # Show another tag
         if g.account["type"] != AccountType.ADMIN.value:
@@ -173,8 +184,10 @@ class RecognizedTagFilter(XMLFilterBase):
         """Returns decision in defined interval. Returns `decision[ref_start - window_start][len] = decision_str´ """
         decisions = [{} for _ in range(window_end - window_start)]
         with get_cursor() as cursor:
-            cursor.execute("SELECT ref_start, ref_end, decision FROM annotation WHERE submission = %s and"
-                           " (ref_start > %s and ref_end < %s) or (ref_end > %s and ref_start < %s) ORDER BY ref_start",
+            cursor.execute("SELECT ref_start, ref_end, COALESCE(rule.decision::text, annotation.decision::text) as decision FROM annotation"
+                           " LEFT JOIN rule ON annotation.rule = rule.id"
+                           " WHERE submission = %s and (ref_start > %s and ref_end < %s) or (ref_end > %s and ref_start < %s)"
+                           " ORDER BY ref_start",
                            (submission_id, window_start, window_end, window_start, window_end))
             for row in cursor:
                 decisions[row["ref_start"] - window_start][row["ref_end"] - row["ref_start"]] = row["decision"]
@@ -182,9 +195,9 @@ class RecognizedTagFilter(XMLFilterBase):
 
     def _startCandidate(self, ref_start, ref_end, is_highlighted) -> None:
         annotation = self._annotations[ref_start - self._window_start].get(ref_end-ref_start)
-        if annotation in {AnnotationDecision.CONTEXT_PUBLIC.value, AnnotationDecision.RULE_PUBLIC.value}:
+        if annotation == AnnotationDecision.PUBLIC.value:
             new_attrs = {"class": "candidate candidate-public"}
-        elif annotation in {AnnotationDecision.CONTEXT_SECRET.value, AnnotationDecision.RULE_SECRET.value}:
+        elif annotation == AnnotationDecision.SECRET.value:
             new_attrs = {"class": "candidate candidate-secret"}
         else:
             new_attrs = {"class": "candidate"}
@@ -211,11 +224,11 @@ class RecognizedTagFilter(XMLFilterBase):
         else:
             # Check for known decision
             for length, decision in self._annotations[self._token_id - self._window_start].items():
-                if decision in {AnnotationDecision.CONTEXT_PUBLIC.value, AnnotationDecision.RULE_PUBLIC.value}:
+                if decision == AnnotationDecision.PUBLIC.value:
                     new_attrs = {"class": "token candidate-public"}
                     self._user_cadidate_end = self._token_id + length
                     break
-                elif decision in {AnnotationDecision.CONTEXT_SECRET.value, AnnotationDecision.RULE_SECRET.value}:
+                elif decision == AnnotationDecision.SECRET.value:
                     new_attrs = {"class": "token candidate-secret"}
                     self._user_cadidate_end = self._token_id + length
                     break

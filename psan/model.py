@@ -24,10 +24,9 @@ class SubmissionStatus(Enum):
 
 
 class AnnotationDecision(Enum):
-    CONTEXT_SECRET = "CTX_SECRET"  # nosec
-    CONTEXT_PUBLIC = "CTX_PUBLIC"
-    RULE_SECRET = "RULE_SECRET"  # nosec
-    RULE_PUBLIC = "RULE_PUBLIC"
+    SECRET = "SECRET"  # nosec
+    PUBLIC = "PUBLIC"
+    RULE = "RULE"
     NESTED = "NESTED"
     UNDECIDED = "UNDECIDED"
 
@@ -35,6 +34,12 @@ class AnnotationDecision(Enum):
 class ReferenceType(Enum):
     NAME_ENTRY = "NAME_ENTRY"
     USER = "USER"
+
+
+class RuleType(Enum):
+    WORD_TYPE = "WORD_TYPE"
+    LEMMA = "LEMMA"
+    NE_TYPE = "NE_TYPE"
 
 
 def strip_whitespace(text: str):
@@ -117,5 +122,5 @@ class AnnotateForm(FlaskForm):
     ctx_secret = SubmitField()
     lemma_public = SubmitField()
     lemma_secret = SubmitField()
-    category_public = SubmitField()
-    category_secret = SubmitField()
+    ne_type_public = SubmitField()
+    ne_type_secret = SubmitField()

@@ -5,9 +5,13 @@ CREATE TYPE account_type AS ENUM ('USER', 'ADMIN');
 
 CREATE TYPE submission_status AS ENUM ('NEW', 'RECOGNIZED', 'ANNOTATED', 'DONE');
 
-CREATE TYPE annotation_decision AS ENUM ('CTX_SECRET', 'CTX_PUBLIC', 'RULE_SECRET', 'RULE_PUBLIC', 'NESTED', 'UNDECIDED');
+CREATE TYPE annotation_decision AS ENUM ('PUBLIC', 'SECRET', 'RULE', 'NESTED', 'UNDECIDED');
+
+CREATE TYPE rule_decision AS ENUM ('PUBLIC', 'SECRET');
 
 CREATE TYPE reference_type AS ENUM ('NAME_ENTRY', 'USER');
+
+CREATE TYPE rule_type AS ENUM ('WORD_TYPE', 'LEMMA', 'NE_TYPE');
 
 CREATE TABLE account (
     id                  SERIAL PRIMARY KEY,
@@ -28,13 +32,23 @@ CREATE TABLE submission (
     CHECK (0 <= num_tokens)
 );
 
+CREATE TABLE rule (
+    id              SERIAL PRIMARY KEY,
+    type            rule_type                   NOT NULL,
+    condition       TEXT                        NOT NULL,
+    decision        rule_decision               NOT NULL,
+    UNIQUE (type, condition)
+);
+
 CREATE TABLE annotation (
     id              SERIAL PRIMARY KEY,
     submission      INT REFERENCES submission(id) ON DELETE CASCADE    NOT NULL,
     decision        annotation_decision                                NOT NULL DEFAULT 'UNDECIDED',
+    rule            INT REFERENCES rule(id), 
     ref_type        reference_type                                     NOT NULL DEFAULT 'NAME_ENTRY',
     ref_start       INT                                                NOT NULL,
     ref_end         INT                                                NOT NULL,    
     UNIQUE (submission, ref_start, ref_end),
-    CHECK (ref_start <= ref_end)
+    CHECK (ref_start <= ref_end),
+    CHECK ((decision != 'RULE' and rule IS NULL) or (decision = 'RULE' and rule IS NOT NULL))
 );
