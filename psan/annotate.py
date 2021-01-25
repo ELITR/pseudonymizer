@@ -222,10 +222,14 @@ class RecognizedTagFilter(XMLFilterBase):
             # Get params from XML
             start = int(attrs.get("start"))
             end = int(attrs.get("end"))
-            highlighted = start == self._highlight_start and end == self._highlight_end
+            highlighted = self._highlight_start <= start and end <= self._highlight_end
             # Get name entity type
             if highlighted:
                 self.entity_type = attrs.get("type")
+            # Add another token tag if candidate starts hightlight interval
+            if self._nested_depth == 0 and start == self._highlight_start and end < self._highlight_end:
+                self._token_id = start
+                self._startToken()
             # Transfroms to HTML
             self._startCandidate(start, end, highlighted)
         elif name == "token":
