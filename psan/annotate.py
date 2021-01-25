@@ -139,16 +139,22 @@ def set():
                 decision = AnnotationDecision.RULE
 
             if form.ne_type.data:
-                cursor.execute("UPDATE annotation SET decision = %s, rule = %s WHERE submission = %s and ref_start = %s and ref_end = %s",
+                cursor.execute("UPDATE annotation SET decision = %s, rule = %s"
+                               " WHERE submission = %s and ref_start = %s and ref_end = %s",
                                (decision.value, rule_id, form.submission_id.data, form.ref_start.data, form.ref_end.data))
 
             else:
-                cursor.execute("DELETE FROM annotation WHERE submission = %s and %s <= ref_start and ref_end <= %s and ref_type = %s",
+                cursor.execute("DELETE FROM annotation"
+                               " WHERE submission = %s and %s <= ref_start and ref_end <= %s and ref_type = %s",
                                (form.submission_id.data, form.ref_start.data, form.ref_end.data, ReferenceType.USER.value))
-                cursor.execute("INSERT INTO annotation (decision, submission, ref_start, ref_end, ref_type, rule) VALUES (%s, %s, %s, %s, %s, %s)",
-                               (decision.value, form.submission_id.data, form.ref_start.data, form.ref_end.data, ReferenceType.USER.value, rule_id))
-                cursor.execute("UPDATE annotation SET decision = %s WHERE submission = %s and %s <= ref_start and ref_end <= %s and ref_type = %s",
-                               (AnnotationDecision.NESTED.value, form.submission_id.data, form.ref_start.data, form.ref_end.data, ReferenceType.NAME_ENTRY.value))
+                cursor.execute("INSERT INTO annotation (decision, submission, ref_start, ref_end, ref_type, rule)"
+                               " VALUES (%s, %s, %s, %s, %s, %s)",
+                               (decision.value, form.submission_id.data, form.ref_start.data, form.ref_end.data,
+                                ReferenceType.USER.value, rule_id))
+                cursor.execute("UPDATE annotation SET decision = %s"
+                               " WHERE submission = %s and %s <= ref_start and ref_end <= %s and ref_type = %s",
+                               (AnnotationDecision.NESTED.value, form.submission_id.data, form.ref_start.data, form.ref_end.data,
+                                ReferenceType.NAME_ENTRY.value))
             commit()
 
         # Show another tag
@@ -184,8 +190,8 @@ class RecognizedTagFilter(XMLFilterBase):
         """Returns decision in defined interval. Returns `decision[ref_start - window_start][len] = decision_str´ """
         decisions = [{} for _ in range(window_end - window_start)]
         with get_cursor() as cursor:
-            cursor.execute("SELECT ref_start, ref_end, COALESCE(rule.decision::text, annotation.decision::text) as decision FROM annotation"
-                           " LEFT JOIN rule ON annotation.rule = rule.id"
+            cursor.execute("SELECT ref_start, ref_end, COALESCE(rule.decision::text, annotation.decision::text) as decision"
+                           " FROM annotation LEFT JOIN rule ON annotation.rule = rule.id"
                            " WHERE submission = %s and (ref_start > %s and ref_end < %s) or (ref_end > %s and ref_start < %s)"
                            " ORDER BY ref_start",
                            (submission_id, window_start, window_end, window_start, window_end))
