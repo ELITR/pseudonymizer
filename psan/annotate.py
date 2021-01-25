@@ -14,7 +14,7 @@ from werkzeug.utils import redirect
 from psan.auth import login_required
 from psan.db import commit, get_cursor
 from psan.model import (AccountType, AnnotateForm, AnnotationDecision,
-                        SubmissionStatus)
+                        ReferenceType, SubmissionStatus)
 from psan.submission import get_submission_file
 
 _ = gettext
@@ -53,7 +53,8 @@ def index():
             candidate = cursor.fetchone()
             return show_candidate(candidate["submission"], candidate["ref_start"], candidate["ref_end"])
         else:
-            return render_template("annotate/index.html", candidate=_("No document ready for annotation found..."))
+            return render_template("annotate/index.html", context_html=_("No document ready for annotation found..."),
+                                   form=AnnotateForm())
 
 
 @bp.route("/show")
@@ -96,12 +97,12 @@ def show_candidate(submission_id: int, ref_start: int, ref_end: int):
     if filter.entity_type in NE_CODES:
         type_str = NE_CODES[filter.entity_type]
     else:
-        type_str = filter.entity_type
+        type_str = filter.entity_type if filter.entity_type else ""
     tokens_str = " ".join(filter.highlight_tokens)
 
     form = AnnotateForm(request.form)
 
-    return render_template("annotate/index.html", context_html=output.getvalue(), type=type_str,
+    return render_template("annotate/index.html", context_html=output.getvalue(), ne_type=type_str,
                            token_str=tokens_str, form=form, submission_id=submission_id,
                            ref_start=ref_start, ref_end=ref_end)
 
@@ -124,10 +125,20 @@ def set():
             raise InternalServerError(f"Unknown annotation {request.form}")
 
         # Save result to db
-        with get_cursor() as cursor:
-            cursor.execute("UPDATE annotation SET decision = %s WHERE submission = %s and ref_start = %s and ref_end = %s",
-                           (decision.value, form.submission_id.data, form.ref_start.data, form.ref_end.data))
-            commit()
+        if form.ne_type.data:
+            with get_cursor() as cursor:
+                cursor.execute("UPDATE annotation SET decision = %s WHERE submission = %s and ref_start = %s and ref_end = %s",
+                               (decision.value, form.submission_id.data, form.ref_start.data, form.ref_end.data))
+                commit()
+        else:
+            with get_cursor() as cursor:
+                cursor.execute("DELETE FROM annotation WHERE submission = %s and %s <= ref_start and ref_end <= %s and ref_type = %s",
+                               (form.submission_id.data, form.ref_start.data, form.ref_end.data, ReferenceType.USER.value))
+                cursor.execute("INSERT INTO annotation (decision, submission, ref_start, ref_end, ref_type) VALUES (%s, %s, %s, %s, %s)",
+                               (decision.value, form.submission_id.data, form.ref_start.data, form.ref_end.data, ReferenceType.USER.value))
+                cursor.execute("UPDATE annotation SET decision = %s WHERE submission = %s and %s <= ref_start and ref_end <= %s and ref_type = %s",
+                               (AnnotationDecision.NESTED.value, form.submission_id.data, form.ref_start.data, form.ref_end.data, ReferenceType.NAME_ENTRY.value))
+                commit()
 
         # Show another tag
         if g.account["type"] != AccountType.ADMIN.value:
@@ -224,7 +235,7 @@ class RecognizedTagFilter(XMLFilterBase):
             end = int(attrs.get("end"))
             highlighted = self._highlight_start <= start and end <= self._highlight_end
             # Get name entity type
-            if highlighted:
+            if self._highlight_start == start and end == self._highlight_end:
                 self.entity_type = attrs.get("type")
             # Add another token tag if candidate starts hightlight interval
             if self._nested_depth == 0 and start == self._highlight_start and end < self._highlight_end:
