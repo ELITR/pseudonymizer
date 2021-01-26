@@ -1,6 +1,6 @@
 import re
 from io import StringIO
-from typing import Hashable, List
+from typing import Dict, List, Optional
 from xml import sax  # nosec
 from xml.sax import make_parser  # nosec
 from xml.sax.saxutils import XMLFilterBase, XMLGenerator  # nosec
@@ -116,7 +116,7 @@ def set():
         # Process decision
         if form.ctx_public.data or form.lemma_public.data or form.ne_type_public.data:
             decision = AnnotationDecision.PUBLIC
-        elif form.ctx_secret.data or form.lemma_secret.data or form.ne_type_secret.data:
+        else:
             decision = AnnotationDecision.SECRET
         # Process decision condition
         if form.lemma_public.data or form.lemma_secret.data:
@@ -179,14 +179,14 @@ class RecognizedTagFilter(XMLFilterBase):
         self._annotations = RecognizedTagFilter._get_decisions(doc_id, self._window_start, self._window_end)
         self._highlight_start = highlight_start
         self._highlight_end = highlight_end
-        self.highlight_tokens = []
+        self.highlight_tokens: List[str] = []
         self._user_cadidate_end = -1
         self._token_id = -1
         self._nested_depth = 0
-        self.entity_type = None
+        self.entity_type: Optional[str] = None
 
     @ staticmethod
-    def _get_decisions(submission_id: int, window_start, window_end) -> List[Hashable]:
+    def _get_decisions(submission_id: int, window_start: int, window_end: int) -> List[Dict[int, str]]:
         """Returns decision in defined interval. Returns `decision[ref_start - window_start][len] = decision_str´ """
         decisions = [{} for _ in range(window_end - window_start)]
         with get_cursor() as cursor:

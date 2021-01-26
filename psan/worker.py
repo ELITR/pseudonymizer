@@ -1,4 +1,5 @@
 import xml.sax  # nosec - parse only internal XML
+from typing import List, NamedTuple
 
 from psycopg2.extras import execute_values
 
@@ -42,16 +43,23 @@ def recognize_submission(uid: str) -> None:
         commit()
 
 
+class NameEntry(NamedTuple):
+    doc_id: int
+    start: int
+    end: int
+    decision: AnnotationDecision
+
+
 class RecognizedInputHandler(xml.sax.ContentHandler):
     def __init__(self, document_id: int) -> None:
         super().__init__()
         self._doc_id = document_id
         self._ne_depth = 0
-        self.entities = []
+        self.entities: List[NameEntry] = []
 
     def _register_candidate(self, start_id: int, end_id: int):
-        self.entities.append((self._doc_id, start_id, end_id, AnnotationDecision.UNDECIDED.value
-                              if self._ne_depth == 1 else AnnotationDecision.NESTED.value))
+        self.entities.append(NameEntry(self._doc_id, start_id, end_id, AnnotationDecision.UNDECIDED.value
+                                       if self._ne_depth == 1 else AnnotationDecision.NESTED.value))
 
     def startElement(self, tag, attributes):
         if tag == "ne":
