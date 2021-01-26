@@ -121,7 +121,7 @@ def set():
         # Process decision condition
         if form.lemma_public.data or form.lemma_secret.data:
             rule = RuleType.LEMMA
-            rule_condition = "LEMMAS"  # TODO
+            rule_condition = form.condition.data
         elif form.ne_type_public.data or form.ne_type_secret.data:
             rule = RuleType.NE_TYPE
             rule_condition = form.ne_type.data
