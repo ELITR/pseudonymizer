@@ -1,13 +1,13 @@
 import xml.sax  # nosec - parse only internal XML
+import xml.sax.handler  # nosec - parse only internal XML
 from typing import List, NamedTuple
 
-from psycopg2.extras import execute_values
-
-from psan import celery
+from psan.celery import celery
 from psan.db import commit, get_cursor
 from psan.model import AnnotationDecision, SubmissionStatus
 from psan.submission import get_submission_file
 from psan.tool import recognize_file
+from psycopg2.extras import execute_values
 
 
 @celery.task()

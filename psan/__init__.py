@@ -1,16 +1,12 @@
-import os
-from typing import Tuple
-
-from celery import Celery
 from flask import (Flask, after_this_request, g, redirect, render_template,
                    request)
 from flask_babel import Babel
 from flask_bootstrap import Bootstrap
 
-from psan import db
+from psan import celery, db
 
 
-def build_app() -> Tuple[Flask, Celery]:
+def build_app() -> Flask:
     app = Flask(__name__, instance_relative_config=True)
 
     # Configs
@@ -25,7 +21,7 @@ def build_app() -> Tuple[Flask, Celery]:
     else:
         app.config.from_object("config.production")
 
-    celery = init_celery(app)
+    celery.init_celery(app)
     db.init_app(app)
 
     Bootstrap(app)
@@ -48,7 +44,7 @@ def build_app() -> Tuple[Flask, Celery]:
     from psan import annotate
     app.register_blueprint(annotate.bp)
 
-    return app, celery
+    return app
 
 
 def init_translations(app: Flask) -> None:
@@ -97,23 +93,4 @@ def init_translations(app: Flask) -> None:
         return g.lang
 
 
-def init_celery(app: Flask) -> Celery:
-    celery = Celery(
-        app.name,
-        backend=os.environ["CELERY_REDIS"],
-        broker=os.environ["CELERY_REDIS"],
-        include=["psan.worker"]
-    )
-    celery.conf.update(app.config)
-
-    class ContextTask(celery.Task):
-        def __call__(self, *args, **kwargs):
-            with app.app_context():
-                return self.run(*args, **kwargs)
-
-    celery.Task = ContextTask
-
-    return celery
-
-
-app, celery = build_app()
+app = build_app()

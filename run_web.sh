@@ -8,7 +8,7 @@ export FLASK_RUN_HOST=0.0.0.0
 source venv/bin/activate
 
 # Start background worker
-(celery -A psan.celery worker)&
+(celery -A psan.celery.celery worker)&
 status=$?
 if [ $status -ne 0 ]; then
   echo "Failed to start celery worker. EXIT $status" >&2

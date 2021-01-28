@@ -89,8 +89,8 @@ def new():
                 with open(os.path.join(folder, _INPUT_FILENAME), "w") as file:
                     file.write(form.text.data)
             # Register background task
-            from psan import worker
-            worker.recognize_submission.delay(uid)
+            from psan.celery import recognize
+            recognize.recognize_submission.delay(uid)
 
             return redirect(url_for(".index"))
     else:
