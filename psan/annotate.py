@@ -93,12 +93,13 @@ def show_candidate(submission_id: int, ref_start: int, ref_end: int):
     # Line has to be surrounded with XML tags
     sax.parseString(token_line, filter)
 
-    # Show correct NE type string
+    # Prepare candidate info
     ne_type_code = filter.entity_type
-    if filter.entity_type in NE_CODES:
+    if ne_type_code in NE_CODES:
         ne_type_str = NE_CODES[ne_type_code]
     else:
         ne_type_str = ne_type_code if ne_type_code else ""
+        ne_type_code = ne_type_code if ne_type_code else ""
     tokens_str = " ".join(filter.highlight_tokens)
 
     form = AnnotateForm(request.form)
@@ -139,10 +140,10 @@ def set():
                 decision = AnnotationDecision.RULE
 
             if form.ne_type.data:
+                # if selection is a candidate than it has ne_type
                 cursor.execute("UPDATE annotation SET decision = %s, rule = %s"
                                " WHERE submission = %s and ref_start = %s and ref_end = %s",
                                (decision.value, rule_id, form.submission_id.data, form.ref_start.data, form.ref_end.data))
-
             else:
                 cursor.execute("DELETE FROM annotation"
                                " WHERE submission = %s and %s <= ref_start and ref_end <= %s and ref_type = %s",
