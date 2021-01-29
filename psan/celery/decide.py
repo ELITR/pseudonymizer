@@ -1,4 +1,5 @@
 import functools
+from pydoc import doc
 from typing import Container, Optional
 
 from psan.celery import celery
@@ -20,7 +21,7 @@ def auto_decide_remaining(doc_id: int) -> None:
         # Parse file and apply rules
         find = functools.partial(find_rule, cursor=cursor)
         update = functools.partial(update_annotation, doc_id=doc_id, cursor=cursor)
-        auto_decide_file(submission_file, SqlContainer(), find, update)
+        auto_decide_file(submission_file, SqlContainer(doc_id, cursor), find, update)
 
         commit()
 
@@ -43,5 +44,16 @@ def update_annotation(candidate: Candidate, rule: Rule, doc_id: int, cursor) -> 
 
 
 class SqlContainer(Container[Candidate]):
+    def __init__(self, doc_id: int, cursor) -> None:
+        self._doc_id = doc_id
+        self._cursor = cursor
+        super().__init__()
+
     def __contains__(self, candidate: Candidate) -> bool:
-        return True
+        self._cursor.execute("SELECT decision FROM annotation WHERE submission = %s and ref_start = %s and ref_end = %s",
+                             (self._doc_id, candidate.start, candidate.end))
+        row = self._cursor.fetchone()
+        if row and row["decision"] == AnnotationDecision.UNDECIDED.value:
+            return True
+        else:
+            return False

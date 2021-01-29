@@ -2,7 +2,7 @@ import xml.sax  # nosec - parse only internal XML
 import xml.sax.handler  # nosec - parse only internal XML
 from typing import List, NamedTuple
 
-from psan.celery import celery
+from psan.celery import celery, decide
 from psan.db import commit, get_cursor
 from psan.model import AnnotationDecision, SubmissionStatus
 from psan.submission import get_submission_file
@@ -36,10 +36,13 @@ def recognize_submission(uid: str) -> None:
 
         commit()
 
+    # Apply known rules to submission
+    decide.auto_decide_remaining(document_id)
+
     # Update document status
     with get_cursor() as cursor:
-        cursor.execute("UPDATE submission SET status = %s, num_tokens = %s WHERE uid = %s",
-                       (SubmissionStatus.RECOGNIZED.value, num_tokens, uid))
+        cursor.execute("UPDATE submission SET status = %s, num_tokens = %s WHERE id = %s",
+                       (SubmissionStatus.RECOGNIZED.value, num_tokens, document_id))
         commit()
 
 
