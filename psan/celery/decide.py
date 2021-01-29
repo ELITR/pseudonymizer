@@ -26,8 +26,8 @@ def auto_decide_remaining(doc_id: int) -> None:
 
 
 def find_rule(evidence: Evidence, cursor) -> Optional[Rule]:
-    cursor.execute("SELECT id FROM rule WHERE (type=%s and condition = %s) or (type= %s and condition = %s)"
-                   " ORDER BY array_position(array['WORD_TYPE','LEMMA','NE_TYPE'], type::text)",
+    cursor.execute("SELECT id FROM rule WHERE (type = %s and condition = %s) or (type = %s and condition = %s)"
+                   " ORDER BY array_position(array['WORD_TYPE','LEMMA','NE_TYPE'], type::text) LIMIT 1",
                    (RuleType.WORD_TYPE.value, " ".join(evidence.tokens), RuleType.NE_TYPE.value, evidence.ne_type))
     row = cursor.fetchone()
     if row:

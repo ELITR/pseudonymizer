@@ -60,7 +60,7 @@ class EvidenceParser(xml.sax.ContentHandler):
                 start = last_candidate.start - offset
                 end = last_candidate.end - offset
                 # Save evidence
-                self.evidences.append(Evidence(last_candidate, last_ne_type, self._token_list[start: end]))
+                self.evidences.append(Evidence(last_candidate, last_ne_type, self._token_list[start: end + 1]))
                 self._candidate_stack.pop()
                 # Clear up tokens if there is nothing to track
                 if len(self._candidate_stack) == 0:
