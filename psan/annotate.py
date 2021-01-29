@@ -120,7 +120,7 @@ def set():
             decision = AnnotationDecision.SECRET
         # Process decision condition
         if form.lemma_public.data or form.lemma_secret.data:
-            rule = RuleType.LEMMA
+            rule = RuleType.WORD_TYPE
             rule_condition = form.condition.data
         elif form.ne_type_public.data or form.ne_type_secret.data:
             rule = RuleType.NE_TYPE
@@ -156,6 +156,11 @@ def set():
                                (AnnotationDecision.NESTED.value, form.submission_id.data, form.ref_start.data, form.ref_end.data,
                                 ReferenceType.NAME_ENTRY.value))
             commit()
+
+            if rule:
+                # Annotate rest using background task
+                from psan.celery import decide
+                decide.auto_decide_remaining.delay(form.submission_id.data)
 
         # Show another tag
         if g.account["type"] != AccountType.ADMIN.value:
@@ -275,7 +280,9 @@ class RecognizedTagFilter(XMLFilterBase):
     def characters(self, content):
         # Save highlighted tokens
         if self._highlight_start <= self._token_id <= self._highlight_end:
-            self.highlight_tokens.append(content)
+            text = content.strip()
+            if len(text) > 0:
+                self.highlight_tokens.append(text)
 
         return super().characters(content)
 
