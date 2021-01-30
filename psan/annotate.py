@@ -1,4 +1,3 @@
-import re
 from io import StringIO
 from typing import Dict, List, Optional
 from xml import sax  # nosec
@@ -8,7 +7,6 @@ from xml.sax.saxutils import XMLFilterBase, XMLGenerator  # nosec
 from flask import Blueprint, g, render_template, request
 from flask.helpers import url_for
 from flask_babel import gettext
-from werkzeug.exceptions import InternalServerError
 from werkzeug.utils import redirect
 
 from psan.auth import login_required
@@ -71,27 +69,15 @@ def show_candidate(submission_id: int, ref_start: int, ref_end: int):
     with get_cursor() as cursor:
         cursor.execute("SELECT uid FROM submission WHERE id = %s", (submission_id,))
         submission_uid = cursor.fetchone()["uid"]
-
-    # Find line with token ID == ref_start
-    token_line = None
-    with open(get_submission_file(submission_uid, SubmissionStatus.RECOGNIZED), "r") as input:
-        pattern = re.compile(f"<token[^<>]+id=\"{ref_start}\"")
-        for line in input:
-            if pattern.search(line):
-                token_line = line
-                break
-    # Check if any token was found
-    if not token_line:
-        raise InternalServerError(
-            f"Cannot find token id {ref_start} from submission {submission_uid}")
+    filename = get_submission_file(submission_uid, SubmissionStatus.RECOGNIZED)
 
     # Transform line for UI
     output = StringIO()
     generator = XMLGenerator(output)
-    filter = RecognizedTagFilter(submission_id, ref_start, ref_end, make_parser())
+    filter = RecognizedTagFilter(submission_id, ref_start, ref_end, ref_start - 200, ref_start + 200, make_parser())
     filter.setContentHandler(generator)
     # Line has to be surrounded with XML tags
-    sax.parseString(token_line, filter)
+    sax.parse(filename, filter)
 
     # Prepare candidate info
     ne_type_code = filter.entity_type
@@ -176,20 +162,24 @@ def set():
 class RecognizedTagFilter(XMLFilterBase):
     """Transform `ne` tags to `mark` tags. Highlight tag with `id==candidate_id`."""
 
-    def __init__(self, doc_id: int, highlight_start: int, highlight_end: int, parent=None):
+    def __init__(self, doc_id: int, highlight_start: int, highlight_end: int, window_start: int, window_end: int, parent):
         super().__init__(parent)
 
-        # Tag to highlight
-        self._window_start = highlight_start - 200
-        self._window_end = highlight_end + 200
-        self._annotations = RecognizedTagFilter._get_decisions(doc_id, self._window_start, self._window_end)
+        self._doc_id = doc_id
+        # View window
+        self._window_start = max(0, window_start)
+        self._window_end = window_end
+        self._in_window = False
+        self._annotations = RecognizedTagFilter._get_decisions(self._doc_id, self._window_start, self._window_end)
+        # Selected text
         self._highlight_start = highlight_start
         self._highlight_end = highlight_end
         self.highlight_tokens: List[str] = []
+        self.entity_type: Optional[str] = None
+        # State of parser
         self._user_cadidate_end = -1
         self._token_id = -1
         self._nested_depth = 0
-        self.entity_type: Optional[str] = None
 
     @ staticmethod
     def _get_decisions(submission_id: int, window_start: int, window_end: int) -> List[Dict[int, str]]:
@@ -254,50 +244,64 @@ class RecognizedTagFilter(XMLFilterBase):
         super().startElement("span", new_attrs)
 
     def startElement(self, name, attrs):
-        if name == "ne":
-            # Get params from XML
-            start = int(attrs.get("start"))
-            end = int(attrs.get("end"))
-            highlighted = self._highlight_start <= start and end <= self._highlight_end
-            # Get name entity type
-            if self._highlight_start == start and end == self._highlight_end:
-                self.entity_type = attrs.get("type")
-            # Add another token tag if candidate starts hightlight interval
-            if self._nested_depth == 0 and start == self._highlight_start and end < self._highlight_end:
-                self._token_id = start
-                self._startToken()
-            # Transfroms to HTML
-            self._startCandidate(start, end, highlighted)
+        if name == "sentence":
+            if self._window_start <= self._token_id + 1 <= self._window_end:
+                self._in_window = True
+            else:
+                self._in_window = False
         elif name == "token":
             self._token_id = int(attrs.get("id"))
-            # Check if token isn't nested insede another annotation
-            if (self._nested_depth == 0):
-                self._startToken()
-        elif name == "sentence":
-            pass
-        else:
-            super().startElement(name, attrs)
+
+        if self._in_window:
+            if name == "ne":
+                # Get params from XML
+                start = int(attrs.get("start"))
+                end = int(attrs.get("end"))
+                highlighted = self._highlight_start <= start and end <= self._highlight_end
+                # Get name entity type
+                if self._highlight_start == start and end == self._highlight_end:
+                    self.entity_type = attrs.get("type")
+                # Add another token tag if candidate starts hightlight interval
+                if self._nested_depth == 0 and start == self._highlight_start and end < self._highlight_end:
+                    self._token_id = start
+                    self._startToken()
+                # Transfroms to HTML
+                self._startCandidate(start, end, highlighted)
+            elif name == "token":
+                # Check if token isn't nested insede another annotation
+                if (self._nested_depth == 0):
+                    self._startToken()
 
     def characters(self, content):
         # Save highlighted tokens
-        if self._highlight_start <= self._token_id <= self._highlight_end:
-            text = content.strip()
-            if len(text) > 0:
-                self.highlight_tokens.append(text)
+        if self._in_window:
+            if self._highlight_start <= self._token_id <= self._highlight_end:
+                text = content.strip()
+                if len(text) > 0:
+                    self.highlight_tokens.append(text)
 
-        return super().characters(content)
+            fist_line = True
+            for line in content.split("\n"):
+                super().characters(line)
+                if fist_line:
+                    fist_line = False
+                else:
+                    super().startElement("br/", {})
 
     def endElement(self, name):
-        if name == "ne":
-            self._endCandidate()
-        elif name == "token":
-            if self._nested_depth == 0:
-                super().endElement("span")
-            elif self._user_cadidate_end == self._token_id:
-                super().endElement("span")
-                self._nested_depth -= 1
-                self._user_cadidate_end = -1
-        elif name == "sentence":
-            pass
-        else:
-            super().endElement(name)
+        if self._in_window:
+            if name == "ne":
+                self._endCandidate()
+            elif name == "token":
+                if self._nested_depth == 0:
+                    super().endElement("span")
+                elif self._user_cadidate_end == self._token_id:
+                    super().endElement("span")
+                    self._nested_depth -= 1
+                    self._user_cadidate_end = -1
+                # Check end of reached end of text window
+                if self._token_id == self._window_end:
+                    while self._nested_depth > 0:
+                        super().endElement("span")
+                        self._nested_depth -= 1
+                    self._in_window = False
