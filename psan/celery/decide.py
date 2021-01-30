@@ -1,5 +1,4 @@
 import functools
-from pydoc import doc
 from typing import Container, Optional
 
 from psan.celery import celery

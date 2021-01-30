@@ -188,7 +188,7 @@ class RecognizedTagFilter(XMLFilterBase):
         with get_cursor() as cursor:
             cursor.execute("SELECT ref_start, ref_end, COALESCE(rule.decision::text, annotation.decision::text) as decision"
                            " FROM annotation LEFT JOIN rule ON annotation.rule = rule.id"
-                           " WHERE submission = %s and ((ref_start >= %s and ref_end <= %s) or (ref_end >= %s and ref_start <= %s))"
+                           " WHERE submission = %s and ((ref_start>=%s and ref_end<=%s) or (ref_end>=%s and ref_start<=%s))"
                            " ORDER BY ref_start",
                            (submission_id, window_start, window_end, window_start, window_end))
             for row in cursor:
