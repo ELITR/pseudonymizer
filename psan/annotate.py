@@ -74,7 +74,7 @@ def show_candidate(submission_id: int, ref_start: int, ref_end: int):
     # Transform line for UI
     output = StringIO()
     generator = XMLGenerator(output)
-    filter = RecognizedTagFilter(submission_id, ref_start, ref_end, ref_start - 200, ref_start + 200, make_parser())
+    filter = RecognizedTagFilter(submission_id, ref_start, ref_end, ref_start - 100, ref_start + 100, make_parser())
     filter.setContentHandler(generator)
     # Line has to be surrounded with XML tags
     sax.parse(filename, filter)
@@ -180,6 +180,7 @@ class RecognizedTagFilter(XMLFilterBase):
         self._user_cadidate_end = -1
         self._token_id = -1
         self._nested_depth = 0
+        self._last_sentence = False
 
     @ staticmethod
     def _get_decisions(submission_id: int, window_start: int, window_end: int) -> List[Dict[int, str]]:
@@ -273,13 +274,15 @@ class RecognizedTagFilter(XMLFilterBase):
                     self._startToken()
 
     def characters(self, content):
-        # Save highlighted tokens
-        if self._in_window:
+        # Show text only from text window or from last sentence
+        if self._in_window or self._last_sentence:
+            # Save highlighted tokens
             if self._highlight_start <= self._token_id <= self._highlight_end:
                 text = content.strip()
                 if len(text) > 0:
                     self.highlight_tokens.append(text)
 
+            # Preserve newlines from input file
             fist_line = True
             for line in content.split("\n"):
                 super().characters(line)
@@ -305,4 +308,9 @@ class RecognizedTagFilter(XMLFilterBase):
                         super().endElement("span")
                         self._nested_depth -= 1
                     self._in_window = False
-                    # assert False
+                    # Show last sentence in fadeout style (to preserve context)
+                    self._last_sentence = True
+                    super().startElement("span", {"class": "fadeout"})
+        elif self._last_sentence and name == "sentence":
+            super().endElement("span")
+            self._last_sentence = False

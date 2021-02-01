@@ -43,3 +43,10 @@
 .highlight {
     background-color:rgb(255, 253, 163);
 }
+
+span.fadeout {
+    background: linear-gradient(90deg, #000, #fff);
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    cursor: not-allowed;
+}
