@@ -313,7 +313,7 @@ class RecognizedTagFilter(XMLFilterBase):
                     self._in_window = False
                     # Show last sentence in fadeout style (to preserve context)
                     self._last_sentence = True
-                    super().startElement("span", {"class": "fadeout"})
+                    super().startElement("span", {"class": "small fadeout"})
         elif self._last_sentence and name == "sentence":
             super().endElement("span")
             self._last_sentence = False
