@@ -32,15 +32,24 @@ def _find_rule(evidence: Evidence, cursor) -> Optional[Rule]:
     if evidence.type == ReasonType.NE_TYPE:
         cursor.execute("SELECT id FROM rule WHERE type = %s and condition = %s",
                        (RuleType.NE_TYPE.value, evidence.value))
+        row = cursor.fetchone()
+        rule = Rule(row["id"]) if row else None
     elif evidence.type == ReasonType.WORD_TYPE:
-        cursor.execute("SELECT id FROM rule WHERE type = %s and condition = %s",
-                       (RuleType.WORD_TYPE.value, evidence.value))
-    # Returns rule or None
-    row = cursor.fetchone()
-    if row:
-        return Rule(row["id"])
+        cursor.execute("SELECT id, condition FROM rule WHERE type = %s and condition[1] = %s",
+                       (RuleType.WORD_TYPE.value, evidence.value[0]))
+        # Find rule where condition match evidence
+        rule = None
+        for row in cursor:
+            condition = row["condition"]
+            if condition == evidence.value[:len(condition)]:
+                rule = Rule(row["id"])
+                break
     else:
-        return None
+        # Every evidence type should be supported
+        raise RuntimeError(f"Unknown evidence type {evidence.type} for evidence {evidence}")
+
+    # Returns rule or None
+    return rule
 
 
 def _word_lookup(word: Word, cursor) -> Tuple[ReasonType, int]:
