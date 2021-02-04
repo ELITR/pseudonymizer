@@ -54,7 +54,7 @@ class EvidenceParser(xml.sax.ContentHandler):
         # Word types and tokens
         self._lookup = word_lookup
         self._word_list: List[Word] = []
-        self._word_list_first_token_id = None
+        self._word_list_first_token_id = -1
         self._lookup_events: List[LookupEvent] = []
         # Current state
         self._last_token_id = -1
@@ -96,13 +96,14 @@ class EvidenceParser(xml.sax.ContentHandler):
         heappush(self._lookup_events, LookupEvent(target_id, current_id, type))
 
     def _handleLookups(self, current_id: int):
-        if self._lookup_events[0].target_token_id == current_id:
+        while len(self._lookup_events) > 0 and self._lookup_events[0].target_token_id == current_id:
             event = heappop(self._lookup_events)
             # Prepare evidence
             candidate = Candidate(event.source_token_id, event.target_token_id)
             if event.type == ReasonType.WORD_TYPE:
                 types = [word.token for word in
-                         self._word_list[self._last_token_id + candidate.start:self._last_token_id + candidate.end + 1]]
+                         self._word_list[candidate.start - self._word_list_first_token_id:
+                                         candidate.end - self._word_list_first_token_id + 1]]
                 evidence = Evidence(ReasonType.WORD_TYPE, candidate, types)
                 self._evidence_callback(evidence)
             # Tokens cleanup
