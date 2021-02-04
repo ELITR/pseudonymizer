@@ -35,7 +35,7 @@ CREATE TABLE submission (
 CREATE TABLE rule (
     id              SERIAL PRIMARY KEY,
     type            rule_type                   NOT NULL,
-    condition       TEXT                        NOT NULL,
+    condition       TEXT[]                        NOT NULL,
     decision        rule_decision               NOT NULL,
     UNIQUE (type, condition)
 );

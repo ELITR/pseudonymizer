@@ -1,3 +1,4 @@
+import json
 from io import StringIO
 from typing import Dict, List, Optional
 from xml import sax  # nosec
@@ -79,20 +80,22 @@ def show_candidate(submission_id: int, ref_start: int, ref_end: int):
     # Line has to be surrounded with XML tags
     sax.parse(filename, filter)
 
-    # Prepare candidate info
+    # Prepare name entry category
     ne_type_code = filter.entity_type
     if ne_type_code in NE_CODES:
         ne_type_str = NE_CODES[ne_type_code]
     else:
         ne_type_str = ne_type_code if ne_type_code else ""
         ne_type_code = ne_type_code if ne_type_code else ""
+    # Prepare token info
     tokens_str = " ".join(filter.highlight_tokens)
+    tokens_code = json.dumps(filter.highlight_tokens)
 
     form = AnnotateForm(request.form)
 
     return render_template("annotate/index.html", context_html=output.getvalue(), ne_type_str=ne_type_str,
-                           ne_type_code=ne_type_code, token_str=tokens_str, form=form, submission_id=submission_id,
-                           ref_start=ref_start, ref_end=ref_end)
+                           ne_type_code=ne_type_code, token_str=tokens_str, token_code=tokens_code, form=form,
+                           submission_id=submission_id, ref_start=ref_start, ref_end=ref_end)
 
 
 @bp.route("/set", methods=['POST'])
@@ -108,10 +111,10 @@ def set():
         # Process decision condition
         if form.lemma_public.data or form.lemma_secret.data:
             rule = RuleType.WORD_TYPE
-            rule_condition = form.condition.data
+            rule_condition = json.loads(form.condition.data)
         elif form.ne_type_public.data or form.ne_type_secret.data:
             rule = RuleType.NE_TYPE
-            rule_condition = form.ne_type.data
+            rule_condition = [form.ne_type.data]
         else:
             rule = None
 
