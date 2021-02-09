@@ -23,6 +23,7 @@
             <th data-field="type">Type</th>
             <th data-field="condition">Condition</th>
             <th data-field="decision">Decision</th>
+            <th data-field="operate" data-formatter="operateFormatter" data-align="center">Actions</th>
         </tr>
     </thead>
 </table>
@@ -47,6 +48,25 @@
             $.get(url + '?' + $.param(params.data)).then(function (res) {
                 params.success(res)
             })
+        }
+
+        function operateFormatter(value, row, index) {
+            return [
+            '<button class="btn btn-outline-danger" onclick="remove('+ row.id + ')" title="Remove">',
+            'Remove',
+            '</button>'
+            ].join('')
+        }
+
+        var $table = $('#table')
+
+        function remove(row_id) {
+            $.ajax({type: "POST", url: "/rule/remove/" + row_id, success: function(result){
+                $table.bootstrapTable('remove', {
+                    field: 'id',
+                    values: [row_id]
+                })
+            }});
         }
     </script>
 {% endblock %}
