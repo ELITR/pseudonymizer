@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% from 'bootstrap/form.html' import render_form, render_field %}
+
+{% block styles %}
+    {{ super() }}
+
+    <link href="https://unpkg.com/bootstrap-table@1.18.2/dist/bootstrap-table.min.css" rel="stylesheet">
+{% endblock %}
+
+{% block title %}{% trans %}Rule{% endtrans %}{% endblock %}
+
+{% block content %}
+<table
+    id="table"
+    data-toggle="table"
+    data-ajax="ajaxRequest"
+    data-search="true"
+    data-side-pagination="server"
+    data-pagination="true">
+    <thead>
+        <tr>
+            <th data-field="id">ID</th>
+            <th data-field="type">Type</th>
+            <th data-field="condition">Condition</th>
+            <th data-field="decision">Decision</th>
+        </tr>
+    </thead>
+</table>
+{% endblock %}
+
+{% block scripts %}
+    {{ super() }}
+
+    <script src="https://unpkg.com/bootstrap-table@1.18.2/dist/bootstrap-table.min.js"></script>
+
+    <script>
+    // your custom ajax request here
+    function ajaxRequest(params) {
+        var url = '/rule/data'
+        $.get(url + '?' + $.param(params.data)).then(function (res) {
+            params.success(res)
+        })
+    }
+    </script>
+{% endblock %}

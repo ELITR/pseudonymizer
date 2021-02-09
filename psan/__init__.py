@@ -43,6 +43,8 @@ def build_app() -> Flask:
     app.register_blueprint(submission.bp)
     from psan import annotate
     app.register_blueprint(annotate.bp)
+    from psan import rule
+    app.register_blueprint(rule.bp)
 
     return app
 
