@@ -15,15 +15,14 @@
     data-toggle="table"
     data-ajax="ajaxRequest"
     data-search="true"
-    data-side-pagination="server"
     data-pagination="true">
     <thead>
         <tr>
-            <th data-field="id">ID</th>
-            <th data-field="type">Type</th>
-            <th data-field="condition">Condition</th>
-            <th data-field="decision">Decision</th>
-            <th data-field="operate" data-formatter="operateFormatter" data-align="center">Actions</th>
+            <th data-field="id">{% trans %}ID{% endtrans %}</th>
+            <th data-field="type">{% trans %}Type{% endtrans %}</th>
+            <th data-field="condition">{% trans %}Condition{% endtrans %}</th>
+            <th data-field="decision">{% trans %}Decision{% endtrans %}</th>
+            <th data-field="operate" data-formatter="operateFormatter" data-align="center">{% trans %}Actions{% endtrans %}</th>
         </tr>
     </thead>
 </table>
@@ -33,6 +32,7 @@
     {{ super() }}
 
     <script src="https://unpkg.com/bootstrap-table@1.18.2/dist/bootstrap-table.min.js"></script>
+    <script src="https://unpkg.com/bootstrap-table@1.18.2/dist/locale/bootstrap-table-cs-CZ.min.js"></script>
 
     <script>
         $.ajaxSetup({
@@ -53,7 +53,7 @@
         function operateFormatter(value, row, index) {
             return [
             '<button class="btn btn-outline-danger" onclick="remove('+ row.id + ')" title="Remove">',
-            'Remove',
+            '{% trans %}Remove{% endtrans %}',
             '</button>'
             ].join('')
         }
