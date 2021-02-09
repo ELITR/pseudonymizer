@@ -1,6 +1,8 @@
+import csv
 import gettext
+from io import StringIO
 
-from flask import Blueprint, jsonify, render_template, request
+from flask import Blueprint, jsonify, make_response, render_template, request
 
 from psan.auth import login_required
 from psan.db import commit, get_cursor
@@ -53,3 +55,21 @@ def remove(rule_id: int):
 
     # Return OK reply
     return jsonify({"stutus": "ok"})
+
+
+@bp.route('/export')
+def export():
+    si = StringIO()
+    cw = csv.writer(si)
+
+    # Prepare data
+    with get_cursor() as cursor:
+        cursor.execute("SELECT type, condition, decision FROM rule")
+        for row in cursor:
+            cw.writerow((row["type"], ' '.join(row["condition"]), row["decision"]))
+
+    # Prepare output
+    output = make_response(si.getvalue())
+    output.headers["Content-Disposition"] = "attachment; filename=export.csv"
+    output.headers["Content-type"] = "text/csv"
+    return output

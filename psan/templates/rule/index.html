@@ -10,6 +10,13 @@
 {% block title %}{% trans %}Rule{% endtrans %}{% endblock %}
 
 {% block content %}
+<div class="d-flex justify-content-between align-items-center">
+    <h2 class="mb-4">
+        {% trans %}Rules{% endtrans %}
+    </h2>
+    <a class="btn btn-outline-primary" href="{{ url_for("rule.export") }}">{{ render_icon("download") }}{% trans %}Export{% endtrans %}</a>
+</div>
+
 <table
     id="table"
     data-toggle="table"
