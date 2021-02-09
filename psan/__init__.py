@@ -2,6 +2,7 @@ from flask import (Flask, after_this_request, g, redirect, render_template,
                    request)
 from flask_babel import Babel
 from flask_bootstrap import Bootstrap
+from flask_wtf.csrf import CSRFProtect
 
 from psan import celery, db
 
@@ -24,8 +25,13 @@ def build_app() -> Flask:
     celery.init_celery(app)
     db.init_app(app)
 
+    # Bootstrap
     Bootstrap(app)
     init_translations(app)
+
+    # CSRF protection
+    csrf = CSRFProtect()
+    csrf.init_app(app)
 
     @app.route("/")
     def index():
