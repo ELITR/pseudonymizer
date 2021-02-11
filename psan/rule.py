@@ -1,14 +1,20 @@
 import csv
-import gettext
-from io import StringIO
+from io import StringIO, TextIOWrapper
 
-from flask import Blueprint, jsonify, make_response, render_template, request
+from flask import (Blueprint, flash, jsonify, make_response, redirect,
+                   render_template, request, url_for)
+from flask_babel import lazy_gettext
+from flask_wtf import FlaskForm
+from flask_wtf.file import FileAllowed, FileField
+from psycopg2.errors import DataError
+from wtforms import SubmitField
+from wtforms.fields.simple import TextAreaField
 
 from psan.auth import login_required
 from psan.db import commit, get_cursor
 from psan.model import AccountType, AnnotationDecision
 
-_ = gettext
+_ = lazy_gettext
 
 bp = Blueprint("rule", __name__, url_prefix="/rule")
 
@@ -67,10 +73,55 @@ def export():
     with get_cursor() as cursor:
         cursor.execute("SELECT type, condition, decision FROM rule")
         for row in cursor:
-            cw.writerow((row["type"], ' '.join(row["condition"]), row["decision"]))
+            cw.writerow((row["type"], '='.join(row["condition"]), row["decision"]))
 
     # Prepare output
     output = make_response(si.getvalue())
     output.headers["Content-Disposition"] = "attachment; filename=export.csv"
     output.headers["Content-type"] = "text/csv"
     return output
+
+
+class UploadForm(FlaskForm):
+    text = TextAreaField(_("Text rules"))
+    file = FileField(_("CSV file"), validators=[
+                     FileAllowed(["csv", "txt"], _("*.csv files only"))])
+    submit = SubmitField(_("Upload"))
+
+
+@bp.route('/import', methods=["GET", "POST"])
+@login_required(role=AccountType.ADMIN)
+def upload():
+    form = UploadForm()
+    if form.validate_on_submit():
+        if not form.file.data and not form.text.data:
+            flash(_("File or text input required.", category="error"))
+        else:
+            # Load input
+            if form.file.data:
+                csv_input = csv.reader(TextIOWrapper(form.file.data, "UTF8"))
+            else:
+                csv_input = csv.reader(form.text.data.splitlines())
+            # Import input
+            line_num = 0
+            with get_cursor() as cursor:
+                for row in csv_input:
+                    # Line numbering
+                    line_num += 1
+                    if len(row) == 0:
+                        continue
+                    # Try to import to db
+                    try:
+                        cursor.execute("INSERT INTO rule (type, condition, decision) VALUES(%s, %s, %s)"
+                                       " ON CONFLICT (type, condition) DO UPDATE SET decision = EXCLUDED.decision",
+                                       (row[0], row[1].split('='), row[2]))
+                    except (IndexError, DataError):
+                        flash(_(f"Illegal format on line {line_num}.", category="error"))
+                        return render_template("rule/import.html", form=form)
+                commit()
+
+            flash(_(f"{csv_input.line_num} rules imported", category="message"))
+            return redirect(url_for(".index"))
+
+    # Prepare output
+    return render_template("rule/import.html", form=form)

@@ -44,12 +44,14 @@ def test_reset(client: FlaskClient) -> None:
 
 def test_restricted(client: FlaskClient) -> None:
     for page in ["account.index", "account.delete_account", "account.change_password",
-                 "annotate.index", "annotate.show", "submission.index", "rule.index"]:
+                 "annotate.index", "annotate.show", "submission.index", "rule.index",
+                 "rule.export", "rule.upload"]:
         with app.app_context():
             login_redirect(url_for(page), client)
 
 
 def login_redirect(page: str, client: FlaskClient) -> None:
     response = client.get(page)
+    print(f"Testing page {page}")
     assert response.status_code == 302
     assert response.location == url_for("auth.login", _external=True)
