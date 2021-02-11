@@ -6,7 +6,7 @@ from flask import Blueprint, jsonify, make_response, render_template, request
 
 from psan.auth import login_required
 from psan.db import commit, get_cursor
-from psan.model import AnnotationDecision
+from psan.model import AccountType, AnnotationDecision
 
 _ = gettext
 
@@ -14,13 +14,13 @@ bp = Blueprint("rule", __name__, url_prefix="/rule")
 
 
 @bp.route("/")
-@login_required()
+@login_required(role=AccountType.ADMIN)
 def index():
     return render_template("rule/index.html")
 
 
 @bp.route("/data")
-@login_required()
+@login_required(role=AccountType.ADMIN)
 def data():
     # GET params
     search = request.args.get("search", type=str)
@@ -43,7 +43,7 @@ def data():
 
 
 @bp.route("/remove/<int:rule_id>",  methods=['POST'])
-@login_required()
+@login_required(role=AccountType.ADMIN)
 def remove(rule_id: int):
     with get_cursor() as cursor:
         # Remove already made annotation
@@ -58,6 +58,7 @@ def remove(rule_id: int):
 
 
 @bp.route('/export')
+@login_required(role=AccountType.ADMIN)
 def export():
     si = StringIO()
     cw = csv.writer(si)
