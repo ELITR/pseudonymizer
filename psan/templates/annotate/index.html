@@ -8,9 +8,11 @@
         <div class="row">
             <div class="col-12 col-lg-8 col-xl-9">
                 <h2 class="mb-4">
-                    {% trans %}Annotatation interface{% endtrans %}
+                    {% trans %}Annotation interface{% endtrans %}
                 </h2>
-                {{ context_html | safe }}
+                <div id="annotation-window">
+                    {% trans %}Loading...{% endtrans %}
+                </div>
             </div>
 
             {# Annotation UI #}
@@ -29,7 +31,7 @@
                             <h5 class="card-title">
                                 {{ render_icon("vr", size="1.5em") }}{% trans %}By lemma{% endtrans %}
                             </h5>
-                            <h6 class="card-subtitle mb-2 text-muted">{{token_str}}</h6>
+                            <h6 id="lemma" class="card-subtitle mb-2 text-muted">{% trans %}Loading...{% endtrans %}</h6>
                             <div class="card-text d-flex justify-content-around">
                                 <button type="submit" name="lemma_public" class="btn btn-outline-success my-2" value="True">
                                     {{ render_icon("globe", size="1.5em") }}{% trans %}Public{% endtrans %}
@@ -87,21 +89,60 @@
     {{ super() }}
 
      <script>
+        var highlight_start = null
+        var highlight_end = null
+
+        function selectInterval(start, end) {    
+            // Select token objects including last one and spaces between them
+            matched = $.map($("#token-"+start), function (elem, i) {
+                list = [];
+                do {
+                    if (elem.nodeType === Node.ELEMENT_NODE || elem.nodeType === Node.TEXT_NODE) {
+                        list.push(elem);
+                        if (jQuery(elem).is("#token-"+end)) {
+                            break;
+                        }
+                    }
+                } while ((elem = elem.nextSibling) && elem.nodeType !== Node.DOCUMENT_NODE);
+                return list;
+            });
+
+            return $("#token-"+start).pushStack(matched).addBack()
+        }
+
         function showAnnotation(event, ref_start, ref_end) {
             event.stopPropagation();
-            window.location =  "{{ url_for(".show") }}?doc_id={{ submission_id }}&ref_start="+ref_start+"&ref_end="+ref_end;
+            // Discard previous highlightion
+            if (highlight_start) {
+                selection = selectInterval(highlight_start, highlight_end);
+                selection.unwrap();
+            }
+            // Highlight new interval
+            selection = selectInterval(ref_start, ref_end)
+            selection.wrapAll('<span class="highlight" />')
+            // Update inner state
+            highlight_start = ref_start;
+            highlight_end = ref_end;
+            // Update form data
+            $("#ref_start").val(ref_start)
+            $("#ref_end").val(ref_end)
+            // Tokens
+            token_list = []
+            selection.children().addBack().filter(".token").each(function() {
+                token_list.push($(this).text())
+            });
+            $("#condition").val(JSON.stringify(token_list))
+            // Update UI
+            $("#lemma").html(selection.text())
         }
 
         function onTokenClick(event, token_id) {
-            curent_start = {{ ref_start }};
-            curent_end = {{ ref_end }};
-
             // Extend interval with shift key
             if (event.shiftKey) {
-                if(token_id < curent_start) {
-                    showAnnotation(event, token_id, curent_end);
+                if(token_id < highlight_start) {
+                    showAnnotation(event, token_id, highlight_end);
                 } else {
-                    showAnnotation(event, curent_start, token_id);
+                    showAnnotation(event, highlight_start, token_id);
                 }
             } else {
                 showAnnotation(event, token_id, token_id);
@@ -109,19 +150,26 @@
         }
 
         function onTokenIntervalClick(event, start_token_id, end_token_id) {
-            curent_start = {{ ref_start }};
-            curent_end = {{ ref_end }};
-
             // Extend interval with shift key
             if (event.shiftKey) {
-                if(end_token_id < curent_start) {
-                    showAnnotation(event, start_token_id, curent_end);
+                if(end_token_id < highlight_start) {
+                    showAnnotation(event, start_token_id, highlight_end);
                 } else {
-                    showAnnotation(event, curent_start, end_token_id);
+                    showAnnotation(event, highlight_start, end_token_id);
                 }
             } else {
                 showAnnotation(event, start_token_id, end_token_id);
             }
         }
+
+        // Load text to annotation window
+        $.ajax({
+            type: "GET",
+            url: "{{ url_for("annotate.window", doc_id=submission_id, start=win_start, end=win_end) | safe }}",               
+            cache: true,
+            success: function(response) {
+                $("#annotation-window").html(response);
+            }
+        });
     </script> 
 {% endblock %}

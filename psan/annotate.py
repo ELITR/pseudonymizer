@@ -66,6 +66,22 @@ def show():
 
 
 def show_candidate(submission_id: int, ref_start: int, ref_end: int):
+    # Prepare window size
+    win_start = ref_start - 200
+    win_end = ref_start + 200
+    # Prepare web page
+    form = AnnotateForm(request.form)
+    return render_template("annotate/index.html", form=form, submission_id=submission_id, win_start=win_start, win_end=win_end)
+
+
+
+@bp.route("/window")
+@login_required()
+def window():
+    submission_id = request.args.get("doc_id", type=int)
+    start = request.args.get("start", type=int)
+    end = request.args.get("end", type=int)
+
     # Find UID
     with get_cursor() as cursor:
         cursor.execute("SELECT uid FROM submission WHERE id = %s", (submission_id,))
@@ -75,7 +91,7 @@ def show_candidate(submission_id: int, ref_start: int, ref_end: int):
     # Transform line for UI
     output = StringIO()
     generator = XMLGenerator(output)
-    filter = RecognizedTagFilter(submission_id, ref_start, ref_end, ref_start - 100, ref_start + 100, make_parser())
+    filter = RecognizedTagFilter(start, end, make_parser())
     filter.setContentHandler(generator)
     # Line has to be surrounded with XML tags
     sax.parse(filename, filter)
@@ -93,9 +109,7 @@ def show_candidate(submission_id: int, ref_start: int, ref_end: int):
 
     form = AnnotateForm(request.form)
 
-    return render_template("annotate/index.html", context_html=output.getvalue(), ne_type_str=ne_type_str,
-                           ne_type_code=ne_type_code, token_str=tokens_str, token_code=tokens_code, form=form,
-                           submission_id=submission_id, ref_start=ref_start, ref_end=ref_end)
+    return output.getvalue()
 
 
 @bp.route("/set", methods=['POST'])
@@ -165,53 +179,24 @@ def set():
 class RecognizedTagFilter(XMLFilterBase):
     """Transform `ne` tags to `mark` tags. Highlight tag with `id==candidate_id`."""
 
-    def __init__(self, doc_id: int, highlight_start: int, highlight_end: int, window_start: int, window_end: int, parent):
+    def __init__(self, window_start: int, window_end: int, parent):
         super().__init__(parent)
 
-        self._doc_id = doc_id
         # View window
         self._window_start = max(0, window_start)
         self._window_end = window_end
         self._in_window = False
-        self._annotations = RecognizedTagFilter._get_decisions(self._doc_id, self._window_start, self._window_end)
-        # Selected text
-        self._highlight_start = highlight_start
-        self._highlight_end = highlight_end
-        self.highlight_tokens: List[str] = []
-        self.entity_type: Optional[str] = None
         # State of parser
-        self._user_cadidate_end = -1
         self._token_id = -1
         self._nested_depth = 0
         self._last_sentence = False
 
-    @ staticmethod
-    def _get_decisions(submission_id: int, window_start: int, window_end: int) -> List[Dict[int, str]]:
-        """Returns decision in defined interval. Returns `decision[ref_start - window_start][len] = decision_str´ """
-        decisions = [{} for _ in range(window_end - window_start + 1)]
-        with get_cursor() as cursor:
-            cursor.execute("SELECT ref_start, ref_end, COALESCE(rule.decision::text, annotation.decision::text) as decision"
-                           " FROM annotation LEFT JOIN rule ON annotation.rule = rule.id"
-                           " WHERE submission = %s and (%s<=ref_start and ref_start<=%s)"
-                           " ORDER BY ref_start",
-                           (submission_id, window_start, window_end))
-            for row in cursor:
-                decisions[row["ref_start"] - window_start][row["ref_end"] - row["ref_start"]] = row["decision"]
-        return decisions
-
-    def _startCandidate(self, ref_start, ref_end, is_highlighted) -> None:
-        annotation = self._annotations[ref_start - self._window_start].get(ref_end-ref_start)
-        if annotation == AnnotationDecision.PUBLIC.value:
-            new_attrs = {"class": "candidate candidate-public"}
-        elif annotation == AnnotationDecision.SECRET.value:
-            new_attrs = {"class": "candidate candidate-secret"}
-        else:
-            new_attrs = {"class": "candidate"}
-        # Check highlight
-        if is_highlighted:
-            new_attrs["class"] += " highlight"
-        # Mouse events
-        new_attrs["onClick"] = f"onTokenIntervalClick(event, {ref_start}, {ref_end})"
+    def _startCandidate(self, ref_start, ref_end, entity_type) -> None:
+        new_attrs = {"class": "candidate",
+                     "data-ne-type": entity_type,
+                     "data-ne-start": str(ref_start),
+                     "data-ne-end": str(ref_end),
+                     "onClick": f"onTokenIntervalClick(event, {ref_start}, {ref_end})"}
         # Return span element
         self._nested_depth += 1
         super().startElement("span", new_attrs)
@@ -221,29 +206,10 @@ class RecognizedTagFilter(XMLFilterBase):
         self._nested_depth -= 1
 
     def _startToken(self) -> None:
-        new_attrs = {"class": "token"}
-        # Check for user highlight
-        if self._token_id == self._highlight_start:
-            new_attrs["class"] += " highlight"
-            assert self._user_cadidate_end == -1  # nosec
-            self._user_cadidate_end = self._highlight_end
-        else:
-            # Check for known decision
-            for length, decision in self._annotations[self._token_id - self._window_start].items():
-                if decision == AnnotationDecision.PUBLIC.value:
-                    new_attrs = {"class": "token candidate-public"}
-                    self._user_cadidate_end = self._token_id + length
-                    break
-                elif decision == AnnotationDecision.SECRET.value:
-                    new_attrs = {"class": "token candidate-secret"}
-                    self._user_cadidate_end = self._token_id + length
-                    break
-        # If we have to transform token to candidate
-        if self._user_cadidate_end != -1:
-            new_attrs["onClick"] = f"onTokenIntervalClick(event, {self._token_id},  {self._user_cadidate_end})"
-            self._nested_depth += 1
-        else:
-            new_attrs["onClick"] = f"onTokenClick(event, {self._token_id})"
+        new_attrs = {"id": f"token-{self._token_id}",
+                     "class": "token",
+                     "onClick": f"onTokenClick(event, {self._token_id})"}
+        self._nested_depth += 1
         # Pass updated element
         super().startElement("span", new_attrs)
 
@@ -261,30 +227,15 @@ class RecognizedTagFilter(XMLFilterBase):
                 # Get params from XML
                 start = int(attrs.get("start"))
                 end = int(attrs.get("end"))
-                highlighted = self._highlight_start <= start and end <= self._highlight_end
-                # Get name entity type
-                if self._highlight_start == start and end == self._highlight_end:
-                    self.entity_type = attrs.get("type")
-                # Add another token tag if candidate starts hightlight interval
-                if self._nested_depth == 0 and start == self._highlight_start and end < self._highlight_end:
-                    self._token_id = start
-                    self._startToken()
+                entity_type = attrs.get("type")
                 # Transfroms to HTML
-                self._startCandidate(start, end, highlighted)
+                self._startCandidate(start, end, entity_type)
             elif name == "token":
-                # Check if token isn't nested insede another annotation
-                if (self._nested_depth == 0):
-                    self._startToken()
+                self._startToken()
 
     def characters(self, content):
         # Show text only from text window or from last sentence
         if self._in_window or self._last_sentence:
-            # Save highlighted tokens
-            if self._highlight_start <= self._token_id <= self._highlight_end:
-                text = content.strip()
-                if len(text) > 0:
-                    self.highlight_tokens.append(text)
-
             # Preserve newlines from input file
             fist_line = True
             for line in content.split("\n"):
@@ -299,12 +250,7 @@ class RecognizedTagFilter(XMLFilterBase):
             if name == "ne":
                 self._endCandidate()
             elif name == "token":
-                if self._nested_depth == 0:
-                    super().endElement("span")
-                elif self._user_cadidate_end == self._token_id:
-                    super().endElement("span")
-                    self._nested_depth -= 1
-                    self._user_cadidate_end = -1
+                super().endElement("span")
                 # Check end of reached end of text window
                 if self._token_id == self._window_end:
                     while self._nested_depth > 0:
