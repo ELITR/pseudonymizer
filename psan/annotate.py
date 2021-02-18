@@ -72,11 +72,10 @@ def show():
 
 def show_candidate(submission_id: int, ref_start: int, ref_end: int):
     # Prepare window size
-    win_start = ref_start - 200
+    win_start = max(ref_start - 200, 0)
     win_end = ref_start + 200
     # Prepare web page
     form = AnnotateForm(request.form)
-    return render_template("annotate/index.html", form=form, submission_id=submission_id, win_start=win_start, win_end=win_end)
 
 
 

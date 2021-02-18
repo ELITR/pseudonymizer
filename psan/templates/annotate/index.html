@@ -89,8 +89,8 @@
     {{ super() }}
 
      <script>
-        var highlight_start = null
-        var highlight_end = null
+        var highlight_start = {{ highlight_start if highlight_start else "null" }};
+        var highlight_end = {{ highlight_end if highlight_end else "null" }};
 
         function selectInterval(start, end) {    
             // Select token objects including last one and spaces between them
@@ -107,58 +107,59 @@
                 return list;
             });
 
-            return $("#token-"+start).pushStack(matched).addBack()
+            return $("#token-"+start).pushStack(matched).addBack();
         }
 
-        function showAnnotation(event, ref_start, ref_end) {
-            event.stopPropagation();
+        function highlightInterval(ref_start, ref_end) {
             // Discard previous highlightion
             if (highlight_start) {
                 selection = selectInterval(highlight_start, highlight_end);
                 selection.unwrap();
             }
             // Highlight new interval
-            selection = selectInterval(ref_start, ref_end)
-            selection.wrapAll('<span class="highlight" />')
+            selection = selectInterval(ref_start, ref_end);
+            selection.wrapAll('<span class="highlight" />');
             // Update inner state
             highlight_start = ref_start;
             highlight_end = ref_end;
             // Update form data
-            $("#ref_start").val(ref_start)
-            $("#ref_end").val(ref_end)
+            $("#ref_start").val(ref_start);
+            $("#ref_end").val(ref_end);
             // Tokens
-            token_list = []
+            token_list = [];
             selection.children().addBack().filter(".token").each(function() {
-                token_list.push($(this).text())
+                token_list.push($(this).text());
             });
-            $("#condition").val(JSON.stringify(token_list))
+            $("#condition").val(JSON.stringify(token_list));
             // Update UI
-            $("#lemma").html(selection.text())
+            $("#lemma").html(selection.text());
         }
 
         function onTokenClick(event, token_id) {
+            event.stopPropagation();
             // Extend interval with shift key
             if (event.shiftKey) {
                 if(token_id < highlight_start) {
-                    showAnnotation(event, token_id, highlight_end);
+                    highlightInterval(token_id, highlight_end);
                 } else {
-                    showAnnotation(event, highlight_start, token_id);
+                    highlightInterval(highlight_start, token_id);
                 }
             } else {
-                showAnnotation(event, token_id, token_id);
+                highlightInterval(token_id, token_id);
             }
         }
 
-        function onTokenIntervalClick(event, start_token_id, end_token_id) {
+        function onTokenIntervalClick(start_token_id, end_token_id) {
+            event.stopPropagation();
             // Extend interval with shift key
             if (event.shiftKey) {
                 if(end_token_id < highlight_start) {
-                    showAnnotation(event, start_token_id, highlight_end);
+                    highlightInterval(start_token_id, highlight_end);
                 } else {
-                    showAnnotation(event, highlight_start, end_token_id);
+                    highlightInterval(highlight_start, end_token_id);
                 }
             } else {
-                showAnnotation(event, start_token_id, end_token_id);
+                highlightInterval(start_token_id, end_token_id);
             }
         }
 
@@ -169,6 +170,9 @@
             cache: true,
             success: function(response) {
                 $("#annotation-window").html(response);
+                if(highlight_start) {
+                    highlightInterval(highlight_start, highlight_end);
+                }
             }
         });
     </script> 
