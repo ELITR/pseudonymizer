@@ -3,6 +3,7 @@ import os
 # disable the CDN support for Bootstrap
 BOOTSTRAP_SERVE_LOCAL = True
 SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_DOMAIN = False  # Don't send session cookie to subdomains
 COMMIT_REV = "unknown"
 # Secrets
 SECRET_KEY = os.environ["APP_SECRET_KEY"]

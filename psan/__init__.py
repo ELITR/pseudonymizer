@@ -21,6 +21,9 @@ def build_app() -> Flask:
         app.config.from_object("config.debug")
     else:
         app.config.from_object("config.production")
+    # Save whitespace in templates
+    app.jinja_env.lstrip_blocks = True
+    app.jinja_env.trim_blocks = True
 
     celery.init_celery(app)
     db.init_app(app)
