@@ -5,8 +5,8 @@
 
 {% block content %}
     <div class="d-flex">
-        <div class="row">
-            <div class="col-12 col-lg-8 col-xl-9">
+        <div class="row col-12">
+            <div class="col-12 col-lg-8 col-xl-9 non-selectable-ui">
                 <h2 class="mb-4">
                     {% trans %}Annotation interface{% endtrans %}
                 </h2>
@@ -89,8 +89,8 @@
     {{ super() }}
 
      <script>
-        var highlight_start = {{ highlight_start if highlight_start else "null" }};
-        var highlight_end = {{ highlight_end if highlight_end else "null" }};
+        var highlight_start = {{ highlight_start if highlight_start is not none else "null" }};
+        var highlight_end = {{ highlight_end if highlight_end is not none else "null" }};
 
         function selectInterval(start, end) {    
             // Select token objects including last one and spaces between them
@@ -112,7 +112,7 @@
 
         function highlightInterval(ref_start, ref_end) {
             // Discard previous highlightion
-            if (highlight_start) {
+            if (highlight_start != null) {
                 selection = selectInterval(highlight_start, highlight_end);
                 selection.unwrap();
             }
@@ -164,16 +164,13 @@
         }
 
         // Load text to annotation window
-        $.ajax({
-            type: "GET",
-            url: "{{ url_for("annotate.window", doc_id=submission_id, start=win_start, end=win_end) | safe }}",               
-            cache: true,
-            success: function(response) {
-                $("#annotation-window").html(response);
-                if(highlight_start) {
+        $("#annotation-window").load("{{ url_for("annotate.window", doc_id=submission_id, start=win_start, end=win_end) | safe }}", function(responseTxt, statusTxt, xhr){
+            if(statusTxt == "success")
+                if(highlight_start != null) {
                     highlightInterval(highlight_start, highlight_end);
                 }
-            }
+            if(statusTxt == "error")
+                $("#annotation-window").text("Error: " + xhr.status + ": " + xhr.statusText);
         });
     </script> 
 {% endblock %}

@@ -77,6 +77,8 @@ def show_candidate(submission_id: int, ref_start: int, ref_end: int):
     # Prepare web page
     form = AnnotateForm(request.form)
 
+    return render_template("annotate/index.html", form=form, submission_id=submission_id,  win_start=win_start, win_end=win_end,
+                           highlight_start=ref_start, highlight_end=ref_end)
 
 
 @bp.route("/window")

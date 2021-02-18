@@ -14,7 +14,7 @@
     }
 }
 
-#annotation-window {
+.non-selectable-ui {
     user-select: none;
 }
 
