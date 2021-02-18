@@ -29,13 +29,16 @@
                             <small> ({{ submission["decided"] }} / {{ submission["candidates"] }}) </small>
                         {% endif %}
                     </div>
-                    <form method="post" action="{{ url_for("submission.remove") }}">
-                        {{ remove_form.csrf_token }}
-                        {{ remove_form.uid(value=submission["uid"]) }}
-                        <div class="d-flex">
-                            <button type="submit" name="submit" class="btn btn-outline-danger ml-auto">{{ render_icon("trash") }}</button>
-                        </div>
-                    </form> 
+                    <div class="d-flex justify-content-end">
+                        {% if submission["status"]!=SubmissionStatus.NEW.value %}
+                            <a href="{{ url_for("annotate.show", doc_id=submission["id"], ref_start=0, ref_end=0) }}" class="btn btn-outline-secondary ml-2" title="{{_("Annotate")}}">{{ render_icon("pencil-square") }}</a>
+                        {% endif %}
+                        <form method="post" action="{{ url_for("submission.remove") }}" class="ml-2">
+                            {{ remove_form.csrf_token }}
+                            {{ remove_form.uid(value=submission["uid"]) }}
+                            <button type="submit" name="submit" class="btn btn-outline-danger" title="{{_("Remove")}}">{{ render_icon("trash") }}</button>
+                        </form> 
+                    </div>
                 </div>
             </div>
         {% endfor %}
