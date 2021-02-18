@@ -1,6 +1,6 @@
 import json
 from io import StringIO
-from typing import Dict, List, Optional
+from typing import Dict, List
 from xml import sax  # nosec
 from xml.sax import make_parser  # nosec
 from xml.sax.saxutils import XMLFilterBase, XMLGenerator  # nosec
@@ -8,6 +8,7 @@ from xml.sax.saxutils import XMLFilterBase, XMLGenerator  # nosec
 from flask import Blueprint, g, render_template, request
 from flask.helpers import url_for
 from flask_babel import gettext
+from werkzeug.exceptions import BadRequest
 from werkzeug.utils import redirect
 
 from psan.auth import login_required
@@ -59,9 +60,13 @@ def index():
 @bp.route("/show")
 @login_required(role=AccountType.ADMIN)
 def show():
+    # Parse input params
     doc_id = request.args.get("doc_id", type=int)
     ref_start = request.args.get("ref_start", type=int)
     ref_end = request.args.get("ref_end", type=int)
+    if doc_id is None or ref_start is None or ref_end is None:
+        raise BadRequest("Missing required parameters")
+    # Show annotation page
     return show_candidate(doc_id, ref_start, ref_end)
 
 
@@ -78,9 +83,12 @@ def show_candidate(submission_id: int, ref_start: int, ref_end: int):
 @bp.route("/window")
 @login_required()
 def window():
+    # Parse input params
     submission_id = request.args.get("doc_id", type=int)
     start = request.args.get("start", type=int)
     end = request.args.get("end", type=int)
+    if submission_id is None or start is None or end is None:
+        raise BadRequest(f"Missing required parameters {submission_id}, {start}, {end}")
 
     # Find UID
     with get_cursor() as cursor:
@@ -95,19 +103,6 @@ def window():
     filter.setContentHandler(generator)
     # Line has to be surrounded with XML tags
     sax.parse(filename, filter)
-
-    # Prepare name entry category
-    ne_type_code = filter.entity_type
-    if ne_type_code in NE_CODES:
-        ne_type_str = NE_CODES[ne_type_code]
-    else:
-        ne_type_str = ne_type_code if ne_type_code else ""
-        ne_type_code = ne_type_code if ne_type_code else ""
-    # Prepare token info
-    tokens_str = " ".join(filter.highlight_tokens)
-    tokens_code = json.dumps(filter.highlight_tokens)
-
-    form = AnnotateForm(request.form)
 
     return output.getvalue()
 
@@ -131,6 +126,7 @@ def set():
             rule_condition = [form.ne_type.data]
         else:
             rule = None
+            rule_condition = None
 
         # Save result to db
         rule_id = None
