@@ -80,6 +80,16 @@
                         </div>
                     {% endif %}
                 </form>
+
+                <div class="input-group mb-3">
+                <div class="input-group-prepend">
+                    <label class="input-group-text" for="inputGroupSelect01">{% trans %}Snap to{% endtrans %}</label>
+                </div>
+                <select class="custom-select" id="snapSelect">
+                    <option value="candidate">{% trans %}candidate{% endtrans %}</option>
+                    <option value="token">{% trans %}token{% endtrans %}</option>
+                </select>
+                </div>
             </div>
         </div>
     </div>
@@ -89,17 +99,31 @@
     {{ super() }}
 
      <script>
-        var highlight_start = {{ highlight_start if highlight_start is not none else "null" }};
-        var highlight_end = {{ highlight_end if highlight_end is not none else "null" }};
+        var highlight_start = null;
+        var highlight_end = null;
 
-        function selectInterval(start, end) {    
+        function selectInterval(start, end) {
+            // Find first element (longest candidate or token)
+            best_end = start;
+            first_element = null;
+            $(".candidate[data-ne-start="+start+"]").each((index, dom_el) => {
+                jqeury_el = $(dom_el);
+                data_end = jqeury_el.data("ne-end");
+                if(data_end <= end && best_end <= data_end) {
+                    best_end = data_end;
+                    first_element = jqeury_el;
+                }
+             })
+            if (!first_element) {
+                first_element = $("#token-"+start);
+            }
             // Select token objects including last one and spaces between them
-            matched = $.map($("#token-"+start), function (elem, i) {
+            matched = $.map(first_element, function (elem, i) {
                 list = [];
                 do {
                     if (elem.nodeType === Node.ELEMENT_NODE || elem.nodeType === Node.TEXT_NODE) {
                         list.push(elem);
-                        if (jQuery(elem).is("#token-"+end)) {
+                        if (jQuery(elem).is("#token-"+end) || jQuery(elem).is(".candidate[data-ne-end="+end+"]")) {
                             break;
                         }
                     }
@@ -107,7 +131,7 @@
                 return list;
             });
 
-            return $("#token-"+start).pushStack(matched).addBack();
+            return first_element.pushStack(matched).addBack();
         }
 
         function highlightInterval(ref_start, ref_end) {
@@ -135,8 +159,11 @@
             $("#lemma").html(selection.text());
         }
 
-        function onTokenClick(event, token_id) {
-            event.stopPropagation();
+        function onTokenClick(event, token_id, token_depth) {
+            // Don use in snap to candidate (in candidates)
+            if (token_depth > 0 && $("#snapSelect option:selected").val() == "candidate") {
+                return;
+            }
             // Extend interval with shift key
             if (event.shiftKey) {
                 if(token_id < highlight_start) {
@@ -147,9 +174,15 @@
             } else {
                 highlightInterval(token_id, token_id);
             }
+            // Stop event
+            event.stopPropagation();
         }
 
-        function onTokenIntervalClick(start_token_id, end_token_id) {
+        function onTokenIntervalClick(event, start_token_id, end_token_id) {
+            // Use only in snap to candidates mode
+            if ($("#snapSelect option:selected").val() == "tokens") {
+                return;
+            }
             event.stopPropagation();
             // Extend interval with shift key
             if (event.shiftKey) {
@@ -161,14 +194,16 @@
             } else {
                 highlightInterval(start_token_id, end_token_id);
             }
+            // Stop event
+            event.stopPropagation();
         }
 
         // Load text to annotation window
         $("#annotation-window").load("{{ url_for("annotate.window", doc_id=submission_id, start=win_start, end=win_end) | safe }}", function(responseTxt, statusTxt, xhr){
             if(statusTxt == "success")
-                if(highlight_start != null) {
-                    highlightInterval(highlight_start, highlight_end);
-                }
+                {% if highlight_start is not none %}
+                    highlightInterval({{ highlight_start }}, {{ highlight_end }});
+                {% endif %}
             if(statusTxt == "error")
                 $("#annotation-window").text("Error: " + xhr.status + ": " + xhr.statusText);
         });

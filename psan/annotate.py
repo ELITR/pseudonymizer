@@ -205,7 +205,7 @@ class RecognizedTagFilter(XMLFilterBase):
     def _startToken(self) -> None:
         new_attrs = {"id": f"token-{self._token_id}",
                      "class": "token",
-                     "onClick": f"onTokenClick(event, {self._token_id})"}
+                     "onClick": f"onTokenClick(event, {self._token_id}, {self._nested_depth})"}
         self._nested_depth += 1
         # Pass updated element
         super().startElement("span", new_attrs)
@@ -248,6 +248,7 @@ class RecognizedTagFilter(XMLFilterBase):
                 self._endCandidate()
             elif name == "token":
                 super().endElement("span")
+                self._nested_depth -= 1
                 # Check end of reached end of text window
                 if self._token_id == self._window_end:
                     while self._nested_depth > 0:
