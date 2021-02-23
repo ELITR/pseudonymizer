@@ -106,14 +106,14 @@
             // Find first element (longest candidate or token)
             best_end = start;
             first_element = null;
-            $(".candidate[data-ne-start="+start+"]").each((index, dom_el) => {
+            $(".wrapper[data-start="+start+"]").each((index, dom_el) => {
                 jqeury_el = $(dom_el);
-                data_end = jqeury_el.data("ne-end");
+                data_end = jqeury_el.data("end");
                 if(data_end <= end && best_end <= data_end) {
                     best_end = data_end;
                     first_element = jqeury_el;
                 }
-             })
+            })
             if (!first_element) {
                 first_element = $("#token-"+start);
             }
@@ -123,7 +123,11 @@
                 do {
                     if (elem.nodeType === Node.ELEMENT_NODE || elem.nodeType === Node.TEXT_NODE) {
                         list.push(elem);
-                        if (jQuery(elem).is("#token-"+end) || jQuery(elem).is(".candidate[data-ne-end="+end+"]")) {
+                        jqeury_el = $(elem);
+                        if (jqeury_el.is("#token-"+end)) {
+                            break;
+                        }
+                        if (jqeury_el.is(".wrapper") && jqeury_el.data("end") >= end) {
                             break;
                         }
                     }
@@ -211,11 +215,19 @@
 
         function setDecision(decisions) {
             decisions.forEach(entry => {
+                // Find text intervall
                 selection = selectInterval(entry.start, entry.end);
+                // Decide class according to decision
                 if(entry.decision == "PUBLIC")
-                    selection.wrapAll('<span class="candidate-public" />');
+                    cls = "candidate-public";
                 else
-                    selection.wrapAll('<span class="candidate-secret" />');
+                    cls = "candidate-secret";
+                // Update class
+                if (selection.length == 1) 
+                    selection.addClass(cls);
+                else
+                    selection.wrapAll('<span class="wrapper ' + cls + '" data-start="' + entry.start
+                                       +'" data-end="' + entry.end + '" />');
             })
         }
 

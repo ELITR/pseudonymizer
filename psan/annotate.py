@@ -198,10 +198,10 @@ class RecognizedTagFilter(XMLFilterBase):
         self._last_sentence = False
 
     def _startCandidate(self, ref_start, ref_end, entity_type) -> None:
-        new_attrs = {"class": "candidate",
+        new_attrs = {"class": "wrapper candidate",
                      "data-ne-type": entity_type,
-                     "data-ne-start": str(ref_start),
-                     "data-ne-end": str(ref_end),
+                     "data-start": str(ref_start),
+                     "data-end": str(ref_end),
                      "onClick": f"onTokenIntervalClick(event, {ref_start}, {ref_end})"}
         # Return span element
         self._nested_depth += 1

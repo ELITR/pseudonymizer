@@ -44,7 +44,7 @@
     background-color:rgba(240, 80, 80, 0.5);
 }
 
-.highlight {
+.highlight, .highlight .candidate-secret, .highlight .candidate-public {
     background-color:rgb(255, 253, 163);
 }
 
