@@ -95,7 +95,7 @@ def upload():
     form = UploadForm()
     if form.validate_on_submit():
         if not form.file.data and not form.text.data:
-            flash(_("File or text input required.", category="error"))
+            flash(_("File or text input required."), category="error")
         else:
             # Load input
             if form.file.data:
@@ -116,11 +116,11 @@ def upload():
                                        " ON CONFLICT (type, condition) DO UPDATE SET decision = EXCLUDED.decision",
                                        (row[0], row[1].split('='), row[2]))
                     except (IndexError, DataError):
-                        flash(_(f"Illegal format on line {line_num}.", category="error"))
+                        flash(_("Illegal format on line %(line_num)s.", line_num=line_num), category="error")
                         return render_template("rule/import.html", form=form)
                 commit()
 
-            flash(_(f"{csv_input.line_num} rules imported", category="message"))
+            flash(_("%(num)s rules imported", num=csv_input.line_num), category="message")
             return redirect(url_for(".index"))
 
     # Prepare output
