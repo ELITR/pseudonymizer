@@ -1,11 +1,10 @@
 import json
 from io import StringIO
-from typing import Dict, List
 from xml import sax  # nosec
 from xml.sax import make_parser  # nosec
 from xml.sax.saxutils import XMLFilterBase, XMLGenerator  # nosec
 
-from flask import Blueprint, g, render_template, request
+from flask import Blueprint, g, jsonify, render_template, request
 from flask.helpers import url_for
 from flask_babel import gettext
 from werkzeug.exceptions import BadRequest
@@ -92,6 +91,30 @@ def window():
     sax.parse(filename, filter)
 
     return output.getvalue()
+
+
+@bp.route("/decisions")
+@login_required()
+def decisions():
+    # Parse input params
+    submission_id = request.args.get("doc_id", type=int)
+    window_start = request.args.get("start", type=int)
+    window_end = request.args.get("end", type=int)
+    if submission_id is None or window_start is None or window_end is None:
+        raise BadRequest(f"Missing required parameters {submission_id}, {window_start}, {window_end}")
+
+    # Returns decision in defined interval
+    decisions = []
+    with get_cursor() as cursor:
+        cursor.execute("SELECT ref_start, ref_end, COALESCE(rule.decision::text, annotation.decision::text) as decision"
+                       " FROM annotation LEFT JOIN rule ON annotation.rule = rule.id"
+                       " WHERE submission = %s and (%s<=ref_start and ref_start<=%s) and annotation.decision != %s"
+                       " ORDER BY ref_start",
+                       (submission_id, window_start, window_end, AnnotationDecision.NESTED.value))
+        for row in cursor:
+            decisions.append({"start": row["ref_start"], "end": row["ref_end"], "decision": row["decision"]})
+
+    return jsonify(decisions)
 
 
 @bp.route("/set", methods=['POST'])

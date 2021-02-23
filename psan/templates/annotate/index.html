@@ -209,14 +209,32 @@
             event.stopPropagation();
         }
 
+        function setDecision(decisions) {
+            decisions.forEach(entry => {
+                selection = selectInterval(entry.start, entry.end);
+                if(entry.decision == "PUBLIC")
+                    selection.wrapAll('<span class="candidate-public" />');
+                else
+                    selection.wrapAll('<span class="candidate-secret" />');
+            })
+        }
+
         // Load text to annotation window
+        windowDeferred = $.Deferred();
         $("#annotation-window").load("{{ url_for("annotate.window", doc_id=submission_id, start=win_start, end=win_end) | safe }}", function(responseTxt, statusTxt, xhr){
             if(statusTxt == "success")
                 {% if highlight_start is not none %}
                     highlightInterval({{ highlight_start }}, {{ highlight_end }});
                 {% endif %}
+                windowDeferred.resolve()
             if(statusTxt == "error")
                 $("#annotation-window").text("Error: " + xhr.status + ": " + xhr.statusText);
         });
+
+        // Load decisions to annotation window
+        decisionsDeferred = $.Deferred();
+        $.get("{{ url_for("annotate.decisions", doc_id=submission_id, start=win_start, end=win_end) | safe }}", 
+                (data) => decisionsDeferred.resolve(data));
+        $.when(windowDeferred, decisionsDeferred).done((window, decisions) => setDecision(decisions));
     </script>
 {% endblock %}
