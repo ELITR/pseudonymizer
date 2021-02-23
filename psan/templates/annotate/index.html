@@ -61,24 +61,22 @@
                     </div>
                     
                     {# Category #}
-                    {% if ne_type_code %}
-                        <div class="card my-2">
-                            <div class="card-body">
-                                <h5 class="card-title">
-                                    {{ render_icon("tag", size="1.5em") }}{% trans %}By category{% endtrans %}
-                                </h5>
-                                <h6 class="card-subtitle mb-2 text-muted">{{ ne_type_str }}</h6>
-                                <div class="card-text d-flex justify-content-around">
-                                    <button type="submit" name="ne_type_public" class="btn btn-outline-success my-2" value="True">
-                                        {{ render_icon("globe", size="1.5em") }}{% trans %}Public{% endtrans %}
-                                    </button>
-                                    <button type="submit" name="ne_type_secret" class="btn btn-outline-danger my-2" value="True">
-                                        {{ render_icon("lock", size="1.5em") }}{% trans %}Secret{% endtrans %}
-                                    </button>
-                                </div>
+                    <div class="card my-2 collapse" id="category-card">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                {{ render_icon("tag", size="1.5em") }}{% trans %}By category{% endtrans %}
+                            </h5>
+                            <h6 id="category" class="card-subtitle mb-2 text-muted">{% trans %}Loading...{% endtrans %}</h6>
+                            <div class="card-text d-flex justify-content-around">
+                                <button type="submit" name="ne_type_public" class="btn btn-outline-success my-2" value="True">
+                                    {{ render_icon("globe", size="1.5em") }}{% trans %}Public{% endtrans %}
+                                </button>
+                                <button type="submit" name="ne_type_secret" class="btn btn-outline-danger my-2" value="True">
+                                    {{ render_icon("lock", size="1.5em") }}{% trans %}Secret{% endtrans %}
+                                </button>
                             </div>
                         </div>
-                    {% endif %}
+                    </div>
                 </form>
 
                 <div class="input-group mb-3">
@@ -98,7 +96,9 @@
 {% block scripts %}
     {{ super() }}
 
-     <script>
+    <script type="text/javascript" src="{{ url_for('static', filename='consts.js') }}"></script>
+
+    <script>
         var highlight_start = null;
         var highlight_end = null;
 
@@ -157,6 +157,17 @@
             $("#condition").val(JSON.stringify(token_list));
             // Update UI
             $("#lemma").html(selection.text());
+            if(selection.length == 1 && selection.is(".candidate")) {
+                category = selection.data("ne-type");
+                $("#ne_type").val(category);
+                if(NE_CODES[category])
+                    $("#category").html(NE_CODES[category]);
+                else 
+                    $("#category").html(category);
+                $("#category-card").show();
+            } else {
+                $("#category-card").hide();
+            }
         }
 
         function onTokenClick(event, token_id, token_depth) {
@@ -207,5 +218,5 @@
             if(statusTxt == "error")
                 $("#annotation-window").text("Error: " + xhr.status + ": " + xhr.statusText);
         });
-    </script> 
+    </script>
 {% endblock %}
