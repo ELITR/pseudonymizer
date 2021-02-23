@@ -28,9 +28,9 @@
         <tr>
             <th data-field="id">{% trans %}ID{% endtrans %}</th>
             <th data-field="type">{% trans %}Type{% endtrans %}</th>
-            <th data-field="condition">{% trans %}Condition{% endtrans %}</th>
+            <th data-field="condition" data-formatter="conditionFormatter">{% trans %}Condition{% endtrans %}</th>
             <th data-field="decision">{% trans %}Decision{% endtrans %}</th>
-            <th data-field="operate" data-formatter="operateFormatter" data-align="center">{% trans %}Actions{% endtrans %}</th>
+            <th data-field="operate" data-formatter="actionFormatter" data-align="center">{% trans %}Actions{% endtrans %}</th>
         </tr>
     </thead>
 </table>
@@ -41,6 +41,7 @@
 
     <script src="https://unpkg.com/bootstrap-table@1.18.2/dist/bootstrap-table.min.js"></script>
     <script src="https://unpkg.com/bootstrap-table@1.18.2/dist/locale/bootstrap-table-cs-CZ.min.js"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='consts.js') }}"></script>
 
     <script>
         $.ajaxSetup({
@@ -58,12 +59,23 @@
             })
         }
 
-        function operateFormatter(value, row, index) {
+        function actionFormatter(value, row, index) {
             return [
             '<button class="btn btn-outline-danger" onclick="remove('+ row.id + ')" title="Remove">',
             '{% trans %}Remove{% endtrans %}',
             '</button>'
             ].join('')
+        }
+
+        function conditionFormatter(value, row, index) {
+            if(value.startsWith("NE_TYPE:")) {
+                ne_value = value.slice(8);
+                if(NE_CODES[ne_value])
+                    return NE_CODES[ne_value];
+                else
+                    return ne_value;
+            } 
+            return value;
         }
 
         var $table = $('#table')

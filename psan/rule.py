@@ -12,7 +12,7 @@ from wtforms.fields.simple import TextAreaField
 
 from psan.auth import login_required
 from psan.db import commit, get_cursor
-from psan.model import AccountType, AnnotationDecision
+from psan.model import AccountType, AnnotationDecision, RuleType
 
 _ = lazy_gettext
 
@@ -42,8 +42,13 @@ def data():
         # Prepare data
         rows = []
         for row in cursor:
-            rows.append({"id": row["id"], "type": row["type"], "condition": ' '.join(
-                row["condition"]), "decision": row["decision"]})
+            # Prepare condition string
+            if row["type"] == RuleType.NE_TYPE.value:
+                condition_str = "NE_TYPE:" + ' '.join(row["condition"])
+            else:
+                condition_str = ' '.join(row["condition"])
+            # Prepare output
+            rows.append({"id": row["id"], "type": row["type"], "condition": condition_str, "decision": row["decision"]})
         # Return output
         return jsonify({"total": cursor.rowcount, "totalNotFiltered": not_filtered, "rows": rows})
 
