@@ -119,7 +119,7 @@ class NameTag(NerInterface):
                         output.write(NameTag.encode_entities(
                             line[text_position:tokens[token_index].start]))
                         if (token_index == 0):
-                            output.write("<sentence>")
+                            output.write(f"<sentence start=\"{token_id}\" end=\"{token_id+len(tokens)}\">")
 
                         # Open entities starting at current token
                         while (ne_index < len(sortedEntities) and sortedEntities[ne_index].start == token_index):

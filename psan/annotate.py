@@ -192,6 +192,8 @@ class RecognizedTagFilter(XMLFilterBase):
         self._window_start = max(0, window_start)
         self._window_end = window_end
         self._in_window = False
+        self._real_start = -1
+        self._real_end = -1
         # State of parser
         self._token_id = -1
         self._nested_depth = 0
@@ -221,10 +223,16 @@ class RecognizedTagFilter(XMLFilterBase):
 
     def startElement(self, name, attrs):
         if name == "sentence":
-            if self._window_start <= self._token_id + 1 <= self._window_end:
+            # Parse sentence info
+            sentence_start = int(attrs.get("start"))
+            sentence_end = int(attrs.get("end"))
+            # Show sentences that intersects with window
+            if not self._in_window and self._window_start <= sentence_start <= self._window_end:
                 self._in_window = True
-            else:
+                self._real_start = sentence_start
+            if self._in_window and self._window_end <= sentence_end:
                 self._in_window = False
+                self._real_end = sentence_end
         elif name == "token":
             self._token_id = int(attrs.get("id"))
 

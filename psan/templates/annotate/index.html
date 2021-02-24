@@ -10,8 +10,14 @@
                 <h2 class="mb-4">
                     {% trans %}Annotation interface{% endtrans %}
                 </h2>
+                <div id="before-window-btn" class="load-ui font-weight-light font-italic text-center p-2 collapse">
+                    {% trans %}... load previous text ...{% endtrans %}
+                </div>
                 <div id="annotation-window">
                     {% trans %}Loading...{% endtrans %}
+                </div>
+                <div id="after-window-btn" class="load-ui font-weight-light font-italic text-center p-2 collapse">
+                    {% trans %}... load following text ...{% endtrans %}
                 </div>
             </div>
 
@@ -99,8 +105,10 @@
     <script type="text/javascript" src="{{ url_for('static', filename='consts.js') }}"></script>
 
     <script>
-        var highlight_start = null;
-        var highlight_end = null;
+        var highlight_start = {{highlight_start if highlight_start is not none else "null"}};
+        var highlight_end = {{highlight_end if highlight_end is not none else "null"}};
+        var win_start = {{win_start}};
+        var win_end = {{win_end}};
 
         function selectInterval(start, end) {
             // Find first element (longest candidate or token)
@@ -231,22 +239,48 @@
             })
         }
 
-        // Load text to annotation window
-        windowDeferred = $.Deferred();
-        $("#annotation-window").load("{{ url_for("annotate.window", doc_id=submission_id, start=win_start, end=win_end) | safe }}", function(responseTxt, statusTxt, xhr){
-            if(statusTxt == "success")
-                {% if highlight_start is not none %}
-                    highlightInterval({{ highlight_start }}, {{ highlight_end }});
-                {% endif %}
-                windowDeferred.resolve()
-            if(statusTxt == "error")
-                $("#annotation-window").text("Error: " + xhr.status + ": " + xhr.statusText);
-        });
+        function loadWindow(start, end) {
+            // Load text to annotation window
+            windowDeferred = $.Deferred();
+            $("#annotation-window").load(`{{ url_for("annotate.window", doc_id=submission_id) | safe }}&start=${start}&end=${end}`, function(responseTxt, statusTxt, xhr) {
+                if(statusTxt == "success") {
+                    if(highlight_start != null) {
+                        // Save values to tmp
+                        tmp_start = highlight_start;
+                        tmp_end = highlight_end;
+                        // Drop global highlight settings (as we have a new text)
+                        highlight_start = null;
+                        highlight_end = null;
+                        highlightInterval(tmp_start, tmp_end);
+                    }
+                    windowDeferred.resolve();
+                    // Show load UI
+                    if(win_start > 0) {
+                        $("#before-window-btn").show();
+                    } else {
+                        $("#before-window-btn").hide();
+                    }
+                    $("#after-window-btn").show();
+                } else {
+                    $("#annotation-window").text("Error: " + xhr.status + ": " + xhr.statusText);
+                }
+            });
 
-        // Load decisions to annotation window
-        decisionsDeferred = $.Deferred();
-        $.get("{{ url_for("annotate.decisions", doc_id=submission_id, start=win_start, end=win_end) | safe }}", 
-                (data) => decisionsDeferred.resolve(data));
-        $.when(windowDeferred, decisionsDeferred).done((window, decisions) => setDecision(decisions));
+            // Load decisions to annotation window
+            decisionsDeferred = $.Deferred();
+            $.get(`{{ url_for("annotate.decisions", doc_id=submission_id) | safe }}&start=${start}&end=${end}`, 
+                    (data) => decisionsDeferred.resolve(data));
+            $.when(windowDeferred, decisionsDeferred).done((window, decisions) => setDecision(decisions));
+        }
+
+        // Load defaults windows
+        loadWindow(win_start, win_end);
+
+        // Register callbacks
+        $("#after-window-btn").click(() => { win_end += 200; loadWindow(win_start, win_end); });
+        $("#before-window-btn").click(() => {
+            win_start = Math.max(0, win_start - 200); 
+            loadWindow(win_start, win_end);
+        });
     </script>
 {% endblock %}
