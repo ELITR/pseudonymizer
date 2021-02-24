@@ -254,13 +254,15 @@
                         highlightInterval(tmp_start, tmp_end);
                     }
                     windowDeferred.resolve();
-                    // Show load UI
-                    if(win_start > 0) {
-                        $("#before-window-btn").show();
-                    } else {
-                        $("#before-window-btn").hide();
-                    }
-                    $("#after-window-btn").show();
+                    {% if is_admin %}
+                        // Show load UI
+                        if(win_start > 0) {
+                            $("#before-window-btn").show();
+                        } else {
+                            $("#before-window-btn").hide();
+                        }
+                        $("#after-window-btn").show();
+                    {% endif %}
                 } else {
                     $("#annotation-window").text("Error: " + xhr.status + ": " + xhr.statusText);
                 }
@@ -276,11 +278,13 @@
         // Load defaults windows
         loadWindow(win_start, win_end);
 
-        // Register callbacks
-        $("#after-window-btn").click(() => { win_end += 200; loadWindow(win_start, win_end); });
-        $("#before-window-btn").click(() => {
-            win_start = Math.max(0, win_start - 200); 
-            loadWindow(win_start, win_end);
-        });
+        {% if is_admin %}
+            // Register callbacks
+            $("#after-window-btn").click(() => { win_end += 200; loadWindow(win_start, win_end); });
+            $("#before-window-btn").click(() => {
+                win_start = Math.max(0, win_start - 200);
+                loadWindow(win_start, win_end);
+            });
+        {% endif %}
     </script>
 {% endblock %}

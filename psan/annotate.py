@@ -4,7 +4,7 @@ from xml import sax  # nosec
 from xml.sax import make_parser  # nosec
 from xml.sax.saxutils import XMLFilterBase, XMLGenerator  # nosec
 
-from flask import Blueprint, g, jsonify, render_template, request
+from flask import Blueprint, g, jsonify, render_template, request, session
 from flask.helpers import url_for
 from flask_babel import gettext
 from werkzeug.exceptions import BadRequest
@@ -59,11 +59,15 @@ def show_candidate(submission_id: int, ref_start: int, ref_end: int):
     # Prepare window size
     win_start = max(ref_start - 200, 0)
     win_end = ref_start + 200
+    # Add permission
+    session["permitted_win_start"] = win_start
+    session["permitted_win_end"] = win_end
     # Prepare web page
     form = AnnotateForm(request.form)
 
+    is_admin = (g.account["type"] == AccountType.ADMIN.value)
     return render_template("annotate/index.html", form=form, submission_id=submission_id,  win_start=win_start, win_end=win_end,
-                           highlight_start=ref_start, highlight_end=ref_end)
+                           highlight_start=ref_start, highlight_end=ref_end, is_admin=is_admin)
 
 
 @bp.route("/window")
@@ -75,6 +79,10 @@ def window():
     end = request.args.get("end", type=int)
     if submission_id is None or start is None or end is None:
         raise BadRequest(f"Missing required parameters {submission_id}, {start}, {end}")
+    # Check window permission
+    is_admin = (g.account["type"] == AccountType.ADMIN.value)
+    if (session["permitted_win_start"] != start or session["permitted_win_end"] != end) and not is_admin:
+        raise BadRequest("Insufficient permissions for this window")
 
     # Find UID
     with get_cursor() as cursor:
@@ -102,6 +110,10 @@ def decisions():
     window_end = request.args.get("end", type=int)
     if submission_id is None or window_start is None or window_end is None:
         raise BadRequest(f"Missing required parameters {submission_id}, {window_start}, {window_end}")
+    # Check window permission
+    is_admin = (g.account["type"] == AccountType.ADMIN.value)
+    if (session["permitted_win_start"] != window_start or session["permitted_win_end"] != window_end) and not is_admin:
+        raise BadRequest("Insufficient permissions for this window")
 
     # Returns decision in defined interval
     decisions = []
