@@ -261,14 +261,6 @@
                         } else {
                             $("#before-window-btn").hide();
                         }
-                        // After button
-                        currentLastTokenId = $(".token:last").attr('id');
-                        if(lastTokenId != currentLastTokenId) {
-                            lastTokenId = currentLastTokenId;
-                            $("#after-window-btn").show();
-                        } else {
-                            $("#after-window-btn").hide();
-                        }
                     {% endif %}
                 } else {
                     $("#annotation-window").text("Error: " + xhr.status + ": " + xhr.statusText);
@@ -284,15 +276,28 @@
 
         // Load defaults windows
         loadWindow(win_start, win_end);
-
         {% if is_admin %}
             // Register callbacks
-            var lastTokenId = null;
-            $("#after-window-btn").click(() => { win_end += 200; loadWindow(win_start, win_end); });
+            // Before
             $("#before-window-btn").click(() => {
                 win_start = Math.max(0, win_start - 200);
                 loadWindow(win_start, win_end);
             });
+            // After
+            var lastTokenId = null;
+            $("#after-window-btn").click(() => { 
+                win_end += 200; 
+                loadWindow(win_start, win_end);
+                // After button
+                currentLastTokenId = $(".token:last").attr('id');
+                if(lastTokenId != currentLastTokenId) {
+                    lastTokenId = currentLastTokenId;
+                    $("#after-window-btn").show();
+                } else {
+                    $("#after-window-btn").hide();
+                } 
+            });
+            $("#after-window-btn").show();
         {% endif %}
     </script>
 {% endblock %}
