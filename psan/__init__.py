@@ -1,5 +1,7 @@
+import os
+
 from flask import (Flask, after_this_request, g, redirect, render_template,
-                   request)
+                   request, send_from_directory)
 from flask_babel import Babel
 from flask_bootstrap import Bootstrap
 from flask_wtf.csrf import CSRFProtect
@@ -39,6 +41,11 @@ def build_app() -> Flask:
     @app.route("/")
     def index():
         return render_template("index.html")
+
+    @app.route('/favicon.ico')
+    def favicon():
+        return send_from_directory(os.path.join(app.root_path, 'static'),
+                                   'favicon.ico', mimetype='image/vnd.microsoft.icon')
 
     # Redirection
     app.add_url_rule("/", endpoint="index")
