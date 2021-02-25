@@ -38,8 +38,7 @@ def index():
             candidate = cursor.fetchone()
             return show_candidate(candidate["submission"], candidate["ref_start"], candidate["ref_end"])
         else:
-            return render_template("annotate/index.html", context_html=_("No document ready for annotation found..."),
-                                   form=AnnotateForm())
+            return render_template("annotate/empty.html")
 
 
 @bp.route("/show")
