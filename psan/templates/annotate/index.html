@@ -226,10 +226,17 @@
                 // Find text intervall
                 selection = selectInterval(entry.start, entry.end);
                 // Decide class according to decision
-                if(entry.decision == "PUBLIC")
-                    cls = "candidate-public";
-                else
-                    cls = "candidate-secret";
+                switch(entry.decision) {
+                    case "PUBLIC":
+                        cls = "candidate-public";
+                        break;
+                    case "SECRET":
+                        cls = "candidate-secret";
+                        break;
+                    case "UNDECIDED":
+                        cls = "candidate"
+                        break;
+                }
                 // Update class
                 if (selection.length == 1) 
                     selection.addClass(cls);
