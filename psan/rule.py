@@ -57,9 +57,15 @@ def data():
 @login_required(role=AccountType.ADMIN)
 def remove(rule_id: int):
     with get_cursor() as cursor:
+        # Find rule type
+        cursor.execute("SELECT type FROM rule WHERE id = %s", (rule_id,))
+        rule_type = cursor.fetchone()["type"]
         # Remove already made annotation
-        cursor.execute("UPDATE annotation SET rule = NULL, decision = %s WHERE rule = %s",
-                       (AnnotationDecision.UNDECIDED.value, rule_id))
+        if rule_type == RuleType.NE_TYPE.value:
+            cursor.execute("UPDATE annotation SET rule = NULL, decision = %s WHERE rule = %s",
+                           (AnnotationDecision.UNDECIDED.value, rule_id))
+        else:
+            cursor.execute("DELETE FROM annotation WHERE rule = %s", (rule_id,))
         # Remove rule
         cursor.execute("DELETE FROM rule WHERE id = %s", (rule_id,))
         commit()
