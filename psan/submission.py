@@ -3,12 +3,13 @@ import os
 import shutil
 import uuid
 
-from flask import current_app, redirect, request, url_for
+from flask import current_app, redirect, request, send_file, url_for
 from flask.blueprints import Blueprint
 from flask.helpers import flash
 from flask.templating import render_template
 from flask_babel import gettext
 from werkzeug.datastructures import CombinedMultiDict
+from werkzeug.exceptions import BadRequest
 from werkzeug.utils import secure_filename
 
 from psan.auth import login_required
@@ -116,3 +117,21 @@ def remove():
         flash(_("Submission removed."))
 
     return redirect(url_for(".index"))
+
+
+@bp.route("/download")
+@login_required(role=AccountType.ADMIN)
+def download():
+    # Parse input params
+    doc_uid = request.args.get("doc_uid", type=str)
+    type = request.args.get("type", type=str)
+    # Check params
+    if doc_uid is None or type is None:
+        raise BadRequest("Missing required parameters")
+    # Check type
+    if type not in [SubmissionStatus.NEW.value]:
+        raise BadRequest("Unsupported type")
+
+    # Send result
+    file = os.path.join(os.getcwd(), get_submission_file(doc_uid, SubmissionStatus[type]))
+    return send_file(file, as_attachment=True, attachment_filename=f"{doc_uid}-{type}.txt")

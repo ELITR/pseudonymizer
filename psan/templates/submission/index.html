@@ -6,7 +6,7 @@
 {% block content %}
     <div class="d-flex justify-content-between align-items-center">
         <h2 class="mb-4">
-            {% trans %}Pseudomize submissions{% endtrans %}
+            {% trans %}Submissions{% endtrans %}
         </h2>
         <a class="btn btn-outline-primary" href="{{ url_for("submission.new") }}">{{ render_icon("upload") }}{% trans %}New submission{% endtrans %}</a>
     </div>
@@ -17,7 +17,7 @@
                 <div class="card-body">
                     <h5 class="card-title">{{ submission["name"] | escape }}</h5>
                     <h6 class="card-subtitle mb-2 text-muted">{{ submission["uid"] }}</h6>
-                    <div class="card-text">
+                    <div class="card-text mb-3">
                         {% if submission["status"]==SubmissionStatus.NEW.value %}
                             {% trans %}Parsing... {% endtrans %}
                         {% elif submission["status"]==SubmissionStatus.RECOGNIZED.value %}
@@ -29,15 +29,21 @@
                             <small> ({{ submission["decided"] }} / {{ submission["candidates"] }}) </small>
                         {% endif %}
                     </div>
-                    <div class="d-flex justify-content-end">
+                    <div class="d-flex">
+                        <button class="btn btn-outline-secondary dropdown-toggle mr-2" type="button" id="downloadMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            {{ render_icon("download") }}
+                        </button>
+                        <div class="dropdown-menu" aria-labelledby="downloadMenuButton">
+                            <a class="dropdown-item" href="{{ url_for(".download", doc_uid=submission["uid"], type=SubmissionStatus.NEW.value) }}" download>{% trans %}Input file{% endtrans %}</a>
+                        </div>
                         {% if submission["status"]!=SubmissionStatus.NEW.value %}
-                            <a href="{{ url_for("annotate.show", doc_id=submission["id"], ref_start=0, ref_end=0) }}" class="btn btn-outline-secondary ml-2" title="{{_("Annotate")}}">{{ render_icon("pencil-square") }}</a>
+                            <a href="{{ url_for("annotate.show", doc_id=submission["id"], ref_start=0, ref_end=0) }}" class="btn btn-outline-secondary mr-2" title="{{_("Annotate")}}">{{ render_icon("pencil-square") }}</a>
                         {% endif %}
-                        <form method="post" action="{{ url_for("submission.remove") }}" class="ml-2">
+                        <form method="post" action="{{ url_for("submission.remove") }}" class="ml-auto">
                             {{ remove_form.csrf_token }}
                             {{ remove_form.uid(value=submission["uid"]) }}
                             <button type="submit" name="submit" class="btn btn-outline-danger" title="{{_("Remove")}}">{{ render_icon("trash") }}</button>
-                        </form> 
+                        </form>
                     </div>
                 </div>
             </div>
