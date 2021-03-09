@@ -44,8 +44,8 @@ def test_reset(client: FlaskClient) -> None:
 
 def test_restricted(client: FlaskClient) -> None:
     for page in ["account.index", "account.delete_account", "account.change_password",
-                 "annotate.index", "annotate.show", "submission.index", "rule.index",
-                 "rule.export", "rule.upload"]:
+                 "annotate.index", "annotate.show", "submission.index", "submission.new",
+                 "submission.download", "rule.index", "rule.export", "rule.upload"]:
         with app.app_context():
             login_redirect(url_for(page), client)
 
