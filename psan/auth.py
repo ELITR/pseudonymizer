@@ -3,9 +3,11 @@ import secrets
 import string
 from typing import Callable, Optional, Union
 
-from flask import (Blueprint, flash, g, redirect, render_template, request,
-                   session, url_for)
+from flask import (Blueprint, current_app, flash, g, redirect, render_template,
+                   request, session, url_for)
 from flask_babel import gettext
+from itsdangerous import BadSignature, BadTimeSignature, URLSafeTimedSerializer
+from werkzeug.exceptions import BadRequest
 from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.utils import escape
 
@@ -17,32 +19,55 @@ from psan.postman import password_reset
 bp = Blueprint("auth", __name__, url_prefix="/auth")
 _ = gettext
 
+_AUTH_TOKEN_SALT = "auth"  # nosec
+REGISTER_TOKEN_NAME = "register"  # nosec
 
-def _login_required_wrapper(user_fnc: Callable, role: Optional[AccountType]) -> Callable:
+
+def _login_required_wrapper(user_fnc: Callable, role: Optional[AccountType], token: Optional[str] = None) -> Callable:
     def wrapper(*args, **kwds):
-        if g.account is None:
+        # Check token override
+        token_data = request.args.get("token", type=str)
+        if token_data and token:
+            s = URLSafeTimedSerializer(current_app.config["TOKEN_SECRET"], _AUTH_TOKEN_SALT)
+            try:
+                token_name, = s.loads(token_data, max_age=current_app.config["TOKEN_MAX_AGE"], salt=_AUTH_TOKEN_SALT)
+            except BadTimeSignature:
+                flash(_("Link has expired. Create a new one."), category="error")
+                return redirect(url_for("index"))
+            except BadSignature:
+                raise BadRequest("Invalid token")
+            if token_name != token:
+                raise BadRequest("Invalid token")
+        elif g.account is None:
             flash(_("Log in needed"), category="info")
             return redirect(url_for("auth.login"))
         elif role and g.account["type"] != role.value:
             flash(_("Insufficient permission"), category="error")
             return redirect(url_for("account.index"))
+        # Show required page if everything pass
         return user_fnc(*args, **kwds)
     return wrapper
 
 
-def login_required(role: Union[Optional[AccountType], Callable] = None):
+def login_required(role: Union[Optional[AccountType], Callable] = None, token: Optional[str] = None):
     """View decorator that redirects anonymous users to the login page."""
 
     # Make it work for @f
     if callable(role):
         user_fnc, role = role, None
-        return functools.update_wrapper(_login_required_wrapper(user_fnc, role), user_fnc)
+        return functools.update_wrapper(_login_required_wrapper(user_fnc, role, token), user_fnc)
     else:
         # Make it work for @f(role)
         def decorating_function(user_fnc):
-            return functools.update_wrapper(_login_required_wrapper(user_fnc, role), user_fnc)
+            return functools.update_wrapper(_login_required_wrapper(user_fnc, role, token), user_fnc)
 
         return decorating_function
+
+
+def generate_auth_token(token_name: str) -> str:
+    """Generates token that can override login_required annotation"""
+    s = URLSafeTimedSerializer(current_app.config["TOKEN_SECRET"], _AUTH_TOKEN_SALT)
+    return s.dumps((token_name,))
 
 
 @bp.before_app_request
@@ -69,6 +94,7 @@ def is_email_unique(cursor, email: str) -> bool:
 
 
 @bp.route("/register", methods=("GET", "POST"))
+@login_required(role=AccountType.ADMIN, token=REGISTER_TOKEN_NAME)
 def register():
     """Register a new account.
     Validates that the email is not already taken. Handles password for security.
