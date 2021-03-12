@@ -1,12 +1,15 @@
 import os
 
 from flask import (Flask, after_this_request, g, redirect, render_template,
-                   request, send_from_directory)
+                   request, send_from_directory, url_for)
 from flask_babel import Babel
 from flask_bootstrap import Bootstrap
 from flask_wtf.csrf import CSRFProtect
+from itsdangerous import URLSafeTimedSerializer
 
 from psan import celery, db
+
+ADMIN_TOKEN_SALT = "admin"  # nosec
 
 
 def build_app() -> Flask:
@@ -62,6 +65,9 @@ def build_app() -> Flask:
     from psan import rule
     app.register_blueprint(rule.bp)
 
+    # Output admin url
+    init_admin_token(app)
+
     return app
 
 
@@ -109,6 +115,14 @@ def init_translations(app: Flask) -> None:
     @babel.localeselector
     def get_locale():
         return g.lang
+
+
+def init_admin_token(app: Flask) -> None:
+    if os.environ.get("ALLOW_TOKEN_REGISTRATION", default="0") == "1":
+        # Create register token
+        s = URLSafeTimedSerializer(app.config["TOKEN_SECRET"], ADMIN_TOKEN_SALT)
+        with app.app_context():
+            app.logger.info(f"You can register new user at {url_for('auth.register', token=s.dumps('register'))}")
 
 
 app = build_app()
