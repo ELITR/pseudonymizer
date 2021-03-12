@@ -41,7 +41,6 @@
                 <a href="{{ url_for("auth.logout") }}"
                    class="btn btn-outline-primary my-2 my-sm-0 mr-auto">{{ _("Log out") }}</a>
             {%- else %}
-                {{ render_nav_item("auth.register", _("Register")) }}
                 {{ render_nav_item("auth.login", _("Log in")) }}
             {%- endif %}
         </div>
