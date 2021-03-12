@@ -1,7 +1,7 @@
 import functools
 import secrets
 import string
-from typing import Optional
+from typing import Callable, Optional, Union
 
 from flask import (Blueprint, flash, g, redirect, render_template, request,
                    session, url_for)
@@ -18,25 +18,31 @@ bp = Blueprint("auth", __name__, url_prefix="/auth")
 _ = gettext
 
 
-def login_required(view=None, role: Optional[AccountType] = None):
-    """View decorator that redirects anonymous users to the login page."""
-
-    # Make it work for @f and @f(role=XYZ), see https://stackoverflow.com/a/36739863
-    if not view:
-        return functools.partial(login_required, role=role)
-
-    @functools.wraps(view)
-    def wrapped_view(**kwargs):
+def _login_required_wrapper(user_fnc: Callable, role: Optional[AccountType]) -> Callable:
+    def wrapper(*args, **kwds):
         if g.account is None:
             flash(_("Log in needed"), category="info")
             return redirect(url_for("auth.login"))
         elif role and g.account["type"] != role.value:
             flash(_("Insufficient permission"), category="error")
             return redirect(url_for("account.index"))
+        return user_fnc(*args, **kwds)
+    return wrapper
 
-        return view(**kwargs)
 
-    return wrapped_view
+def login_required(role: Union[Optional[AccountType], Callable] = None):
+    """View decorator that redirects anonymous users to the login page."""
+
+    # Make it work for @f
+    if callable(role):
+        user_fnc, role = role, None
+        return functools.update_wrapper(_login_required_wrapper(user_fnc, role), user_fnc)
+    else:
+        # Make it work for @f(role)
+        def decorating_function(user_fnc):
+            return functools.update_wrapper(_login_required_wrapper(user_fnc, role), user_fnc)
+
+        return decorating_function
 
 
 @bp.before_app_request
