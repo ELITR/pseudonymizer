@@ -3,8 +3,7 @@
 -- Table
 CREATE TYPE account_type AS ENUM ('USER', 'ADMIN');
 
-CREATE TYPE submission_status AS ENUM ('NEW', 'RECOGNIZED', 'ANNOTATED', 'DONE');
-
+CREATE TYPE submission_status AS ENUM ('NEW', 'RECOGNIZED', 'ANNOTATED', 'DONE'); 
 CREATE TYPE annotation_decision AS ENUM ('PUBLIC', 'SECRET', 'RULE', 'NESTED', 'UNDECIDED');
 
 CREATE TYPE rule_decision AS ENUM ('PUBLIC', 'SECRET');
@@ -17,10 +16,12 @@ CREATE TABLE account (
     id                  SERIAL PRIMARY KEY,
     full_name           TEXT                        NOT NULL,
     type                account_type                NOT NULL,
+    window_size         INT                         NOT NULL,
     email               TEXT                UNIQUE  NOT NULL,
     password            TEXT                        NOT NULL,
     created             TIMESTAMP                   NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CHECK (email LIKE '%@%')
+    CHECK (email LIKE '%@%'),
+    CHECK (window_size > 0)
 );
 
 CREATE TABLE submission (

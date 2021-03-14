@@ -109,9 +109,9 @@ def register():
             flash(_("Form content is not valid."), category="error")
         elif is_email_unique(cursor, form.email.data):
             cursor.execute(
-                "INSERT INTO account (full_name, type, email, password) "
-                "VALUES (%s, %s, %s, %s)",
-                (form.full_name.data, form.type.data, form.email.data,
+                "INSERT INTO account (full_name, type, window_size, email, password) "
+                "VALUES (%s, %s, %s, %s, %s)",
+                (form.full_name.data, form.type.data, form.window_size.data, form.email.data,
                  generate_password_hash(form.password.data)),
             )
             commit()

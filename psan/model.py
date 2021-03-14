@@ -5,7 +5,7 @@ from flask_wtf import FlaskForm
 from flask_wtf.file import FileAllowed, FileField
 from wtforms import (PasswordField, SelectField, StringField, SubmitField,
                      validators)
-from wtforms.fields.html5 import EmailField
+from wtforms.fields.html5 import EmailField, IntegerField
 from wtforms.fields.simple import HiddenField, TextAreaField
 
 _ = lazy_gettext
@@ -57,6 +57,8 @@ class AccountRegisterForm(FlaskForm):
     type = SelectField(_("Account type"),
                        choices=[(AccountType.USER.value, _("User")),
                                 (AccountType.ADMIN.value, _("Admin"))])
+    window_size = IntegerField(_("Text window size"), default=200,
+                               validators=[validators.DataRequired(), validators.number_range(min=0)])
     email = EmailField(_("E-mail address"),
                        validators=email_validators,
                        filters=[strip_whitespace])
@@ -96,7 +98,7 @@ class ChangePasswordForm(FlaskForm):
                                              validators.length(8),
                                              validators.EqualTo("confirm", message=_("Passwords must match"))])
     confirm = PasswordField(_("Repeat new password"), [
-                            validators.DataRequired()])
+        validators.DataRequired()])
     submit = SubmitField(_("Change password"))
 
 
@@ -104,7 +106,7 @@ class UploadForm(FlaskForm):
     name = StringField(_("Submission name"))
     text = TextAreaField(_("Text submission"))
     file = FileField(_("Text file submission"), validators=[
-                     FileAllowed(["txt"], _("*.txt files only"))])
+        FileAllowed(["txt"], _("*.txt files only"))])
     submit = SubmitField(_("Upload"))
 
 
