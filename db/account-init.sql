@@ -19,7 +19,8 @@ CREATE TABLE account (
     type                account_type                NOT NULL,
     email               TEXT                UNIQUE  NOT NULL,
     password            TEXT                        NOT NULL,
-    created             TIMESTAMP                   NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created             TIMESTAMP                   NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CHECK (email LIKE '%@%')
 );
 
 CREATE TABLE submission (
