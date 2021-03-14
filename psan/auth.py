@@ -116,9 +116,14 @@ def register():
             )
             commit()
             cursor.close()
-            session.clear()
+            # Notify user
             flash(_("Registration was successful."), category="message")
-            return redirect(url_for("auth.login"))
+
+            # Redirect to correct page
+            if g.account:
+                return redirect(url_for("account.index"))
+            else:
+                return redirect(url_for("auth.login"))
         else:
             cursor.close()
             form.email.errors.append(_("Value is already taken."))
