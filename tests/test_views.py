@@ -28,13 +28,6 @@ def test_login(client: FlaskClient) -> None:
     assert b"Log in" in response.data
 
 
-def test_register(client: FlaskClient) -> None:
-    with app.app_context():
-        response = client.get(url_for("auth.register"))
-    assert response.status_code == 200
-    assert b"Create a new account" in response.data
-
-
 def test_reset(client: FlaskClient) -> None:
     with app.app_context():
         response = client.get(url_for("auth.reset"))
@@ -43,7 +36,7 @@ def test_reset(client: FlaskClient) -> None:
 
 
 def test_restricted(client: FlaskClient) -> None:
-    for page in ["account.index", "account.delete_account", "account.change_password",
+    for page in ["auth.register", "auth.users", "account.index", "account.delete_account", "account.change_password",
                  "annotate.index", "annotate.show", "submission.index", "submission.new",
                  "submission.download", "rule.index", "rule.export", "rule.upload"]:
         with app.app_context():
