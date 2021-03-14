@@ -1,6 +1,12 @@
 {% extends 'base.html' %}
 {% from 'bootstrap/form.html' import render_form, render_field %}
 
+{% block styles %}
+    {{ super() }}
+
+    <link href="https://unpkg.com/bootstrap-table@1.18.2/dist/bootstrap-table.min.css" rel="stylesheet">
+{% endblock %}
+
 {% block title %}{% trans %}Account{% endtrans %}{% endblock %}
 
 {% block content %}
@@ -11,57 +17,121 @@
         {% endif %}
     </h2>
 
-    <div class="card-columns">
+    <div class="row">
 
-        {# User #}
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title">{{ g.account["full_name"] | escape }}</h5>
-                <div class="card-text">
-                    {%- if g.account["type"] == AccountType.USER.value %}
-                        <p class="mb-0">
-                            {% trans %}User account{% endtrans %}
-                        </p>
-                    {%- elif g.account["type"] == AccountType.ADMIN.value %}
-                        <p class="mb-0">
-                            {% trans %}Administrator account{% endtrans %}
-                        </p>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-
-        {# Login #}
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title">{% trans %}Login{% endtrans %}</h5>
-                <div class="card-text">
-                    {{ g.account["email"] | escape }}
-                    <div class="d-flex mt-3">
-                        <a href="{{ url_for(".delete_account") }}" class="btn btn-outline-danger mr-3">
-                            {% trans %}Delete account{% endtrans %}
-                        </a>
-                        <a href="{{ url_for(".change_password") }}" class="btn btn-outline-primary ml-auto">
-                            {% trans %}Change password{% endtrans %}
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        {# Users #}
-        {%- if g.account["type"] == AccountType.ADMIN.value %}       
-            <div class="card">
+        <div class="col-md-4">
+            {# User #}
+            <div class="card mb-3">
                 <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <h5 class="card-title">{% trans %}Users{% endtrans %}</h5>
-                        <a href="{{ url_for("auth.register") }}" class="btn btn-outline-primary">
-                            {% trans %}+{% endtrans %}
-                        </a>
-                    </div>
+                    <h5 class="card-title">{{ g.account["full_name"] | escape }}</h5>
                     <div class="card-text">
+                        {%- if g.account["type"] == AccountType.USER.value %}
+                            <p class="mb-0">
+                                {% trans %}User account{% endtrans %}
+                            </p>
+                        {%- elif g.account["type"] == AccountType.ADMIN.value %}
+                            <p class="mb-0">
+                                {% trans %}Administrator account{% endtrans %}
+                            </p>
+                        {% endif %}
                     </div>
                 </div>
             </div>
-        {% endif %}
+
+            {# Login #}
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">{% trans %}Login{% endtrans %}</h5>
+                    <div class="card-text">
+                        {{ g.account["email"] | escape }}
+                        <div class="d-flex mt-3">
+                            <a href="{{ url_for(".delete_account") }}" class="btn btn-outline-danger mr-3">
+                                {% trans %}Delete account{% endtrans %}
+                            </a>
+                            <a href="{{ url_for(".change_password") }}" class="btn btn-outline-primary ml-auto">
+                                {% trans %}Change password{% endtrans %}
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="col-md-8">
+            {# Users #}
+            {%- if g.account["type"] == AccountType.ADMIN.value %}  
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <h5 class="card-title">{% trans %}Users{% endtrans %}</h5>
+                            <a href="{{ url_for("auth.register") }}" class="btn btn-outline-primary">
+                                {% trans %}+{% endtrans %}
+                            </a>
+                        </div>
+                        <div class="card-text">
+                            <div class="mt-2">
+                                <table
+                                    id="userTable"
+                                    data-toggle="table"
+                                    data-ajax="ajaxRequest"
+                                    data-search="true"
+                                    data-id-field="id"
+                                    data-pagination="true">
+                                    <thead>
+                                        <tr>
+                                            <th data-field="name">{% trans %}Name{% endtrans %}</th>
+                                            <th data-field="type">{% trans %}Type{% endtrans %}</th>
+                                            <th data-field="operate" data-formatter="actionFormatter" data-align="center">{% trans %}Actions{% endtrans %}</th>
+                                        </tr>
+                                    </thead>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+{% endblock %}
+
+{% block scripts %}
+    {{ super() }}
+
+    <script src="https://unpkg.com/bootstrap-table@1.18.2/dist/bootstrap-table.min.js"></script>
+    
+    <script>
+        $.ajaxSetup({
+            beforeSend: function(xhr, settings) {
+                if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                    xhr.setRequestHeader("X-CSRFToken", "{{ csrf_token() }}");
+                }
+            }
+        });
+        
+        function ajaxRequest(params) {
+            var url = '{{url_for("auth.users")}}'
+            $.get(url + '?' + $.param(params.data)).then(function (res) {
+                params.success(res)
+            })
+        }
+
+        function actionFormatter(value, row, index) {
+            return [
+            '<button class="btn btn-outline-danger" onclick="removeUser('+ row.id + ')" title="Remove">',
+            '{% trans %}Remove{% endtrans %}',
+            '</button>'
+            ].join('')
+        }
+
+        var $table = $('#userTable')
+
+        function removeUser(row_id) {
+            $.ajax({type: "POST", url: "{{ url_for("auth.user_remove") }}/" + row_id, success: function(result){
+                $table.bootstrapTable('remove', {
+                    field: 'id',
+                    values: [row_id]
+                })
+            }});
+        }
+    </script>
 {% endblock %}

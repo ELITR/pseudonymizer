@@ -3,8 +3,8 @@ import secrets
 import string
 from typing import Callable, Optional, Union
 
-from flask import (Blueprint, current_app, flash, g, redirect, render_template,
-                   request, session, url_for)
+from flask import (Blueprint, current_app, flash, g, jsonify, redirect,
+                   render_template, request, session, url_for)
 from flask_babel import gettext
 from itsdangerous import BadSignature, BadTimeSignature, URLSafeTimedSerializer
 from werkzeug.exceptions import BadRequest
@@ -156,6 +156,26 @@ def login():
                 return redirect(url_for("account.index"))
 
     return render_template("auth/login.html", form=form)
+
+
+@bp.route("/users")
+@login_required(role=AccountType.ADMIN)
+def users():
+    # Prepare data
+    with get_cursor() as cursor:
+        cursor.execute("SELECT id, full_name, email, type FROM account")
+        # Prepare data
+        rows = []
+        for row in cursor:
+            rows.append({"id": row["id"], "name": f"{row['full_name']} ({row['email']})", "type": row["type"]})
+    # Return output
+    return jsonify({"total": cursor.rowcount, "totalNotFiltered": cursor.rowcount, "rows": rows})
+
+
+@bp.route("/user/remove")
+@login_required(role=AccountType.ADMIN)
+def user_remove():
+    pass
 
 
 @bp.route("/logout")
