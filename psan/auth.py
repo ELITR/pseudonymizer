@@ -163,11 +163,12 @@ def login():
 def users():
     # Prepare data
     with get_cursor() as cursor:
-        cursor.execute("SELECT id, full_name, email, type FROM account")
+        cursor.execute("SELECT id, full_name, email, type, window_size FROM account")
         # Prepare data
         rows = []
         for row in cursor:
-            rows.append({"id": row["id"], "name": f"{row['full_name']} ({row['email']})", "type": row["type"]})
+            rows.append({"id": row["id"], "name": f"{row['full_name']} ({row['email']})", "type": row["type"],
+                         "window_size": row["window_size"]})
     # Return output
     return jsonify({"total": cursor.rowcount, "totalNotFiltered": cursor.rowcount, "rows": rows})
 

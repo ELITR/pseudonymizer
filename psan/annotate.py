@@ -56,8 +56,8 @@ def show():
 
 def show_candidate(submission_id: int, ref_start: int, ref_end: int):
     # Prepare window size
-    win_start = max(ref_start - 200, 0)
-    win_end = ref_start + 200
+    win_start = max(ref_start - g.account["window_size"], 0)
+    win_end = ref_start + g.account["window_size"]
     # Add permission
     session["permitted_win_start"] = win_start
     session["permitted_win_end"] = win_end
