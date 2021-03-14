@@ -126,7 +126,7 @@
         var $table = $('#userTable')
 
         function removeUser(row_id) {
-            $.ajax({type: "POST", url: "{{ url_for("auth.user_remove") }}/" + row_id, success: function(result){
+            $.ajax({type: "POST", url: "/auth/user/remove/" + row_id, success: function(result){
                 $table.bootstrapTable('remove', {
                     field: 'id',
                     values: [row_id]

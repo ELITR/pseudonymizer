@@ -158,7 +158,7 @@ def login():
     return render_template("auth/login.html", form=form)
 
 
-@bp.route("/users")
+@bp.route("/user")
 @login_required(role=AccountType.ADMIN)
 def users():
     # Prepare data
@@ -172,10 +172,15 @@ def users():
     return jsonify({"total": cursor.rowcount, "totalNotFiltered": cursor.rowcount, "rows": rows})
 
 
-@bp.route("/user/remove")
+@bp.route("/user/remove/<int:user_id>",  methods=['POST'])
 @login_required(role=AccountType.ADMIN)
-def user_remove():
-    pass
+def user_remove(user_id: int):
+    with get_cursor() as cursor:
+        cursor.execute("DELETE FROM account WHERE id = %s", (user_id,))
+        commit()
+
+    # Return OK reply
+    return jsonify({"stutus": "ok"})
 
 
 @bp.route("/logout")
