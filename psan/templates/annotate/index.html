@@ -49,17 +49,17 @@
                         </div>
                     </div>
 
-                    {# Context #}
+                    {# Token #}
                     <div class="card my-2">
                         <div class="card-body">
                             <h5 class="card-title">
-                                {{ render_icon("text-paragraph", size="1.5em") }}{% trans %}By context{% endtrans %}
+                                {{ render_icon("text-paragraph", size="1.5em") }}{% trans %}By token{% endtrans %}
                             </h5>
                             <div class="card-text d-flex justify-content-around">
-                                <button type="submit" name="ctx_public" class="btn btn-outline-success my-2" value="True">
+                                <button type="submit" name="token_public" class="btn btn-outline-success my-2" value="True">
                                     {{ render_icon("globe", size="1.5em") }}{% trans %}Public{% endtrans %}
                                 </button>
-                                <button type="submit" name="ctx_secret" class="btn btn-outline-danger my-2" value="True">
+                                <button type="submit" name="token_secret" class="btn btn-outline-danger my-2" value="True">
                                     {{ render_icon("lock", size="1.5em") }}{% trans %}Secret{% endtrans %}
                                 </button>
                             </div>

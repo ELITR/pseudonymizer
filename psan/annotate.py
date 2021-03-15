@@ -134,7 +134,7 @@ def set():
     form = AnnotateForm(request.form)
     if form.validate():
         # Process decision
-        if form.ctx_public.data or form.lemma_public.data or form.ne_type_public.data:
+        if form.token_public.data or form.lemma_public.data or form.ne_type_public.data:
             decision = AnnotationDecision.PUBLIC
         else:
             decision = AnnotationDecision.SECRET
