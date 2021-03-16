@@ -27,9 +27,12 @@
                 <div class="card my-2 collapse" id="info-card">
                     <div class="card-body">
                         <h5 class="card-title">
-                            {{ render_icon("info", size="1.5em") }}{% trans %}Current status{% endtrans %}
+                            {{ render_icon("info-square", size="1.25em") }}{% trans %}Current decision{% endtrans %}
                         </h5>
-                        <h6 id="status" class="card-subtitle mb-2 text-muted">{% trans %}Unknown{% endtrans %}</h6>
+                        {# Decision #}
+                        <p class="card-text mb-0"><span id="info-status">{% trans %}Unknown{% endtrans %}</span></p>
+                        {# Rules #}
+                        <small id="info-rule" class="card-text mt-2">{% trans %}Using rule:{% endtrans %} <span id="info-condition">{% trans %}Loading...{% endtrans %}</span></small>
                     </div>
                 </div>
 
@@ -157,7 +160,7 @@
         }
 
         function highlightInterval(ref_start, ref_end) {
-            // Discard previous highlightion
+            // Discard previous highlighted
             if (highlight_start != null) {
                 selection = selectInterval(highlight_start, highlight_end);
                 selection.unwrap();
@@ -194,17 +197,7 @@
                 }   
                 // Check if selection is already decided
                 if(selection.data("decision")) {
-                    switch(selection.data("decision")) {
-                        case "PUBLIC":
-                            $("#status").html("{{_("Public")}}");
-                            break;
-                        case "SECRET":
-                            $("#status").html("{{_("Secret")}}");
-                            break;
-                        default:
-                            $("#status").html("{{_("Unknown")}}");
-                            break;
-                    }
+                    loadRule(ref_start, ref_end, selection.data("decision"));
                     $("#info-card").show();
                 } else {
                     $("#info-card").hide();
@@ -313,6 +306,35 @@
             $.get(`{{ url_for("annotate.decisions", doc_id=submission_id) | safe }}&start=${start}&end=${end}`, 
                     (data) => decisionsDeferred.resolve(data));
             $.when(windowDeferred, decisionsDeferred).done((window, decisions) => setDecision(decisions));
+        }
+
+        function loadRule(start, end, decision) {
+            // Show decision
+            switch(decision) {
+                case "PUBLIC":
+                    $("#info-status").html("{{_("Public")}}");
+                    break;
+                case "SECRET":
+                    $("#info-status").html("{{_("Secret")}}");
+                    break;
+                default:
+                    $("#info-status").html("{{_("Unknown")}}");
+                    break;
+            }
+            // Load details
+            $.get(`{{ url_for("annotate.rule", doc_id=submission_id) | safe }}&start=${start}&end=${end}`, 
+                    (data) => {
+                        if(data.type) {
+                            if(data.type == "NE_TYPE" && NE_CODES[data.condition]) {
+                                $("#info-condition").html(NE_CODES[data.condition]);
+                            } else {
+                                $("#info-condition").html(data.condition.join(" "));
+                            }
+                            $("#info-rule").show();
+                        } else {
+                            $("#info-rule").hide();
+                        }
+                    });
         }
 
         // Load defaults windows

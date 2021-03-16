@@ -128,6 +128,30 @@ def decisions():
     return jsonify(decisions)
 
 
+@bp.route("/rule")
+@login_required()
+def rule():
+    # Parse input params
+    submission_id = request.args.get("doc_id", type=int)
+    start = request.args.get("start", type=int)
+    end = request.args.get("end", type=int)
+    if submission_id is None or start is None or end is None:
+        raise BadRequest(f"Missing required parameters {submission_id}, {start}, {end}")
+    # Check window permission
+    is_admin = (g.account["type"] == AccountType.ADMIN.value)
+    if (session["permitted_win_start"] != start or session["permitted_win_end"] != end) and not is_admin:
+        raise BadRequest("Insufficient permissions for this window")
+
+    # Returns decision in defined interval
+    with get_cursor() as cursor:
+        cursor.execute("SELECT rule.type, rule.condition"
+                       " FROM annotation LEFT JOIN rule ON annotation.rule = rule.id"
+                       " WHERE submission = %s and ref_start = %s and ref_end = %s",
+                       (submission_id, start, end))
+        row = cursor.fetchone()
+        return jsonify({"type": row["type"], "condition": row["condition"]})
+
+
 @bp.route("/set", methods=['POST'])
 @login_required()
 def set():
