@@ -278,15 +278,6 @@
             windowDeferred = $.Deferred();
             $("#annotation-window").load(`{{ url_for("annotate.window", doc_id=submission_id) | safe }}&start=${start}&end=${end}`, function(responseTxt, statusTxt, xhr) {
                 if(statusTxt == "success") {
-                    if(highlight_start != null) {
-                        // Save values to tmp
-                        tmp_start = highlight_start;
-                        tmp_end = highlight_end;
-                        // Drop global highlight settings (as we have a new text)
-                        highlight_start = null;
-                        highlight_end = null;
-                        highlightInterval(tmp_start, tmp_end);
-                    }
                     windowDeferred.resolve();
                     {% if is_admin %}
                         // Before button
@@ -305,7 +296,18 @@
             decisionsDeferred = $.Deferred();
             $.get(`{{ url_for("annotate.decisions", doc_id=submission_id) | safe }}&start=${start}&end=${end}`, 
                     (data) => decisionsDeferred.resolve(data));
-            $.when(windowDeferred, decisionsDeferred).done((window, decisions) => setDecision(decisions));
+            $.when(windowDeferred, decisionsDeferred).done((window, decisions) => { 
+                setDecision(decisions);
+                if(highlight_start != null) {
+                    // Save values to tmp
+                    tmp_start = highlight_start;
+                    tmp_end = highlight_end;
+                    // Drop global highlight settings (as we have a new text)
+                    highlight_start = null;
+                    highlight_end = null;
+                    highlightInterval(tmp_start, tmp_end);
+                }
+            });
         }
 
         function loadRule(start, end, decision) {
