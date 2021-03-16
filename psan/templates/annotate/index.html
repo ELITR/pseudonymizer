@@ -23,6 +23,16 @@
 
             {# Annotation UI #}
             <div class="col-12 col-lg-4 col-xl-3">
+                {# Info card #}
+                <div class="card my-2 collapse" id="info-card">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            {{ render_icon("info", size="1.5em") }}{% trans %}Current status{% endtrans %}
+                        </h5>
+                        <h6 id="status" class="card-subtitle mb-2 text-muted">{% trans %}Unknown{% endtrans %}</h6>
+                    </div>
+                </div>
+
                 <form method="POST" action="{{ url_for(".set")}}">
                     {{ form.csrf_token }}
                     {{ form.submission_id(value=submission_id) }}
@@ -86,14 +96,14 @@
                 </form>
 
                 <div class="input-group mb-3">
-                <div class="input-group-prepend">
-                    <label class="input-group-text" for="inputGroupSelect01">{% trans %}Snap to{% endtrans %}</label>
-                </div>
-                <select class="custom-select" id="snapSelect">
-                    <option value="candidate">{% trans %}candidate{% endtrans %}</option>
-                    <option value="token">{% trans %}token{% endtrans %}</option>
-                </select>
-                </div>
+                    <div class="input-group-prepend">
+                        <label class="input-group-text" for="inputGroupSelect01">{% trans %}Snap to{% endtrans %}</label>
+                    </div>
+                    <select class="custom-select" id="snapSelect">
+                        <option value="candidate">{% trans %}candidate{% endtrans %}</option>
+                        <option value="token">{% trans %}token{% endtrans %}</option>
+                    </select>
+                </div>    
             </div>
         </div>
     </div>
@@ -169,14 +179,36 @@
             $("#condition").val(JSON.stringify(token_list));
             // Update UI
             $("#lemma").html(selection.text());
-            if(selection.length == 1 && selection.is(".candidate")) {
-                category = selection.data("ne-type");
-                $("#ne_type").val(category);
-                if(NE_CODES[category])
-                    $("#category").html(NE_CODES[category]);
-                else 
-                    $("#category").html(category);
-                $("#category-card").show();
+            if(selection.length == 1) {
+                // Check if selection has ne_type
+                if (selection.is(".candidate")) {
+                    category = selection.data("ne-type");
+                    $("#ne_type").val(category);
+                    if(NE_CODES[category])
+                        $("#category").html(NE_CODES[category]);
+                    else 
+                        $("#category").html(category);
+                    $("#category-card").show();
+                } else {
+                    $("#category-card").hide();
+                }   
+                // Check if selection is already decided
+                if(selection.data("decision")) {
+                    switch(selection.data("decision")) {
+                        case "PUBLIC":
+                            $("#status").html("{{_("Public")}}");
+                            break;
+                        case "SECRET":
+                            $("#status").html("{{_("Secret")}}");
+                            break;
+                        default:
+                            $("#status").html("{{_("Unknown")}}");
+                            break;
+                    }
+                    $("#info-card").show();
+                } else {
+                    $("#info-card").hide();
+                }
             } else {
                 $("#category-card").hide();
             }
@@ -223,7 +255,7 @@
 
         function setDecision(decisions) {
             decisions.forEach(entry => {
-                // Find text intervall
+                // Find text interval
                 selection = selectInterval(entry.start, entry.end);
                 // Decide class according to decision
                 switch(entry.decision) {
@@ -238,11 +270,13 @@
                         break;
                 }
                 // Update class
-                if (selection.length == 1) 
+                if (selection.length == 1) {
                     selection.addClass(cls);
-                else
+                    selection.attr("data-decision", entry.decision);
+                } else {
                     selection.wrapAll('<span class="wrapper ' + cls + '" data-start="' + entry.start
-                                       +'" data-end="' + entry.end + '" />');
+                                       +'" data-end="' + entry.end + '" / data-decision="' + entry.decision +'">');
+                }
             })
         }
 
