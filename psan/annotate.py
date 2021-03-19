@@ -4,7 +4,8 @@ from xml import sax  # nosec
 from xml.sax import make_parser  # nosec
 from xml.sax.saxutils import XMLFilterBase, XMLGenerator  # nosec
 
-from flask import Blueprint, g, jsonify, render_template, request, session
+from flask import (Blueprint, g, jsonify, make_response, render_template,
+                   request, session)
 from flask.helpers import url_for
 from flask_babel import gettext
 from werkzeug.exceptions import BadRequest
@@ -207,14 +208,11 @@ def set():
                 from psan.celery import decide
                 decide.auto_decide_remaining.delay(form.submission_id.data)
 
-        # Show another tag
-        if g.account["type"] != AccountType.ADMIN.value:
-            return redirect(url_for(".index"))
-        else:
-            return redirect(url_for(".show", doc_id=form.submission_id.data, ref_start=form.ref_start.data,
-                                    ref_end=form.ref_end.data))
+        # Send OK reply
+        return jsonify({"status": "ok"})
     else:
-        return redirect(url_for(".index"))
+        # Send error
+        return make_response(jsonify({"status": "Invalid form data"}), 400)
 
 
 class RecognizedTagFilter(XMLFilterBase):

@@ -36,7 +36,7 @@
                     </div>
                 </div>
 
-                <form method="POST" action="{{ url_for(".set")}}">
+                <form method="POST" id="annotationForm">
                     {{ form.csrf_token }}
                     {{ form.submission_id(value=submission_id) }}
                     {{ form.ref_start(value=ref_start) }}
@@ -364,5 +364,22 @@
             });
             $("#after-window-btn").show();
         {% endif %}
+
+        $("#annotationForm").submit(function (e) {
+            // Send form data using AJAX
+            $.ajax({
+                type: "POST",
+                url: "{{ url_for('.set') }}",
+                data: $('#annotationForm').serialize() + "&" + e.originalEvent.submitter.name + "=1",
+                success: (data) => {
+                    // Reload text window on success
+                    loadWindow(win_start, win_end);
+                },
+                error: (data) => {
+                    console.log(data);
+                }
+            });
+            e.preventDefault(); // block the traditional submission of the form.
+        });
     </script>
 {% endblock %}
