@@ -4,12 +4,10 @@ from xml import sax  # nosec
 from xml.sax import make_parser  # nosec
 from xml.sax.saxutils import XMLFilterBase, XMLGenerator  # nosec
 
-from flask import (Blueprint, g, jsonify, make_response, render_template,
-                   request, session)
-from flask.helpers import url_for
+from flask import (Blueprint, Response, current_app, g, jsonify, make_response,
+                   render_template, request, session)
 from flask_babel import gettext
 from werkzeug.exceptions import BadRequest
-from werkzeug.utils import redirect
 
 from psan.auth import login_required
 from psan.db import commit, get_cursor
@@ -84,21 +82,28 @@ def window():
     if (session["permitted_win_start"] != start or session["permitted_win_end"] != end) and not is_admin:
         raise BadRequest("Insufficient permissions for this window")
 
-    # Find UID
-    with get_cursor() as cursor:
-        cursor.execute("SELECT uid FROM submission WHERE id = %s", (submission_id,))
-        submission_uid = cursor.fetchone()["uid"]
-    filename = get_submission_file(submission_uid, SubmissionStatus.RECOGNIZED)
+    # Don't generate text window each time (use cache instead)
+    if request.if_none_match and f"{submission_id}-{start}-{end}" in request.if_none_match:
+        return Response(status=304)  # Return HTTP 304 (Not modified)
+    else:
+        # Find UID
+        with get_cursor() as cursor:
+            cursor.execute("SELECT uid FROM submission WHERE id = %s", (submission_id,))
+            submission_uid = cursor.fetchone()["uid"]
+        filename = get_submission_file(submission_uid, SubmissionStatus.RECOGNIZED)
 
-    # Transform line for UI
-    output = StringIO()
-    generator = XMLGenerator(output)
-    filter = RecognizedTagFilter(start, end, make_parser())
-    filter.setContentHandler(generator)
-    # Line has to be surrounded with XML tags
-    sax.parse(filename, filter)
-
-    return output.getvalue()
+        # Transform line for UI
+        output = StringIO()
+        generator = XMLGenerator(output)
+        filter = RecognizedTagFilter(start, end, make_parser())
+        filter.setContentHandler(generator)
+        # Line has to be surrounded with XML tags
+        sax.parse(filename, filter)
+        # Prepare response
+        response = make_response(output.getvalue())
+        # Enable browser cache
+        response.set_etag(f"{submission_id}-{start}-{end}")
+        return response
 
 
 @bp.route("/decisions")

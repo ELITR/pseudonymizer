@@ -276,8 +276,11 @@
         function loadWindow(start, end) {
             // Load text to annotation window
             windowDeferred = $.Deferred();
-            $("#annotation-window").load(`{{ url_for("annotate.window", doc_id=submission_id) | safe }}&start=${start}&end=${end}`, function(responseTxt, statusTxt, xhr) {
-                if(statusTxt == "success") {
+            $.ajax({
+                url: `{{ url_for("annotate.window", doc_id=submission_id) | safe }}&start=${start}&end=${end}`,
+                cache: true,
+                success: function(data) {
+                    $("#annotation-window").html(data);
                     windowDeferred.resolve();
                     {% if is_admin %}
                         // Before button
@@ -287,7 +290,8 @@
                             $("#before-window-btn").hide();
                         }
                     {% endif %}
-                } else {
+                },
+                error: (responseTxt, statusTxt, xhr) => {
                     $("#annotation-window").text("Error: " + xhr.status + ": " + xhr.statusText);
                 }
             });
@@ -375,8 +379,8 @@
                     // Reload text window on success
                     loadWindow(win_start, win_end);
                 },
-                error: (data) => {
-                    console.log(data);
+                error: (responseTxt, statusTxt, xhr) => {
+                    console.log("AJAX error: " + xhr.status + ": " + xhr.statusText);
                 }
             });
             e.preventDefault(); // block the traditional submission of the form.
