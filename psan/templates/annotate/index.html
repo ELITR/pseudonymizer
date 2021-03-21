@@ -222,16 +222,13 @@
             } else {
                 highlightInterval(token_id, token_id);
             }
-            // Stop event
-            event.stopPropagation();
-        }
+       }
 
         function onTokenIntervalClick(event, start_token_id, end_token_id) {
             // Use only in snap to candidates mode
-            if ($("#snapSelect option:selected").val() == "tokens") {
+            if ($("#snapSelect option:selected").val() == "token") {
                 return;
             }
-            event.stopPropagation();
             // Extend interval with shift key
             if (event.shiftKey) {
                 if(end_token_id < highlight_start) {
