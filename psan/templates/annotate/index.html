@@ -180,10 +180,11 @@
                 token_list.push($(this).text());
             });
             $("#condition").val(JSON.stringify(token_list));
+
             // Update UI
             $("#lemma").html(selection.text());
             if(selection.length == 1) {
-                // Check if selection has ne_type
+                // Process name entity type
                 if (selection.is(".candidate")) {
                     category = selection.data("ne-type");
                     $("#ne_type").val(category);
@@ -195,14 +196,10 @@
                 } else {
                     $("#category-card").hide();
                 }   
-                // Check if selection is already decided
-                if(selection.data("decision")) {
-                    loadRule(ref_start, ref_end, selection.data("decision"));
-                    $("#info-card").show();
-                } else {
-                    $("#info-card").hide();
-                }
+                // Process current annotation
+                loadAnnotation(ref_start, ref_end, selection.data("decision"));
             } else {
+                $("#info-card").hide();
                 $("#category-card").hide();
             }
         }
@@ -312,9 +309,13 @@
             });
         }
 
-        function loadRule(start, end, decision) {
+        function loadAnnotation(start, end, decision) {
             // Show decision
             switch(decision) {
+                case "UNDECIDED":
+                case undefined:
+                    $("#info-card").hide();
+                    return;
                 case "PUBLIC":
                     $("#info-status").html("{{_("Public")}}");
                     break;
@@ -325,7 +326,8 @@
                     $("#info-status").html("{{_("Unknown")}}");
                     break;
             }
-            // Load details
+            // Load rule details
+            $("#info-rule").hide();
             $.get(`{{ url_for("annotate.rule", doc_id=submission_id) | safe }}&start=${start}&end=${end}`, 
                     (data) => {
                         if(data.type) {
@@ -335,14 +337,15 @@
                                 $("#info-condition").html(data.condition.join(" "));
                             }
                             $("#info-rule").show();
-                        } else {
-                            $("#info-rule").hide();
                         }
                     });
+            // Show decision in UI
+            $("#info-card").show();
         }
 
         // Load defaults windows
         loadWindow(win_start, win_end);
+
         {% if is_admin %}
             // Register callbacks
             // Before
