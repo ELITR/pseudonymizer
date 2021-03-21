@@ -4,7 +4,7 @@ from xml import sax  # nosec
 from xml.sax import make_parser  # nosec
 from xml.sax.saxutils import XMLFilterBase, XMLGenerator  # nosec
 
-from flask import (Blueprint, Response, current_app, g, jsonify, make_response,
+from flask import (Blueprint, Response, g, jsonify, make_response,
                    render_template, request, session)
 from flask_babel import gettext
 from werkzeug.exceptions import BadRequest
