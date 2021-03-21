@@ -267,8 +267,9 @@
                     selection.addClass(cls);
                     selection.attr("data-decision", entry.decision);
                 } else {
-                    selection.wrapAll('<span class="wrapper ' + cls + '" data-start="' + entry.start
-                                       +'" data-end="' + entry.end + '" / data-decision="' + entry.decision +'">');
+                    selection.wrapAll('<span class="wrapper ' + cls + '" onclick="onTokenIntervalClick(event, ' + entry.start +
+                                      ' ,'+entry.end+')" data-start="' + entry.start + '" data-end="' + entry.end + 
+                                      '" data-decision="' + entry.decision +'">');
                 }
             })
         }
