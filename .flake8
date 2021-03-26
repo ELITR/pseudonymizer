@@ -1,4 +1,4 @@
 [flake8]
-exclude = venv,__pycache__
+exclude = venv,__pycache__,ner-eval
 max-line-length = 130
 max-complexity = 10

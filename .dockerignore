@@ -4,6 +4,7 @@ __pycache__/
 
 # Unneded code
 db/
+ner-eval/
 # Docker
 docker-compose*.yaml
 Dockerfile
