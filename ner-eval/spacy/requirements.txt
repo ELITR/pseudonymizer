@@ -1,0 +1,4 @@
+pip 
+setuptools 
+wheel
+spacy==3.0.5
