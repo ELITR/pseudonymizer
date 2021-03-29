@@ -20,4 +20,4 @@ test:
 	$(VENV); PYTHONPATH=. python3 nametag/test.py
 	test -e nametag.output
 
-.PHONY: venv clean
+.PHONY: venv clean test
