@@ -14,6 +14,7 @@ setup: venv
 
 clean:
 	rm -r venv
+	rm *.output
 
 test:
 	$(VENV); PYTHONPATH=. python3 nametag/test.py
