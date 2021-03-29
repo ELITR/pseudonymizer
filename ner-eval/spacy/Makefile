@@ -1,15 +1,11 @@
-VENV=. venv/bin/activate
+.DEFAULT_GOAL := setup
 
 model:
-	$(VENV); python3 -m spacy download en_core_web_sm
+	python3 -m spacy download en_core_web_sm
 
 # Python venv environment
-venv/bin/activate: requirements.txt
-	test -d venv || python3 -m venv venv
-	$(VENV); pip install -Ur requirements.txt
-	touch venv/bin/activate
-
-venv: venv/bin/activate
+venv: requirements.txt
+	pip install -Ur requirements.txt
 
 setup: venv model
 

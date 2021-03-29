@@ -1,4 +1,4 @@
-VENV=. venv/bin/activate
+.DEFAULT_GOAL := setup
 
 # Model
 model:
@@ -6,13 +6,8 @@ model:
 	unzip english-conll-140408.zip 
 	cp english-conll-140408/english-conll-140408.ner .
 
-# Python venv environment
-venv/bin/activate: requirements.txt
-	test -d venv || python3 -m venv venv
-	$(VENV); pip install -Ur requirements.txt
-	touch venv/bin/activate
-
-venv: venv/bin/activate
+venv: requirements.txt
+	pip install -Ur requirements.txt
 
 setup: venv model
 
