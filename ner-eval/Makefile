@@ -15,4 +15,8 @@ setup: venv
 clean:
 	rm -r venv
 
+test:
+	$(VENV); PYTHONPATH=. python3 nametag/test.py
+	test -e nametag.output
+
 .PHONY: venv clean
