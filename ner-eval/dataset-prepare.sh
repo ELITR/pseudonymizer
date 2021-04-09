@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 cd dataset
 
 # Create lang folders
@@ -15,7 +15,7 @@ do
 	name=$(jq -r .name <<< "${line}")
 
 	# Parsing
-	file=$lang/$meeting/${name}/$date
+	file="$lang/$meeting/${name}/${date}.in"
 	mkdir -p "$(dirname "$file")"
 	echo -n "Writing $file"
 	jq -r '.annotated_content' <<< "${line}" > "$file"
@@ -24,13 +24,24 @@ do
 done
 
 # Data info
-echo "Found $(find -mindepth 3 -type d | wc -l) texts"
+echo "[DONE] $(find -mindepth 3 -type d | wc -l) found"
 
 # Clear duplicities (leaving only newest files)
 find -mindepth 3 -type d | while read file; do
-    todo=$(ls "$file" | head -n-1 | wc -l)
+    todo=$(ls "$file" | grep .in | head -n-1 | wc -l)
 	if [ $todo -gt 0 ]; then
 		echo "Removing $todo duplicties from $file"
-		ls "$file" | head -n-1 | awk "{print \"$file/\"\$1}" | xargs -d "\n" rm
+		ls "$file" | grep .in | head -n-1 | awk "{print \"$file/\"\$1}" | xargs -d "\n" rm
 	fi
 done
+
+# Extract features
+echo "Extracting features..."
+find -mindepth 3 -type f -name "*.in" | while read file; do
+	fixed="$(dirname "$file")/fixed.xml"
+	cat <(echo "<?xml version=\"1.0\" encoding=\"utf-8\" ?>") <(echo "<txt>") "$file" <(echo -n "</txt>") > "$fixed"
+	fixed_2="$(dirname "$file")/fixed_2.xml"
+	sed -i "s/\&nbsp;/ /g" "$fixed"
+	python3 ../feature_digger.py "$fixed" "$(dirname "$file")/featrues.csv"
+done
+echo "[DONE] $(find -name "*.csv" -exec wc -l {} \; | cut -f1 -d" " | awk '{ sum += $1 } END { print sum }') found"

@@ -34,6 +34,7 @@ class FeatureParser(xml.sax.ContentHandler):
         if tag == "ne" and self._current:
             if self._possition > self._current.start:
                 self._feature_callback(self._current.start, self._possition, self._current.label)
+                self._current = None
 
 
 class DiscardErrorHandler:
@@ -63,7 +64,6 @@ if __name__ == "__main__":
         parser = xml.sax.make_parser()  # nosec - parse only internal XML
         parser.setFeature(xml.sax.handler.feature_namespaces, False)
         parser.setFeature(xml.sax.handler.feature_validation, False)
-        parser.setFeature(xml.sax.handler.feature_external_ges, True)
         handler = FeatureParser(feature_callback)
         parser.setContentHandler(handler)
         parser.setErrorHandler(DiscardErrorHandler(parser))
