@@ -2,9 +2,8 @@ import csv
 import sys
 import xml.sax  # nosec - parse only internal XML
 from collections import namedtuple
+from distutils import text_file
 from typing import Optional
-
-from py import std
 
 Feature = namedtuple("Feature", ("start", "label"))
 
@@ -12,9 +11,10 @@ Feature = namedtuple("Feature", ("start", "label"))
 class FeatureParser(xml.sax.ContentHandler):
     """ Finds name entity type and tokens for each open candidate in provided XML """
 
-    def __init__(self, feature_callbacks) -> None:
+    def __init__(self, feature_callback, txt_callback) -> None:
         super().__init__()
-        self._feature_callback = feature_callbacks
+        self._feature_callback = feature_callback
+        self._txt_callback = txt_callback
         self._possition = 0
         self._current: Optional[Feature] = None
 
@@ -29,6 +29,7 @@ class FeatureParser(xml.sax.ContentHandler):
 
     def characters(self, content):
         self._possition += len(content)
+        self._txt_callback(content)
 
     def endElement(self, tag):
         if tag == "ne" and self._current:
@@ -47,24 +48,28 @@ class DiscardErrorHandler:
 
 if __name__ == "__main__":
     # Check arguments
-    if len(sys.argv) != 3:
-        print(f"Usage: {sys.argv[0]} input_file output_file", file=sys.stderr)
+    if len(sys.argv) != 4:
+        print(f"Usage: {sys.argv[0]} input_file features_file txt_file", file=sys.stderr)
         exit(1)
     input_file = sys.argv[1]
-    output_file = sys.argv[2]
+    features_file = sys.argv[2]
+    text_file = sys.argv[3]
 
     # Open input file
-    with open(output_file, "w") as output:
+    with open(features_file, "w") as features_output, open(text_file, "w") as text_output:
         # Output format
-        csv_writer = csv.writer(output)
+        csv_writer = csv.writer(features_output)
 
         def feature_callback(start, end, label):
             return csv_writer.writerow((start, end, label if label else ""))
 
+        def txt_callback(text):
+            return text_output.write(text)
+
         parser = xml.sax.make_parser()  # nosec - parse only internal XML
         parser.setFeature(xml.sax.handler.feature_namespaces, False)
         parser.setFeature(xml.sax.handler.feature_validation, False)
-        handler = FeatureParser(feature_callback)
+        handler = FeatureParser(feature_callback, txt_callback)
         parser.setContentHandler(handler)
         parser.setErrorHandler(DiscardErrorHandler(parser))
         parser.parse(input_file)

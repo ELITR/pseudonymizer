@@ -38,10 +38,10 @@ done
 # Extract features
 echo "Extracting features..."
 find -mindepth 3 -type f -name "*.in" | while read file; do
-	fixed="$(dirname "$file")/fixed.xml"
+	folder="$(dirname "$file")"
+	fixed="$folder/fixed.xml"
 	cat <(echo "<?xml version=\"1.0\" encoding=\"utf-8\" ?>") <(echo "<txt>") "$file" <(echo -n "</txt>") > "$fixed"
-	fixed_2="$(dirname "$file")/fixed_2.xml"
-	sed -i "s/\&nbsp;/ /g" "$fixed"
-	python3 ../feature_digger.py "$fixed" "$(dirname "$file")/featrues.csv"
+	sed -i "s/\&nbsp;/ /g;s/<br>//g;" "$fixed"
+	python3 ../feature_digger.py "$fixed" "$folder/featrues.csv" "$folder/data.txt"
 done
 echo "[DONE] $(find -name "*.csv" -exec wc -l {} \; | cut -f1 -d" " | awk '{ sum += $1 } END { print sum }') found"
