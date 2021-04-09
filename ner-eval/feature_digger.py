@@ -19,7 +19,7 @@ class FeatureParser(xml.sax.ContentHandler):
         self._current: Optional[Feature] = None
 
     def startElement(self, tag, attrs):
-        if tag == "ne":
+        if tag.lower() == "ne":
             # Parse arguments
             status = attrs.get("status")
             label = attrs.get("anonymizedlabel")
@@ -32,7 +32,7 @@ class FeatureParser(xml.sax.ContentHandler):
         self._txt_callback(content)
 
     def endElement(self, tag):
-        if tag == "ne" and self._current:
+        if self._current and tag.lower() == "ne":
             if self._possition > self._current.start:
                 self._feature_callback(self._current.start, self._possition, self._current.label)
                 self._current = None
