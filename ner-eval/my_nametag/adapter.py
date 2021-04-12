@@ -118,7 +118,8 @@ class NameTag():
                     # Count name entry tokens id range
                     text_start = line_start_offset + tokens[start_token_index].start
                     text_end = line_start_offset + tokens[end_token_index].start + tokens[end_token_index].length
+                    text = line[tokens[start_token_index].start: tokens[end_token_index].start + tokens[end_token_index].length]
                     # Write output
-                    writer.writerow((text_start, text_end, name_entry.type, name_entry.length))
+                    writer.writerow((text_start, text_end, text, name_entry.type, name_entry.length))
             # Move offset
             line_start_offset += len(line)

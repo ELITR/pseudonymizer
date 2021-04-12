@@ -17,6 +17,7 @@ class FeatureParser(xml.sax.ContentHandler):
         self._txt_callback = txt_callback
         self._possition = 0
         self._current: Optional[Feature] = None
+        self._text = None
 
     def startElement(self, tag, attrs):
         if tag.lower() == "ne":
@@ -26,16 +27,20 @@ class FeatureParser(xml.sax.ContentHandler):
             # Check status
             if status.startswith("confirmed"):
                 self._current = Feature(self._possition, label)
+                self._text = ""
 
     def characters(self, content):
         self._possition += len(content)
         self._txt_callback(content)
+        if self._current:
+            self._text += content
 
     def endElement(self, tag):
         if self._current and tag.lower() == "ne":
             if self._possition > self._current.start:
-                self._feature_callback(self._current.start, self._possition, self._current.label)
+                self._feature_callback(self._current.start, self._possition, self._text, self._current.label)
                 self._current = None
+                self._text = None
 
 
 class DiscardErrorHandler:
@@ -60,8 +65,8 @@ if __name__ == "__main__":
         # Output format
         csv_writer = csv.writer(features_output)
 
-        def feature_callback(start, end, label):
-            return csv_writer.writerow((start, end, label if label else ""))
+        def feature_callback(start, end, text, label):
+            return csv_writer.writerow((start, end, text, label if label else ""))
 
         def txt_callback(text):
             return text_output.write(text)
