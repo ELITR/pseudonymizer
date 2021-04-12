@@ -1,3 +1,4 @@
+import csv
 from typing import List
 
 from ufal.nametag import Forms, NamedEntities, Ner, TokenRanges
@@ -24,7 +25,7 @@ class NameTag():
         """Escapes XML entities to safe variants (`&` to `&amp;`)"""
         return text.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;').replace('"', '&quot;')
 
-    def recognize_file(self, input_filename: str, output_filename: str, token_id=0) -> int:
+    def recognize_file(self, input_filename: str, output_filename: str, token_id=0) -> None:
         forms = Forms()
         tokens = TokenRanges()
         entities = NamedEntities()
@@ -89,4 +90,35 @@ class NameTag():
                 output.write(NameTag.encode_entities(line[text_position:]))
             output.write("\n</submission>")
 
-        return token_id
+    def recognize(self, input, output) -> None:
+        # Output
+        writer = csv.writer(output)
+
+        # NameTag object
+        forms = Forms()
+        tokens = TokenRanges()
+        entities = NamedEntities()
+
+        line_start_offset = 0
+        for line in input:
+            # Tokenize line
+            self._tokenizer.setText(line)
+
+            while self._tokenizer.nextSentence(forms, tokens):
+                # Recognize named entities
+                self._ner.recognize(forms, entities)
+                sorted_name_entries = sorted(entities,
+                                             key=lambda entity: (entity.start, -entity.length))
+
+                # Write entities to output
+                for name_entry in sorted_name_entries:
+                    # Count name entry tokens index range
+                    start_token_index = name_entry.start
+                    end_token_index = name_entry.start + name_entry.length - 1
+                    # Count name entry tokens id range
+                    text_start = line_start_offset + tokens[start_token_index].start
+                    text_end = line_start_offset + tokens[end_token_index].start + tokens[end_token_index].length
+                    # Write output
+                    writer.writerow((text_start, text_end, name_entry.type, name_entry.length))
+            # Move offset
+            line_start_offset += len(line)
