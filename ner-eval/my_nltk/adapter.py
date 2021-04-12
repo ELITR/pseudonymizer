@@ -19,3 +19,23 @@ class StanfordNer():
                 words = nltk.word_tokenize(line)
 
                 print(ner_tagger.tag(words))
+
+    def recognize(self, input, output):
+        # Output
+        writer = csv.writer(output)
+        lines = ''.join(input.readlines())
+        tokens = [nltk.word_tokenize(sentence) for sentence in nltk.sent_tokenize(lines)]
+
+        name_entities = self._ner.tag_sents(tokens)
+
+        text_possition = 0
+        sentence_id = 0
+        for sentence in name_entities:
+            for token, ne_type in sentence:
+                text_possition = lines.find(token, text_possition)
+                if ne_type != 'O':
+                    start = text_possition - sentence_id
+                    end = start + len(token)
+                    writer.writerow((start, end, token, ne_type, 1))
+                text_possition += len(token)
+            sentence_id += 1

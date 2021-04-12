@@ -1,6 +1,7 @@
 import sys
 
 import my_nametag
+from my_nltk.adapter import StanfordNer
 
 if __name__ == "__main__":
     # Check input args
@@ -12,6 +13,8 @@ if __name__ == "__main__":
 
     if ner_name == "nametag":
         ner = my_nametag.get_ner()
+    elif ner_name == "nltk":
+        ner = StanfordNer()
 
     for line in sys.stdin:
         input_file, output_file = line.split()
