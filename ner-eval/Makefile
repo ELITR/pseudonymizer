@@ -8,16 +8,16 @@ venv/bin/activate:
 venv: venv/bin/activate
 
 setup: venv
-	$(VENV); $(MAKE) -C nametag
-	$(VENV); $(MAKE) -C nltk
-	$(VENV); $(MAKE) -C spacy
+	$(VENV); $(MAKE) -C my_nametag
+	$(VENV); $(MAKE) -C my_nltk
+	$(VENV); $(MAKE) -C my_spacy
 
 clean:
 	rm -r venv
 	rm *.output
 
 test:
-	$(VENV); PYTHONPATH=. python3 nametag/test.py
+	$(VENV); PYTHONPATH=. python3 my_nametag/test.py
 	test -e nametag.output
 
 .PHONY: venv clean test

@@ -1,6 +1,6 @@
 import sys
 
-import nametag
+import my_nametag
 
 if __name__ == "__main__":
     # Check input args
@@ -11,7 +11,7 @@ if __name__ == "__main__":
     ner_name = sys.argv[1]
 
     if ner_name == "nametag":
-        ner = nametag.get_ner()
+        ner = my_nametag.get_ner()
 
     for line in sys.stdin:
         input_file, output_file = line.split()

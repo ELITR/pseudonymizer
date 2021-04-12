@@ -6,8 +6,8 @@ sentence = u"Twenty miles east of Reno, Nev., " \
     "the parched landscape, Tesla Gigafactory 1 " \
     "sprawls near Interstate 80."
 
-jar = './stanford-ner.jar'
-model = './english.all.3class.distsim.crf.ser.gz'
+jar = './my_nltk/stanford-ner.jar'
+model = './my_nltk/english.all.3class.distsim.crf.ser.gz'
 
 # Prepare NER tagger with english model
 ner_tagger = StanfordNERTagger(model, jar, encoding='utf8')
