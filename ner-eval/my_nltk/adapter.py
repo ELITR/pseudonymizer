@@ -38,4 +38,4 @@ class StanfordNer():
                     end = start + len(token)
                     writer.writerow((start, end, token, ne_type, 1))
                 text_possition += len(token)
-            sentence_id += 1
+            # sentence_id += 1
