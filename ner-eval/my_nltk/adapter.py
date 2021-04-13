@@ -29,13 +29,29 @@ class StanfordNer():
         name_entities = self._ner.tag_sents(tokens)
 
         text_possition = 0
-        sentence_id = 0
         for sentence in name_entities:
+            current_ne_type = None
+            current_len = 0
             for token, ne_type in sentence:
                 text_possition = lines.find(token, text_possition)
                 if ne_type != 'O':
-                    start = text_possition - sentence_id
-                    end = start + len(token)
-                    writer.writerow((start, end, token, ne_type, 1))
+                    if current_ne_type == ne_type and lines[end:text_possition].isspace():
+                        end = text_possition + len(token)
+                        current_len += 1
+                    else:
+                        if current_len > 0:
+                            # Write current text
+                            writer.writerow((start, end, token, current_ne_type, current_len))
+                        # Update stats
+                        current_ne_type = ne_type
+                        current_len = 1
+                        start = text_possition
+                        end = start + len(token)
+                else:
+                    if current_len > 0:
+                        # Write current text
+                        writer.writerow((start, end, lines[start:end], current_ne_type, current_len))
+                    # Update stats
+                    current_ne_type = None
+                    current_len = 0
                 text_possition += len(token)
-            # sentence_id += 1
