@@ -2,6 +2,7 @@ import sys
 
 import my_nametag
 from my_nltk.adapter import StanfordNer
+from my_spacy.adapter import Spacy
 
 if __name__ == "__main__":
     # Check input args
@@ -15,6 +16,11 @@ if __name__ == "__main__":
         ner = my_nametag.get_ner()
     elif ner_name == "nltk":
         ner = StanfordNer()
+    elif ner_name == "spacy":
+        ner = Spacy()
+    else:
+        print("Unknown NER", file=sys.stderr)
+        exit(1)
 
     for line in sys.stdin:
         input_file, output_file = line.split()
