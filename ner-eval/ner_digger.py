@@ -23,6 +23,6 @@ if __name__ == "__main__":
         exit(1)
 
     for line in sys.stdin:
-        input_file, output_file = line.split(";")
+        input_file, output_file = line.strip().split(";")
         with open(input_file, "r") as input, open(output_file, "w") as output:
             ner.recognize(input, output)
