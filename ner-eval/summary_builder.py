@@ -41,7 +41,7 @@ if __name__ == "__main__":
         feats = csv.DictReader(feat_input)
         its = [LazyReader(csv.DictReader(stack.enter_context(open(file_name)))) for file_name in ner_files]
         # Open CSV writers
-        writer = csv.DictWriter(output, ("start", "end", "text", *ner_names))
+        writer = csv.DictWriter(output, ("start", "end", "text", *ner_names, *(f"{ner}-raw" for ner in ner_names)))
         writer.writeheader()
 
         for feat in feats:
@@ -59,6 +59,11 @@ if __name__ == "__main__":
                     i_start = int(it.value["start"])
                     i_end = int(it.value["end"])
                     if i_start <= f_end and f_start <= i_end:
-                        results[ner_names[i]] = it.value["text"]
+                        results[f"{ner_names[i]}-raw"] = it.value["text"]
+                        results[ner_names[i]] = "INTERSECT"
+                        if i_start <= f_start and f_end <= i_end:
+                            results[ner_names[i]] = "INSIDE"
+                        if i_start == f_start and i_end == f_end:
+                            results[ner_names[i]] = "EXACT"
 
             writer.writerow(results)

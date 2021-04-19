@@ -14,6 +14,8 @@ for ner in "nametag" "nltk" "spacy"; do
 	find -name input.txt -path "./dataset/*" | outputPipe $ner | python3 ner_digger.py $ner 
 done
 
+# Summary
+echo "Summary report"
 mkdir -p ./dataset/out/
 find "./dataset" -name input.txt -exec dirname {} \; | while read -r folder; do
 	output="./dataset/out/$(echo "$folder" | cut -d"/" -f 4,5 | tr "/" "-").csv"
