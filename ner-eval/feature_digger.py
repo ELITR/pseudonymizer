@@ -63,10 +63,11 @@ if __name__ == "__main__":
     # Open input file
     with open(features_file, "w") as features_output, open(text_file, "w") as text_output:
         # Output format
-        csv_writer = csv.writer(features_output)
+        csv_writer = csv.DictWriter(features_output,  ("start", "end", "text", "label"))
+        csv_writer.writeheader()
 
         def feature_callback(start, end, text, label):
-            return csv_writer.writerow((start, end, text, label if label else ""))
+            return csv_writer.writerow({"start": start, "end": end, "text": text, "label": label if label else ""})
 
         def txt_callback(text):
             return text_output.write(text)

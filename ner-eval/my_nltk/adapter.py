@@ -1,4 +1,5 @@
 import csv
+from typing import TextIO
 
 import nltk
 from nltk.tag.stanford import StanfordNERTagger
@@ -20,9 +21,7 @@ class StanfordNer():
 
                 print(ner_tagger.tag(words))
 
-    def recognize(self, input, output):
-        # Output
-        writer = csv.writer(output)
+    def recognize(self, input: TextIO, writer: csv.DictWriter) -> None:
         lines = ''.join(input.readlines())
         tokens = [nltk.word_tokenize(sentence) for sentence in nltk.sent_tokenize(lines)]
 
@@ -41,7 +40,8 @@ class StanfordNer():
                     else:
                         if current_len > 0:
                             # Write current text
-                            writer.writerow((start, end, token, current_ne_type, current_len))
+                            writer.writerow({"start": start, "end": end, "text": token,
+                                             "type": current_ne_type, "token_len": current_len})
                         # Update stats
                         current_ne_type = ne_type
                         current_len = 1
@@ -50,7 +50,8 @@ class StanfordNer():
                 else:
                     if current_len > 0:
                         # Write current text
-                        writer.writerow((start, end, lines[start:end], current_ne_type, current_len))
+                        writer.writerow({"start": start, "end": end,
+                                         "text": lines[start:end], "type": current_ne_type, "token_len": current_len})
                     # Update stats
                     current_ne_type = None
                     current_len = 0

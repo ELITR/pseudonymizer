@@ -1,3 +1,4 @@
+import csv
 import sys
 
 import my_nametag
@@ -25,4 +26,6 @@ if __name__ == "__main__":
     for line in sys.stdin:
         input_file, output_file = line.strip().split(";")
         with open(input_file, "r") as input, open(output_file, "w") as output:
-            ner.recognize(input, output)
+            csv_writer = csv.DictWriter(output, ("start", "end", "text", "type", "token_len"))
+            csv_writer.writeheader()
+            ner.recognize(input, csv_writer)

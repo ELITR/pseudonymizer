@@ -1,4 +1,5 @@
 import csv
+from typing import TextIO
 
 import spacy
 
@@ -8,11 +9,9 @@ class Spacy():
         # Prepare NER tagger with english model
         self._nlp = spacy.load("en_core_web_sm")
 
-    def recognize(self, input, output):
-        # Output
-        writer = csv.writer(output)
+    def recognize(self, input: TextIO, writer: csv.DictWriter) -> None:
         lines = ''.join(input.readlines())
 
         document = self._nlp(lines)
         for ent in document.ents:
-            writer.writerow((ent.start_char, ent.end_char, ent.text, ent.label_))
+            writer.writerow({"start": ent.start_char, "end": ent.end_char, "text": ent.text, "type": ent.label_})

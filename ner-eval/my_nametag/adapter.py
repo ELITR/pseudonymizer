@@ -1,5 +1,5 @@
 import csv
-from typing import List
+from typing import List, TextIO
 
 from ufal.nametag import Forms, NamedEntities, Ner, TokenRanges
 
@@ -90,10 +90,7 @@ class NameTag():
                 output.write(NameTag.encode_entities(line[text_position:]))
             output.write("\n</submission>")
 
-    def recognize(self, input, output) -> None:
-        # Output
-        writer = csv.writer(output)
-
+    def recognize(self, input: TextIO, writer: csv.DictWriter) -> None:
         # NameTag object
         forms = Forms()
         tokens = TokenRanges()
@@ -120,6 +117,7 @@ class NameTag():
                     text_end = line_start_offset + tokens[end_token_index].start + tokens[end_token_index].length
                     text = line[tokens[start_token_index].start: tokens[end_token_index].start + tokens[end_token_index].length]
                     # Write output
-                    writer.writerow((text_start, text_end, text, name_entry.type, name_entry.length))
+                    writer.writerow({"start": text_start, "end": text_end, "text": text,
+                                     "type": name_entry.type, "token_len": name_entry.length})
             # Move offset
             line_start_offset += len(line)
