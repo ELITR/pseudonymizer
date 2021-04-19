@@ -42,6 +42,6 @@ find -mindepth 3 -type f -name "*.raw" | while read file; do
 	fixed="$folder/input.xml"
 	cat <(echo "<?xml version=\"1.0\" encoding=\"utf-8\" ?>") <(echo "<txt>") "$file" <(echo -n "</txt>") > "$fixed"
 	sed -i "s/\&nbsp;/ /g;s/<br>//g;" "$fixed"
-	python3 ../feature_digger.py "$fixed" "$folder/featrues.csv" "$folder/input.txt"
+	python3 ../feature_digger.py "$fixed" "$folder/features.csv" "$folder/input.txt"
 done
 echo "[DONE] $(find -name "*.csv" -exec wc -l {} \; | cut -f1 -d" " | awk '{ sum += $1 } END { print sum }') found"
