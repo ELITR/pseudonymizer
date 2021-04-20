@@ -91,11 +91,11 @@ if __name__ == "__main__":
 
             writer.writerow(results)
 
-        # Print stats
+        # Update global stats
         summary["_features"] = num_features
         for i, it in enumerate(its):
             summary[ner_names[i]].lines = it.line_num
-
-        for key, value in sorted(summary.items()):
-            print(value, end=",")
-        print()
+        # Print stats
+        data = sorted(summary.items())
+        values = (str(value) for key, value in data)
+        print(",".join(values))

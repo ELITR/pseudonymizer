@@ -17,6 +17,7 @@ done
 # Summary
 echo "Summary report"
 mkdir -p ./dataset/out/
+echo "features, nametag-exact, nametag-inside, nametag-partial, nametag-lines, nltk-exact, nltk-inside, nltk-partial, nltk-lines, spacy-exact, spacy-inside, spacy-partial, spacy-lines" > "./dataset/out/summary.csv" 
 find "./dataset" -name input.txt -exec dirname {} \; | while read -r folder; do
 	test_name=$(echo "$folder" | cut -d"/" -f 4,5 | tr "/" "-")
 	output="./dataset/out/$test_name.csv"
