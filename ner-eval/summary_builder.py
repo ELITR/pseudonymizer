@@ -1,7 +1,7 @@
 import csv
 import sys
 from contextlib import ExitStack
-from time import sleep
+from dataclasses import dataclass
 from typing import Dict, Optional
 
 
@@ -9,6 +9,7 @@ class LazyReader():
     def __init__(self, reader: csv.DictReader) -> None:
         self._row = None
         self._reader = reader
+        self.line_num = 0
 
     def next(self) -> None:
         self._row = None
@@ -24,9 +25,21 @@ class LazyReader():
         if not self._row:
             try:
                 self._row = next(self._reader)
+                self.line_num += 1
             except StopIteration:
                 return None
         return self._row
+
+
+@dataclass
+class MatchStat:
+    exact = 0
+    inside = 0
+    partial = 0
+    lines = 0
+
+    def __str__(self) -> str:
+        return f"{self.exact},{self.inside},{self.partial},{self.lines}"
 
 
 if __name__ == "__main__":
@@ -43,8 +56,14 @@ if __name__ == "__main__":
         # Open CSV writers
         writer = csv.DictWriter(output, ("start", "end", "text", *ner_names, *(f"{ner}-raw" for ner in ner_names)))
         writer.writeheader()
+        # Stats
+        num_features = 0
+        summary = dict()
+        for name in ner_names:
+            summary[name] = MatchStat()
 
         for feat in feats:
+            num_features += 1
             f_start = int(feat["start"])
             f_end = int(feat["end"])
 
@@ -60,10 +79,23 @@ if __name__ == "__main__":
                     i_end = int(it.value["end"])
                     if i_start <= f_end and f_start <= i_end:
                         results[f"{ner_names[i]}-raw"] = it.value["text"]
-                        results[ner_names[i]] = "INTERSECT"
-                        if i_start <= f_start and f_end <= i_end:
-                            results[ner_names[i]] = "INSIDE"
                         if i_start == f_start and i_end == f_end:
                             results[ner_names[i]] = "EXACT"
+                            summary[ner_names[i]].exact += 1
+                        elif i_start <= f_start and f_end <= i_end:
+                            results[ner_names[i]] = "INSIDE"
+                            summary[ner_names[i]].inside += 1
+                        else:
+                            results[ner_names[i]] = "PARTIAL"
+                            summary[ner_names[i]].partial += 1
 
             writer.writerow(results)
+
+        # Print stats
+        summary["_features"] = num_features
+        for i, it in enumerate(its):
+            summary[ner_names[i]].lines = it.line_num
+
+        for key, value in sorted(summary.items()):
+            print(value, end=",")
+        print()
