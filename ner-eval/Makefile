@@ -17,8 +17,11 @@ clean:
 	rm -r venv
 	rm *.output
 
+notebook: venv
+	$(VENV); jupyter-notebook .
+
 test:
 	$(VENV); PYTHONPATH=. python3 my_nametag/test.py
 	test -e nametag.output
 
-.PHONY: venv clean test
+.PHONY: venv clean test notebook
