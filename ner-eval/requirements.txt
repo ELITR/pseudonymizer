@@ -1,3 +1,4 @@
 numpy
 dataclass
 jupyter
+jedi==0.17.2 # Workaround for https://github.com/ipython/ipython/issues/12740
