@@ -52,7 +52,7 @@ if __name__ == "__main__":
     with open(features_file, "r") as feat_input, open(output_file, "w") as output, ExitStack() as stack:
         # Open CSV readers
         feats = csv.DictReader(feat_input)
-        its = [LazyReader(csv.DictReader(stack.enter_context(open(file_name)))) for file_name in ner_files]
+        its = [LazyReader(csv.DictReader(stack.enter_context(open(file_name, "r")))) for file_name in ner_files]
         # Open CSV writers
         writer = csv.DictWriter(output, ("start", "end", "text", *ner_names, *(f"{ner}-raw" for ner in ner_names)))
         writer.writeheader()
@@ -78,9 +78,11 @@ if __name__ == "__main__":
                     if i_start <= f_end and f_start <= i_end:
                         results[f"{ner_names[i]}-raw"] = it.value["text"]
                         if i_start == f_start and i_end == f_end:
+                            assert feat["text"] == it.value["text"]
                             results[ner_names[i]] = "EXACT"
                             stats[i].exact += 1
                         elif i_start <= f_start and f_end <= i_end:
+                            assert feat["text"] in it.value["text"]
                             results[ner_names[i]] = "INSIDE"
                             stats[i].inside += 1
                         else:

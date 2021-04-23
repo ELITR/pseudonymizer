@@ -40,7 +40,7 @@ class StanfordNer():
                     else:
                         if current_len > 0:
                             # Write current text
-                            writer.writerow({"start": start, "end": end, "text": token,
+                            writer.writerow({"start": start, "end": end, "text": lines[start:end],
                                              "type": current_ne_type, "token_len": current_len})
                         # Update stats
                         current_ne_type = ne_type
