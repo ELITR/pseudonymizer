@@ -32,7 +32,7 @@ class LazyReader():
 
 
 @dataclass
-class MatchStat:
+class NerStat:
     exact = 0
     inside = 0
     partial = 0
@@ -44,9 +44,9 @@ class MatchStat:
 
 if __name__ == "__main__":
     if len(sys.argv) < 4:
-        print(f"Usage {sys.argv[0]} output_file features_file ner_files...", file=sys.stderr)
+        print(f"Usage {sys.argv[0]} test_name output_file features_file ner_files...", file=sys.stderr)
         exit(1)
-    _, output_file, features_file, *ner_files = sys.argv
+    _, test_name, output_file, features_file, *ner_files = sys.argv
     ner_names = [ner.split("/")[-1][:-4] for ner in ner_files]
 
     with open(features_file, "r") as feat_input, open(output_file, "w") as output, ExitStack() as stack:
@@ -58,9 +58,7 @@ if __name__ == "__main__":
         writer.writeheader()
         # Stats
         num_features = 0
-        summary = dict()
-        for name in ner_names:
-            summary[name] = MatchStat()
+        stats = [NerStat() for _ in range(len(ner_names))]
 
         for feat in feats:
             num_features += 1
@@ -81,21 +79,19 @@ if __name__ == "__main__":
                         results[f"{ner_names[i]}-raw"] = it.value["text"]
                         if i_start == f_start and i_end == f_end:
                             results[ner_names[i]] = "EXACT"
-                            summary[ner_names[i]].exact += 1
+                            stats[i].exact += 1
                         elif i_start <= f_start and f_end <= i_end:
                             results[ner_names[i]] = "INSIDE"
-                            summary[ner_names[i]].inside += 1
+                            stats[i].inside += 1
                         else:
                             results[ner_names[i]] = "PARTIAL"
-                            summary[ner_names[i]].partial += 1
+                            stats[i].partial += 1
 
             writer.writerow(results)
 
-        # Update global stats
-        summary["_features"] = num_features
+        # Update stats
         for i, it in enumerate(its):
-            summary[ner_names[i]].lines = it.line_num
+            stats[i].lines = it.line_num
         # Print stats
-        data = sorted(summary.items())
-        values = (str(value) for key, value in data)
-        print(",".join(values))
+        for i, ner_name in enumerate(ner_names):
+            print(f"{test_name},{ner_name},{num_features},{stats[i]}")

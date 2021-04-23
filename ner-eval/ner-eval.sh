@@ -17,10 +17,10 @@ done
 # Summary
 echo "Building summary..."
 mkdir -p ./dataset/out/
-echo "features,nametag-exact,nametag-inside,nametag-partial,nametag-lines,nltk-exact,nltk-inside,nltk-partial,nltk-lines,spacy-exact,spacy-inside,spacy-partial,spacy-lines" > "./dataset/out/summary.csv" 
+echo "test-name,ner,features,exact,inside,partial,lines" > "./dataset/out/summary.csv" 
 find "./dataset" -name input.txt -exec dirname {} \; | while read -r folder; do
 	test_name=$(echo "$folder" | cut -d"/" -f 4,5 | tr "/" "-")
 	output="./dataset/out/$test_name.csv"
-	find "$folder" -name "*.csv" | grep -v features.csv | xargs -d "\n" python3 summary_builder.py "$output" "$folder/features.csv" >> "./dataset/out/summary.csv"
+	find "$folder" -name "*.csv" | grep -v features.csv | xargs -d "\n" python3 summary_builder.py "$test_name" "$output" "$folder/features.csv" >> "./dataset/out/summary.csv"
 done
 echo "... $(wc -l ./dataset/out/summary.csv) found"
