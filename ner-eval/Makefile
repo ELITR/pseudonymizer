@@ -18,7 +18,7 @@ clean:
 	rm *.output
 
 notebook: venv
-	$(VENV); jupyter-notebook .
+	$(VENV); jupyter-notebook --ip $(shell hostname -I) --no-browser .
 
 test:
 	$(VENV); PYTHONPATH=. python3 my_nametag/test.py
