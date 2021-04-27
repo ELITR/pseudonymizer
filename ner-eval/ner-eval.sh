@@ -4,7 +4,8 @@ function outputPipe {
 	while read -r row; do
 		input="$row"
 		output="$(dirname "$row")/$1.csv"
-		echo "$input;$output"
+		output_plus="$(dirname "$row")/$1_plus.csv"
+		echo "$input;$output;$output_plus"
 	done
 }
 
@@ -21,6 +22,6 @@ echo "test-name,ner,features,exact,inside,partial,lines" > "./dataset/out/summar
 find "./dataset" -name input.txt -exec dirname {} \; | while read -r folder; do
 	test_name=$(echo "$folder" | cut -d"/" -f 4,5 | tr "/" "-")
 	output="./dataset/out/$test_name.csv"
-	find "$folder" -name "*.csv" | grep -v features.csv | xargs -d "\n" python3 summary_builder.py "$test_name" "$output" "$folder/features.csv" >> "./dataset/out/summary.csv"
+	find "$folder" -name "*.csv" | sort | grep -v features.csv | xargs -d "\n" python3 summary_builder.py "$test_name" "$output" "$folder/features.csv" >> "./dataset/out/summary.csv"
 done
 echo "... $(wc -l ./dataset/out/summary.csv) found"
