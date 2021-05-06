@@ -195,7 +195,8 @@ def set():
                 # if selection is a candidate than it has ne_type
                 cursor.execute("UPDATE annotation SET decision = %s, rule = %s, author = %s"
                                " WHERE submission = %s and ref_start = %s and ref_end = %s",
-                               (decision.value, rule_id, g.account["id"], form.submission_id.data, form.ref_start.data, form.ref_end.data))
+                               (decision.value, rule_id, g.account["id"], form.submission_id.data, form.ref_start.data,
+                                form.ref_end.data))
             else:
                 cursor.execute("DELETE FROM annotation"
                                " WHERE submission = %s and %s <= ref_start and ref_end <= %s and ref_type = %s",
