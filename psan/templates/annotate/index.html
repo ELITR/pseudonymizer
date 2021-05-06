@@ -30,9 +30,12 @@
                             {{ render_icon("info-square", size="1.25em") }}{% trans %}Current decision{% endtrans %}
                         </h5>
                         {# Decision #}
-                        <p class="card-text mb-0"><span id="info-status">{% trans %}Unknown{% endtrans %}</span></p>
+                        <p class="card-text mb-0 d-flex">
+                            <b><span id="info-status">{% trans %}Unknown{% endtrans %}</span></b>
+                            <span id="info-author" class="small ml-auto"></span>
+                        </p>
                         {# Rules #}
-                        <small id="info-rule" class="card-text mt-2">{% trans %}Using rule:{% endtrans %} <span id="info-condition">{% trans %}Loading...{% endtrans %}</span></small>
+                        <small id="info-rule" class="card-text mt-2">(<span id="info-condition">{% trans %}Loading...{% endtrans %}</span>)</small>
                     </div>
                 </div>
 
@@ -327,8 +330,7 @@
                     break;
             }
             // Load rule details
-            $("#info-rule").hide();
-            $.get(`{{ url_for("annotate.rule", doc_id=submission_id) | safe }}&start=${start}&end=${end}`, 
+            $.get(`{{ url_for("annotate.detail", doc_id=submission_id) | safe }}&start=${start}&end=${end}`, 
                     (data) => {
                         if(data.type) {
                             if(data.type == "NE_TYPE" && NE_CODES[data.condition]) {
@@ -337,10 +339,13 @@
                                 $("#info-condition").html(data.condition.join(" "));
                             }
                             $("#info-rule").show();
+                        } else {
+                            $("#info-rule").hide();
                         }
+                        $("#info-author").html(data.author);
+                        // Show decision in UI
+                        $("#info-card").show();
                     });
-            // Show decision in UI
-            $("#info-card").show();
         }
 
         // Load defaults windows

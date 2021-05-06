@@ -37,8 +37,9 @@ CREATE TABLE submission (
 CREATE TABLE rule (
     id              SERIAL PRIMARY KEY,
     type            rule_type                   NOT NULL,
-    condition       TEXT[]                        NOT NULL,
+    condition       TEXT[]                      NOT NULL,
     decision        rule_decision               NOT NULL,
+    author          INT REFERENCES account(id)  ON DELETE SET NULL,
     UNIQUE (type, condition)
 );
 
@@ -50,6 +51,7 @@ CREATE TABLE annotation (
     ref_type        reference_type                                     NOT NULL DEFAULT 'NAME_ENTRY',
     ref_start       INT                                                NOT NULL,
     ref_end         INT                                                NOT NULL,    
+    author          INT REFERENCES account(id) ON DELETE SET NULL,
     UNIQUE (submission, ref_start, ref_end),
     CHECK (ref_start <= ref_end),
     CHECK ((decision != 'RULE' and rule IS NULL) or (decision = 'RULE' and rule IS NOT NULL))

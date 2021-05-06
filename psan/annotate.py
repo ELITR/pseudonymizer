@@ -134,9 +134,9 @@ def decisions():
     return jsonify(decisions)
 
 
-@bp.route("/rule")
+@bp.route("/detail")
 @login_required()
-def rule():
+def detail():
     # Parse input params
     submission_id = request.args.get("doc_id", type=int)
     start = request.args.get("start", type=int)
@@ -150,12 +150,13 @@ def rule():
 
     # Returns decision in defined interval
     with get_cursor() as cursor:
-        cursor.execute("SELECT rule.type, rule.condition"
+        cursor.execute("SELECT rule.type, rule.condition, account.full_name"
                        " FROM annotation LEFT JOIN rule ON annotation.rule = rule.id"
+                       " LEFT JOIN account ON annotation.author = account.id OR rule.author = account.id"
                        " WHERE submission = %s and ref_start = %s and ref_end = %s",
                        (submission_id, start, end))
         row = cursor.fetchone()
-        return jsonify({"type": row["type"], "condition": row["condition"]})
+        return jsonify({"type": row["type"], "condition": row["condition"], "author": row["full_name"]})
 
 
 @bp.route("/set", methods=['POST'])
@@ -183,29 +184,30 @@ def set():
         rule_id = None
         with get_cursor() as cursor:
             if rule:
-                cursor.execute("INSERT INTO rule(type, condition, decision) VALUES(%s, %s, %s)"
-                               " ON CONFLICT(type, condition) DO UPDATE SET decision=excluded.decision RETURNING id",
-                               (rule.value, rule_condition, decision.value))
+                cursor.execute("INSERT INTO rule(type, condition, decision, author) VALUES(%s, %s, %s, %s)"
+                               " ON CONFLICT(type, condition) DO UPDATE"
+                               " SET decision=excluded.decision, author=excluded.author RETURNING id",
+                               (rule.value, rule_condition, decision.value, g.account["id"]))
                 rule_id = cursor.fetchone()[0]
                 decision = AnnotationDecision.RULE
 
             if form.ne_type.data:
                 # if selection is a candidate than it has ne_type
-                cursor.execute("UPDATE annotation SET decision = %s, rule = %s"
+                cursor.execute("UPDATE annotation SET decision = %s, rule = %s, author = %s"
                                " WHERE submission = %s and ref_start = %s and ref_end = %s",
-                               (decision.value, rule_id, form.submission_id.data, form.ref_start.data, form.ref_end.data))
+                               (decision.value, rule_id, g.account["id"], form.submission_id.data, form.ref_start.data, form.ref_end.data))
             else:
                 cursor.execute("DELETE FROM annotation"
                                " WHERE submission = %s and %s <= ref_start and ref_end <= %s and ref_type = %s",
                                (form.submission_id.data, form.ref_start.data, form.ref_end.data, ReferenceType.USER.value))
-                cursor.execute("INSERT INTO annotation (decision, submission, ref_start, ref_end, ref_type, rule)"
-                               " VALUES (%s, %s, %s, %s, %s, %s)",
+                cursor.execute("INSERT INTO annotation (decision, submission, ref_start, ref_end, ref_type, rule, author)"
+                               " VALUES (%s, %s, %s, %s, %s, %s, %s)",
                                (decision.value, form.submission_id.data, form.ref_start.data, form.ref_end.data,
-                                ReferenceType.USER.value, rule_id))
-                cursor.execute("UPDATE annotation SET decision = %s"
+                                ReferenceType.USER.value, rule_id, g.account["id"]))
+                cursor.execute("UPDATE annotation SET decision = %s, author = %s"
                                " WHERE submission = %s and %s <= ref_start and ref_end <= %s and ref_type = %s",
-                               (AnnotationDecision.NESTED.value, form.submission_id.data, form.ref_start.data, form.ref_end.data,
-                                ReferenceType.NAME_ENTRY.value))
+                               (AnnotationDecision.NESTED.value, g.account["id"], form.submission_id.data, form.ref_start.data,
+                                form.ref_end.data, ReferenceType.NAME_ENTRY.value))
             commit()
 
             if rule:
