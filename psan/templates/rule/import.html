@@ -15,7 +15,11 @@
             {% trans %}You can either submit a text or upload a csv file...{% endtrans %}
         </p>
         <p>
-            {% trans %}Lines should follow pattern: <code>(WORD_TYPE|LEMMA|NE_TYPE),token1=token2=token3...,(PUBLIC|SECRET)</code>{% endtrans %}
+            {% trans %}Lines should follow pattern: {% endtrans %}
+            <code><pre>type,                       condition,                  decision
+(WORD_TYPE|LEMMA|NE_TYPE),  token1=token2=token3...,    (PUBLIC|SECRET)
+...
+            </pre></code>
         </p>
 
         <div class="form-row">

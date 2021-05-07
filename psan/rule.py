@@ -78,13 +78,16 @@ def remove(rule_id: int):
 @login_required(role=AccountType.ADMIN)
 def export():
     si = StringIO()
-    cw = csv.writer(si)
+    cw = csv.DictWriter(si, fieldnames=["type", "condition", "decision", "author"])
+    cw.writeheader()
 
     # Prepare data
     with get_cursor() as cursor:
-        cursor.execute("SELECT type, condition, decision FROM rule")
+        cursor.execute("SELECT rule.type, rule.condition, rule.decision, account.full_name FROM rule"
+                       " LEFT JOIN account ON rule.author = account.id")
         for row in cursor:
-            cw.writerow((row["type"], '='.join(row["condition"]), row["decision"]))
+            cw.writerow({"type": row["type"], "condition": '='.join(row["condition"]),
+                         "decision": row["decision"], "author": row["full_name"]})
 
     # Prepare output
     output = make_response(si.getvalue())
@@ -110,22 +113,30 @@ def upload():
         else:
             # Load input
             if form.file.data:
-                csv_input = csv.reader(TextIOWrapper(form.file.data, "UTF8"))
+                csv_input = csv.DictReader(TextIOWrapper(form.file.data, "UTF8"))
             else:
-                csv_input = csv.reader(form.text.data.splitlines())
-            # Import input
+                csv_input = csv.DictReader(form.text.data.splitlines())
+            # Check header format
+            if any(field not in csv_input.fieldnames for field in ["type", "condition", "decision"]):
+                flash(_("Some header columns are missing"), category="warning")
+                return render_template("rule/import.html", form=form)
+            if "author" in csv_input.fieldnames:
+                flash(_("Rule authors were ignored in import"), category="warning")
+            # Parse input
             line_num = 0
             with get_cursor() as cursor:
                 for row in csv_input:
                     # Line numbering
                     line_num += 1
-                    if len(row) == 0:
-                        continue
                     # Try to import to db
                     try:
+                        # Check row format
+                        if row["type"] is None or row["condition"] is None or row["decision"] is None:
+                            raise IndexError
+                        # Import data
                         cursor.execute("INSERT INTO rule (type, condition, decision) VALUES(%s, %s, %s)"
                                        " ON CONFLICT (type, condition) DO UPDATE SET decision = EXCLUDED.decision",
-                                       (row[0], row[1].split('='), row[2]))
+                                       (row["type"], row["condition"].split('='), row["decision"]))
                     except (IndexError, DataError):
                         flash(_("Illegal format on line %(line_num)s.", line_num=line_num), category="error")
                         return render_template("rule/import.html", form=form)
