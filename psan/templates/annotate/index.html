@@ -348,8 +348,34 @@
                     });
         }
 
+        function shortcut(evt) {
+            key = String.fromCharCode(evt.charCode);
+            switch(key) {
+                case "h":
+                    highlightInterval(Math.max(highlight_start-1, win_start), highlight_end);
+                    break;
+                case "H":
+                    highlightInterval(Math.min(highlight_start+1, highlight_end), highlight_end);
+                    break;
+                case "j":
+                    highlightInterval(Math.max(highlight_start-1, win_start), Math.max(highlight_end-1, win_start));
+                    break;
+                case "k":
+                    highlightInterval(Math.min(highlight_start+1, win_end), Math.min(highlight_end+1, win_end));
+                    break;
+                case "l":
+                    highlightInterval(highlight_start, Math.min(highlight_end+1, win_end));
+                    break;
+                case "L":
+                    highlightInterval(highlight_start, Math.max(highlight_end-1, highlight_start));
+                    break;
+            }
+        }
+
         // Load defaults windows
         loadWindow(win_start, win_end);
+        // Key shortcuts
+        document.onkeypress = shortcut;
 
         {% if is_admin %}
             // Register callbacks
