@@ -23,16 +23,8 @@ class SubmissionStatus(Enum):
     DONE = "DONE"
 
 
-class AnnotationDecision(Enum):
-    SECRET = "SECRET"  # nosec
-    PUBLIC = "PUBLIC"
+class AnnotationSource(Enum):
     RULE = "RULE"
-    NESTED = "NESTED"
-    UNDECIDED = "UNDECIDED"
-
-
-class ReferenceType(Enum):
-    NAME_ENTRY = "NAME_ENTRY"
     USER = "USER"
 
 

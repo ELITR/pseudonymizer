@@ -7,7 +7,7 @@ CREATE TYPE submission_status AS ENUM ('NEW', 'RECOGNIZED', 'ANNOTATED', 'DONE')
 
 CREATE TYPE annotation_decision AS ENUM ('PUBLIC', 'SECRET', 'NESTED');
 
-CREATE TYPE reference_type AS ENUM ('NAME_ENTRY', 'USER');
+CREATE TYPE annotation_source AS ENUM ('RULE', 'USER');
 
 CREATE TYPE rule_type AS ENUM ('WORD_TYPE', 'LEMMA', 'NE_TYPE');
 
@@ -38,7 +38,7 @@ CREATE TABLE annotation (
     submission      INT REFERENCES submission(id) ON DELETE CASCADE    NOT NULL,
     token_level     annotation_decision,
     rule_level      INT,
-    ref_type        reference_type                                     NOT NULL DEFAULT 'NAME_ENTRY',
+    source          annotation_source                                  NOT NULL DEFAULT 'RULE',
     ref_start       INT                                                NOT NULL,
     ref_end         INT                                                NOT NULL,    
     author          INT REFERENCES account(id) ON DELETE SET NULL,
