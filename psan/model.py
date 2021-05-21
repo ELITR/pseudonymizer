@@ -36,12 +36,6 @@ class ReferenceType(Enum):
     USER = "USER"
 
 
-class RuleType(Enum):
-    WORD_TYPE = "WORD_TYPE"
-    LEMMA = "LEMMA"
-    NE_TYPE = "NE_TYPE"
-
-
 def strip_whitespace(text: str):
     return text.strip()
 

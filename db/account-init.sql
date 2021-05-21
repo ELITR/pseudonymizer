@@ -4,16 +4,15 @@
 CREATE TYPE account_type AS ENUM ('USER', 'ADMIN');
 
 CREATE TYPE submission_status AS ENUM ('NEW', 'RECOGNIZED', 'ANNOTATED', 'DONE'); 
-CREATE TYPE annotation_decision AS ENUM ('PUBLIC', 'SECRET', 'RULE', 'NESTED', 'UNDECIDED');
 
-CREATE TYPE rule_decision AS ENUM ('PUBLIC', 'SECRET');
+CREATE TYPE annotation_decision AS ENUM ('PUBLIC', 'SECRET', 'NESTED');
 
 CREATE TYPE reference_type AS ENUM ('NAME_ENTRY', 'USER');
 
 CREATE TYPE rule_type AS ENUM ('WORD_TYPE', 'LEMMA', 'NE_TYPE');
 
 CREATE TABLE account (
-    id                  SERIAL PRIMARY KEY,
+    id                  INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
     full_name           TEXT                        NOT NULL,
     type                account_type                NOT NULL,
     window_size         INT                         NOT NULL,
@@ -25,7 +24,7 @@ CREATE TABLE account (
 );
 
 CREATE TABLE submission (
-    id          SERIAL PRIMARY KEY,
+    id          INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
     name        TEXT                        NOT NULL,
     uid         UUID                UNIQUE  NOT NULL,
     status      submission_status           NOT NULL,
@@ -34,25 +33,98 @@ CREATE TABLE submission (
     CHECK (0 <= num_tokens)
 );
 
-CREATE TABLE rule (
-    id              SERIAL PRIMARY KEY,
-    type            rule_type                   NOT NULL,
-    condition       TEXT[]                      NOT NULL,
-    decision        rule_decision               NOT NULL,
-    author          INT REFERENCES account(id)  ON DELETE SET NULL,
-    UNIQUE (type, condition)
-);
-
 CREATE TABLE annotation (
-    id              SERIAL PRIMARY KEY,
+    id              INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
     submission      INT REFERENCES submission(id) ON DELETE CASCADE    NOT NULL,
-    decision        annotation_decision                                NOT NULL DEFAULT 'UNDECIDED',
-    rule            INT REFERENCES rule(id), 
+    token_level     annotation_decision,
+    rule_level      INT,
     ref_type        reference_type                                     NOT NULL DEFAULT 'NAME_ENTRY',
     ref_start       INT                                                NOT NULL,
     ref_end         INT                                                NOT NULL,    
     author          INT REFERENCES account(id) ON DELETE SET NULL,
     UNIQUE (submission, ref_start, ref_end),
-    CHECK (ref_start <= ref_end),
-    CHECK ((decision != 'RULE' and rule IS NULL) or (decision = 'RULE' and rule IS NOT NULL))
+    CHECK (ref_start <= ref_end)
 );
+
+CREATE TABLE rule (
+    id              INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+    type            rule_type                   NOT NULL,
+    condition       TEXT[]                      NOT NULL,
+    confidence      INT                         NOT NULL,
+    author          INT REFERENCES account(id)  ON DELETE SET NULL,
+    parent          INT REFERENCES rule(id)     ON DELETE CASCADE, -- cleanup rules from NER+
+    source          INT REFERENCES annotation(id) ON DELETE CASCADE, -- cleanup from auto rules
+    UNIQUE (type, condition)
+);
+
+CREATE TABLE annotation_rule (
+    annotation      INT REFERENCES annotation(id) ON DELETE CASCADE    NOT NULL,
+    rule            INT REFERENCES rule(id) ON DELETE CASCADE          NOT NULL,
+    UNIQUE (annotation, rule)
+);
+
+CREATE PROCEDURE update_rule(rule_id integer, ammount integer)
+LANGUAGE SQL
+AS $$
+UPDATE 
+    annotation 
+SET 
+    rule_level = rule_level + ammount 
+FROM 
+    annotation_rule 
+WHERE 
+    annotation.id = annotation_rule.annotation 
+    and annotation_rule.rule = rule_id;
+$$;
+
+CREATE OR REPLACE PROCEDURE annotatation_cleanup()
+LANGUAGE SQL
+AS $$
+DELETE FROM annotation AS a WHERE a.token_level IS NULL AND a.rule_level = 0 AND NOT EXISTS (SELECT 1 FROM annotation_rule AS ar WHERE a.id = ar.annotation);
+$$;
+
+CREATE OR REPLACE FUNCTION rule_deletion_fnc() RETURNS trigger AS $emp_stamp$
+    BEGIN
+        CALL update_rule(OLD.id, -OLD.confidence);
+        CALL annotatation_cleanup();
+        RETURN NULL;
+    END;
+$emp_stamp$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION rule_update_fn() RETURNS trigger AS $emp_stamp$
+    BEGIN
+        CALL updater_rule(NEW.id, -OLD.confidence + NEW.confidence);
+        RETURN NULL;
+    END;
+$emp_stamp$ LANGUAGE plpgsql;
+
+
+CREATE OR REPLACE FUNCTION annotation_rule_insert_fn() RETURNS trigger AS $emp_stamp$
+    BEGIN
+        UPDATE 
+            annotation 
+        SET 
+            rule_level = rule_level + rule.confidence
+        FROM 
+            rule 
+        WHERE 
+            annotation.id = NEW.annotation
+            and rule.id = NEW.rule; 
+        RETURN NULL;
+   END;
+$emp_stamp$ LANGUAGE plpgsql;
+
+CREATE TRIGGER rule_deletion_trigger AFTER DELETE 
+    ON rule
+    FOR EACH ROW
+    EXECUTE PROCEDURE rule_deletion_fnc();
+
+CREATE TRIGGER rule_update_trigger AFTER UPDATE 
+    OF confidence ON rule
+    FOR EACH ROW
+    EXECUTE PROCEDURE rule_update_fn();
+
+CREATE TRIGGER annotation_rule_insert_trigger AFTER INSERT 
+    ON annotation_rule
+    FOR EACH ROW
+    EXECUTE PROCEDURE annotation_rule_insert_fn(); 
