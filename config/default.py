@@ -8,3 +8,5 @@ COMMIT_REV = "unknown"
 # Secrets
 SECRET_KEY = os.environ["APP_SECRET_KEY"]
 TOKEN_SECRET = os.environ["APP_SECRET_KEY"]
+# PSAN tool
+RULE_AUTOAPPLY_CONFIDENCE = 1

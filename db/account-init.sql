@@ -3,7 +3,7 @@
 -- Table
 CREATE TYPE account_type AS ENUM ('USER', 'ADMIN');
 
-CREATE TYPE submission_status AS ENUM ('NEW', 'RECOGNIZED', 'ANNOTATED', 'DONE'); 
+CREATE TYPE submission_status AS ENUM ('NEW', 'RECOGNIZED', 'PRE_ANNOTATED', 'ANNOTATED', 'DONE'); 
 
 CREATE TYPE annotation_decision AS ENUM ('PUBLIC', 'SECRET', 'NESTED');
 
@@ -27,7 +27,7 @@ CREATE TABLE submission (
     id          INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
     name        TEXT                        NOT NULL,
     uid         UUID                UNIQUE  NOT NULL,
-    status      submission_status           NOT NULL,
+    status      submission_status           NOT NULL DEFAULT 'NEW',
     num_tokens  INT,
     created     TIMESTAMP                   NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CHECK (0 <= num_tokens)

@@ -21,6 +21,8 @@
                         {% if submission["status"]==SubmissionStatus.NEW.value %}
                             {% trans %}Parsing... {% endtrans %}
                         {% elif submission["status"]==SubmissionStatus.RECOGNIZED.value %}
+                            {% trans %}Pre-annotating... {% endtrans %}
+                        {% elif submission["status"]==SubmissionStatus.PRE_ANNOTATED.value %}
                             {% if submission["candidates"] > 0 %}
                                 {% trans percent=((submission["decided"] / submission["candidates"] *100) | round(2)) %}{{ percent  }} % annotated{% endtrans %}
                             {% else %}

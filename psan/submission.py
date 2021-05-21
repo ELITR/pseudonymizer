@@ -44,10 +44,10 @@ def index():
     # Load data from db
     with get_cursor() as cursor:
         cursor.execute(
-            "SELECT submission.id as id, name, uid, status, COUNT(annotation.id) AS candidates, "
-            "SUM(CASE WHEN annotation.decision <> 'UNDECIDED' THEN 1 ELSE 0 END) as decided "
-            "FROM submission LEFT JOIN annotation ON submission.id=annotation.submission "
-            "GROUP BY submission.id ORDER BY submission.id")
+            "SELECT s.id as id, name, uid, status, COUNT(a.id) AS candidates, "
+            "SUM(CASE WHEN token_level IS NOT NULL OR ABS(rule_level) >= %s THEN 1 ELSE 0 END) as decided "
+            "FROM submission s LEFT JOIN annotation a ON s.id=a.submission "
+            "GROUP BY s.id ORDER BY s.id", (current_app.config["RULE_AUTOAPPLY_CONFIDENCE"],))
         submissions = cursor.fetchall()
     # Remove button
     remove_form = RemoveSubmissionForm(request.form)
@@ -78,8 +78,9 @@ def new():
             # Save uuid to db
             with get_cursor() as cursor:
                 cursor.execute(
-                    "INSERT INTO submission (uid, name, status) VALUES (%s, %s, %s)",
-                    (uid, name, SubmissionStatus.NEW.value))
+                    "INSERT INTO submission (uid, name) VALUES (%s, %s) RETURNING id",
+                    (uid, name))
+                doc_id = cursor.fetchone()["id"]
                 commit()
             # Save file
             folder = get_submission_folder(uid)
@@ -90,8 +91,8 @@ def new():
                 with open(os.path.join(folder, _INPUT_FILENAME), "w") as file:
                     file.write(form.text.data)
             # Register background task
-            from psan.celery import recognize
-            recognize.recognize_submission.delay(uid)
+            from psan.celery import pre_process
+            pre_process.pre_process.delay(doc_id)
 
             return redirect(url_for(".index"))
     else:
@@ -129,7 +130,7 @@ def download():
     if doc_uid is None or type is None:
         raise BadRequest("Missing required parameters")
     # Check type
-    if type not in [SubmissionStatus.NEW.value]:
+    if type not in [SubmissionStatus.NEW.value, SubmissionStatus.RECOGNIZED.value]:
         raise BadRequest("Unsupported type")
 
     # Send result

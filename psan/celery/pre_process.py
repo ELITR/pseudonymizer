@@ -22,6 +22,10 @@ def pre_process(document_id: int) -> None:
     num_tokens = recognize_file(input_file, recognized_file)
 
     with get_cursor() as cursor:
+        cursor.execute("UPDATE submission SET status = %s, num_tokens = %s WHERE id = %s",
+                       (SubmissionStatus.RECOGNIZED.value, num_tokens, document_id))
+        commit()
+
         ctl = controller.Controller(cursor, document_id)
 
         # Run pre-annotation
@@ -31,6 +35,6 @@ def pre_process(document_id: int) -> None:
         apply_rules(recognized_file, ctl)
 
         # Update document status
-        cursor.execute("UPDATE submission SET status = %s, num_tokens = %s WHERE id = %s",
-                       (SubmissionStatus.RECOGNIZED.value, num_tokens, document_id))
+        cursor.execute("UPDATE submission SET status = %s WHERE id = %s",
+                       (SubmissionStatus.PRE_ANNOTATED.value, document_id))
         commit()
