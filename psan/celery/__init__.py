@@ -11,7 +11,7 @@ def init_celery(app: Flask) -> None:
         app.name,
         backend=os.environ["CELERY_REDIS"],
         broker=os.environ["CELERY_REDIS"],
-        include=["psan.celery.recognize", "psan.celery.decide"]
+        include=["psan.celery.pre_process", "psan.celery.re_annotate"]
     )
     celery.conf.update(app.config)
 
