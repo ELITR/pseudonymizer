@@ -35,7 +35,9 @@
                             <span id="info-author" class="small ml-auto"></span>
                         </p>
                         {# Rules #}
-                        <small id="info-rule" class="card-text mt-2">(<span id="info-condition">{% trans %}Loading...{% endtrans %}</span>)</small>
+                        <div id="info-detail">
+                            {% trans %}Loading...{% endtrans %}
+                        </div>
                     </div>
                 </div>
 
@@ -245,8 +247,6 @@
 
         function setDecision(decisions) {
             decisions.forEach(entry => {
-                // Find text interval
-                selection = selectInterval(entry.start, entry.end);
                 // Decide class according to decision
                 switch(entry.decision) {
                     case "PUBLIC":
@@ -255,10 +255,13 @@
                     case "SECRET":
                         cls = "candidate-secret";
                         break;
-                    case "UNDECIDED":
+                    case "NESTED":
+                    case null:
                         cls = "candidate"
                         break;
                 }
+                // Find text interval
+                selection = selectInterval(entry.start, entry.end);
                 // Update class
                 if (selection.length == 1) {
                     selection.addClass(cls);
@@ -312,10 +315,16 @@
             });
         }
 
+        function addDecisionDetailRow(rootElement, condition, decision, author) {
+            rootElement.append('<small class="card-text mt-2">' + condition + ':</small> ' +
+                               '<small class="card-text mt-2">' + decision + '</small> ' +
+                               '<small class="card-text mt-2">' + (author ? author : "") + '</small> ');
+        }
+
         function loadAnnotation(start, end, decision) {
             // Show decision
             switch(decision) {
-                case "UNDECIDED":
+                case "NESTED":
                 case undefined:
                     $("#info-card").hide();
                     return;
@@ -332,17 +341,22 @@
             // Load rule details
             $.get(`{{ url_for("annotate.detail", doc_id=submission_id) | safe }}&start=${start}&end=${end}`, 
                     (data) => {
-                        if(data.type) {
-                            if(data.type == "NE_TYPE" && NE_CODES[data.condition]) {
-                                $("#info-condition").html(NE_CODES[data.condition]);
-                            } else {
-                                $("#info-condition").html(data.condition.join(" "));
-                            }
-                            $("#info-rule").show();
-                        } else {
-                            $("#info-rule").hide();
+                        // Clean detail UI
+                        detail = $("#info-detail");
+                        detail.empty();
+                        // Info about token level
+                        if(data.token_level) {
+                            addDecisionDetailRow(detail, "{{_("Token") }}", data.token_level, data.token_author);
                         }
-                        $("#info-author").html(data.author);
+                        // Info about rule level
+                        data.rules.forEach(rule => {
+                            if(rule.type == "NE_TYPE" && NE_CODES[rule.condition]) {
+                                condition = NE_CODES[rule.condition];
+                            } else {
+                                condition = rule.condition.join(" "); 
+                            }
+                            addDecisionDetailRow(detail, condition, rule.confidence, rule.author);
+                        });
                         // Show decision in UI
                         $("#info-card").show();
                     });

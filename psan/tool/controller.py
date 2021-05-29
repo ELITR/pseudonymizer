@@ -1,27 +1,43 @@
-from typing import Optional, Tuple
+from typing import List, Optional, Tuple
 
-from psan.tool.model import (Confidence, Evidence, EvidenceType, Interval,
+from psan.tool.model import (AnnotationDecision, Confidence, Evidence, EvidenceType, Interval,
                              Rule, RuleType, Word)
 
 
 class Controller:
-    def __init__(self, cursor, document_id) -> None:
+    def __init__(self, cursor, document_id: int, user_id: int = None) -> None:
         self._cursor = cursor
         self._document_id = document_id
+        self._user_id = user_id
+
+    def add_rule(self, rule_type: Rule, condition: List, confidence: int) -> Rule:
+        """Adds new rule into db or update existing and returns it's ID"""
+        self._cursor.execute("INSERT INTO rule (type, condition, confidence, author) VALUES (%s, %s, %s, %s) "
+                             " ON CONFLICT (type, condition) DO UPDATE"
+                             " SET confidence=EXCLUDED.confidence, author=EXCLUDED.author RETURNING id",
+
+                             (rule_type.value, condition, confidence, self._user_id))
+        return Rule(self._cursor.fetchone()["id"])
 
     def add_ne_type(self, ne_type: str) -> Rule:
         """Adds new NE type into db and returns it's ID (or return duplicate rule ID)"""
-        self._cursor.execute("INSERT INTO rule (type, condition, confidence) VALUES (%s, %s, %s) "
-                             " ON CONFLICT (type, condition) DO UPDATE SET confidence=EXCLUDED.confidence RETURNING id",
-                             (RuleType.NE_TYPE.value, [ne_type], Confidence.CANDIDATE))
-        return Rule(self._cursor.fetchone()["id"])
+        return self.add_rule(RuleType.NE_TYPE.value, [ne_type], Confidence.CANDIDATE)
 
-    def annotate_with_rule(self, interval: Interval, rule: Rule, token_level_decision: Optional[str]) -> None:
+    def annotate(self, interval: Interval, token_level_decision: AnnotationDecision) -> None:
+        """ Annotate text interval with token level decision """
+        self._cursor.execute("INSERT INTO annotation (submission, ref_start, ref_end, token_level, author) VALUES (%s, %s, %s, %s, %s)"
+                             " ON CONFLICT (submission, ref_start, ref_end) DO UPDATE"
+                             " SET token_level=EXCLUDED.token_level, author=EXCLUDED.author",
+                             (self._document_id, interval.start, interval.end, token_level_decision.value, self._user_id))
+
+    def annotate_with_rule(self, interval: Interval, rule: Rule, token_level_decision: Optional[AnnotationDecision] = None) -> None:
         """ Annotate text interval with rule """
-        self._cursor.execute("INSERT INTO annotation (submission, ref_start, ref_end, token_level) VALUES (%s, %s, %s, %s)"
-                             " ON CONFLICT (submission, ref_start, ref_end) DO UPDATE SET token_level=EXCLUDED.token_level"
+        token_decision_str = token_level_decision.value if token_level_decision else None
+        self._cursor.execute("INSERT INTO annotation (submission, ref_start, ref_end, token_level, author) VALUES (%s, %s, %s, %s, %s)"
+                             " ON CONFLICT (submission, ref_start, ref_end) DO UPDATE"
+                             " SET token_level=EXCLUDED.token_level, author=EXCLUDED.author"
                              " RETURNING id",
-                             (self._document_id, interval.start, interval.end, token_level_decision))
+                             (self._document_id, interval.start, interval.end, token_decision_str, self._user_id))
         annotation_id = self._cursor.fetchone()["id"]
         # Add connection from rule to annotation
         self._cursor.execute("INSERT INTO annotation_rule (annotation, rule) VALUES (%s, %s) ON CONFLICT DO NOTHING",

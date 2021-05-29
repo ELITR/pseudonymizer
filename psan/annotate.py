@@ -1,19 +1,20 @@
 import json
 from io import StringIO
+from psan.tool.controller import Controller
 from xml import sax  # nosec
 from xml.sax import make_parser  # nosec
 from xml.sax.saxutils import XMLFilterBase, XMLGenerator  # nosec
 
-from flask import (Blueprint, Response, g, jsonify, make_response,
+from flask import (Blueprint, Response, current_app, g, jsonify, make_response,
                    render_template, request, session)
 from flask_babel import gettext
 from werkzeug.exceptions import BadRequest
 
 from psan.auth import login_required
 from psan.db import commit, get_cursor
-from psan.model import (AccountType, AnnotateForm, AnnotationDecision,
-                        ReferenceType, RuleType, SubmissionStatus)
+from psan.model import (AccountType, AnnotateForm, SubmissionStatus)
 from psan.submission import get_submission_file
+from psan.tool.model import AnnotationDecision, Interval, RuleType
 
 _ = gettext
 
@@ -26,14 +27,13 @@ def index():
     # Find longest submission from db
     with get_cursor() as cursor:
         cursor.execute("SELECT submission.id, COUNT(annotation.id) AS candidates FROM submission "
-                       "JOIN annotation ON submission.id = annotation.submission and decision = %s "
-                       "WHERE status = %s GROUP BY submission.id",
-                       (AnnotationDecision.UNDECIDED.value, SubmissionStatus.RECOGNIZED.value))
+                       "JOIN annotation ON submission.id = annotation.submission and token_level IS NULL "
+                       "WHERE status = %s GROUP BY submission.id", (SubmissionStatus.PRE_ANNOTATED.value,))
         document = cursor.fetchone()
         if document:
             # Show first candadate of submission
-            cursor.execute("SELECT * FROM annotation WHERE submission = %s and decision = %s LIMIT 1",
-                           (document["id"], AnnotationDecision.UNDECIDED.value))
+            cursor.execute("SELECT * FROM annotation WHERE submission = %s and token_level IS NULL LIMIT 1",
+                           (document["id"],))
             candidate = cursor.fetchone()
             return show_candidate(candidate["submission"], candidate["ref_start"], candidate["ref_end"])
         else:
@@ -123,13 +123,28 @@ def decisions():
     # Returns decision in defined interval
     decisions = []
     with get_cursor() as cursor:
-        cursor.execute("SELECT ref_start, ref_end, COALESCE(rule.decision::text, annotation.decision::text) as decision"
-                       " FROM annotation LEFT JOIN rule ON annotation.rule = rule.id"
-                       " WHERE submission = %s and (%s<=ref_start and ref_start<=%s) and annotation.decision != %s"
+        cursor.execute("SELECT ref_start, ref_end, token_level, rule_level"
+                       " FROM annotation"
+                       " WHERE submission = %s and %s<=ref_start and ref_start<=%s"
                        " ORDER BY ref_start",
-                       (submission_id, window_start, window_end, AnnotationDecision.NESTED.value))
+                       (submission_id, window_start, window_end))
         for row in cursor:
-            decisions.append({"start": row["ref_start"], "end": row["ref_end"], "decision": row["decision"]})
+            # Decision sum-up
+            if row["token_level"]:
+                # Token level decision
+                decision = row["token_level"]
+            else:
+                # Rule level decision
+                rule_level = row["rule_level"]
+                min_confidence = current_app.config["RULE_AUTOAPPLY_CONFIDENCE"]
+                if rule_level <= -min_confidence:
+                    decision = AnnotationDecision.SECRET.value
+                elif min_confidence <= rule_level:
+                    decision = AnnotationDecision.PUBLIC.value
+                else:
+                    decision = None
+            # Output
+            decisions.append({"start": row["ref_start"], "end": row["ref_end"], "decision": decision})
 
     return jsonify(decisions)
 
@@ -150,13 +165,29 @@ def detail():
 
     # Returns decision in defined interval
     with get_cursor() as cursor:
-        cursor.execute("SELECT rule.type, rule.condition, account.full_name"
-                       " FROM annotation LEFT JOIN rule ON annotation.rule = rule.id"
-                       " LEFT JOIN account ON annotation.author = account.id OR rule.author = account.id"
+        # Annotation info
+        cursor.execute("SELECT a.id, token_level, account.full_name AS annotation_author"
+                       " FROM annotation a"
+                       " LEFT JOIN account ON a.author = account.id"
                        " WHERE submission = %s and ref_start = %s and ref_end = %s",
                        (submission_id, start, end))
         row = cursor.fetchone()
-        return jsonify({"type": row["type"], "condition": row["condition"], "author": row["full_name"]})
+        annotation_id = row["id"]
+        response = {"token_author": row["annotation_author"], "token_level": row["token_level"]}
+        # Rules info
+        rules = []
+        cursor.execute("SELECT r.type, condition, confidence, account.full_name AS rule_author"
+                       " FROM rule r"
+                       " JOIN annotation_rule ar ON r.id = ar.rule AND ar.annotation = %s"
+                       " LEFT JOIN account ON r.author=account.id"
+                       " ORDER BY confidence ASC",
+                       (annotation_id, ))
+        for row in cursor:
+            rules.append({"type": row["type"], "condition": row["condition"], "confidence": row["confidence"],
+                          "author": row["rule_author"]})
+        response["rules"] = rules
+
+        return jsonify(response)
 
 
 @bp.route("/set", methods=['POST'])
@@ -171,50 +202,33 @@ def set():
             decision = AnnotationDecision.SECRET
         # Process decision condition
         if form.lemma_public.data or form.lemma_secret.data:
-            rule = RuleType.WORD_TYPE
+            rule_type = RuleType.WORD_TYPE
             rule_condition = json.loads(form.condition.data)
         elif form.ne_type_public.data or form.ne_type_secret.data:
-            rule = RuleType.NE_TYPE
+            rule_type = RuleType.NE_TYPE
             rule_condition = [form.ne_type.data]
         else:
-            rule = None
+            rule_type = None
             rule_condition = None
 
         # Save result to db
-        rule_id = None
+        interval = Interval(form.ref_start.data, form.ref_end.data)
         with get_cursor() as cursor:
-            if rule:
-                cursor.execute("INSERT INTO rule(type, condition, decision, author) VALUES(%s, %s, %s, %s)"
-                               " ON CONFLICT(type, condition) DO UPDATE"
-                               " SET decision=excluded.decision, author=excluded.author RETURNING id",
-                               (rule.value, rule_condition, decision.value, g.account["id"]))
-                rule_id = cursor.fetchone()[0]
-                decision = AnnotationDecision.RULE
-
-            if form.ne_type.data:
-                # if selection is a candidate than it has ne_type
-                cursor.execute("UPDATE annotation SET decision = %s, rule = %s, author = %s"
-                               " WHERE submission = %s and ref_start = %s and ref_end = %s",
-                               (decision.value, rule_id, g.account["id"], form.submission_id.data, form.ref_start.data,
-                                form.ref_end.data))
+            ctl = Controller(cursor, form.submission_id.data, g.account["id"])
+            if rule_type:
+                # Decision connected with rules
+                rule_confidence = 1 if decision == AnnotationDecision.PUBLIC else -1
+                rule = ctl.add_rule(rule_type, rule_condition, rule_confidence)
+                ctl.annotate_with_rule(interval, rule, decision)
             else:
-                cursor.execute("DELETE FROM annotation"
-                               " WHERE submission = %s and %s <= ref_start and ref_end <= %s and ref_type = %s",
-                               (form.submission_id.data, form.ref_start.data, form.ref_end.data, ReferenceType.USER.value))
-                cursor.execute("INSERT INTO annotation (decision, submission, ref_start, ref_end, ref_type, rule, author)"
-                               " VALUES (%s, %s, %s, %s, %s, %s, %s)",
-                               (decision.value, form.submission_id.data, form.ref_start.data, form.ref_end.data,
-                                ReferenceType.USER.value, rule_id, g.account["id"]))
-                cursor.execute("UPDATE annotation SET decision = %s, author = %s"
-                               " WHERE submission = %s and %s <= ref_start and ref_end <= %s and ref_type = %s",
-                               (AnnotationDecision.NESTED.value, g.account["id"], form.submission_id.data, form.ref_start.data,
-                                form.ref_end.data, ReferenceType.NAME_ENTRY.value))
+                # Decision without rule
+                ctl.annotate(interval, decision)
             commit()
 
-            if rule:
+            if rule_type:
                 # Annotate rest using background task
-                from psan.celery import decide
-                decide.auto_decide_remaining.delay(form.submission_id.data)
+                from psan.celery import re_annotate
+                re_annotate.re_annotate.delay(form.submission_id.data)
 
         # Send OK reply
         return jsonify({"status": "ok"})

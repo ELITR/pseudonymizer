@@ -14,9 +14,9 @@ def re_annotate(doc_id: int) -> None:
         uid = cursor.fetchone()["uid"]
         submission_file = get_submission_file(uid, SubmissionStatus.RECOGNIZED)
 
-        controller = controller.Controller(cursor, doc_id)
+        ctl = controller.Controller(cursor, doc_id)
 
         # Parse file and apply rules
-        apply_rules(submission_file, controller)
+        apply_rules(submission_file, ctl)
 
         commit()
