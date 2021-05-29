@@ -190,7 +190,7 @@
             $("#lemma").html(selection.text());
             if(selection.length == 1) {
                 // Process name entity type
-                if (selection.is(".candidate")) {
+                if (selection.data("ne-type")) {
                     category = selection.data("ne-type");
                     $("#ne_type").val(category);
                     if(NE_CODES[category])
@@ -250,10 +250,10 @@
                 // Decide class according to decision
                 switch(entry.decision) {
                     case "PUBLIC":
-                        cls = "candidate-public";
+                        cls = "candidate candidate-public";
                         break;
                     case "SECRET":
-                        cls = "candidate-secret";
+                        cls = "candidate candidate-secret";
                         break;
                     case "NESTED":
                     case null:
