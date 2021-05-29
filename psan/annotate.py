@@ -255,11 +255,10 @@ class RecognizedTagFilter(XMLFilterBase):
         self._last_sentence = False
 
     def _startCandidate(self, ref_start, ref_end, entity_type) -> None:
-        new_attrs = {"class": "wrapper candidate",
+        new_attrs = {"class": "wrapper",
                      "data-ne-type": entity_type,
                      "data-start": str(ref_start),
-                     "data-end": str(ref_end),
-                     "onClick": f"onTokenIntervalClick(event, {ref_start}, {ref_end})"}
+                     "data-end": str(ref_end)}
         # Return span element
         self._nested_depth += 1
         super().startElement("span", new_attrs)
@@ -271,7 +270,7 @@ class RecognizedTagFilter(XMLFilterBase):
     def _startToken(self) -> None:
         new_attrs = {"id": f"token-{self._token_id}",
                      "class": "token",
-                     "onClick": f"onTokenClick(event, {self._token_id}, {self._nested_depth})"}
+                     "onClick": f"onTokenClick(event, {self._token_id})"}
         self._nested_depth += 1
         # Pass updated element
         super().startElement("span", new_attrs)

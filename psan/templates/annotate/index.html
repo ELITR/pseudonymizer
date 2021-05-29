@@ -209,9 +209,9 @@
             }
         }
 
-        function onTokenClick(event, token_id, token_depth) {
-            // Don use in snap to candidate (in candidates)
-            if (token_depth > 0 && $("#snapSelect option:selected").val() == "candidate") {
+        function onTokenClick(event, token_id) {
+            // Don't use in snap to candidate (in candidates)
+            if ($("#snapSelect option:selected").val() == "candidate" && event.target.parentElement.classList.contains("candidate")) {
                 return;
             }
             // Extend interval with shift key
@@ -257,7 +257,7 @@
                         break;
                     case "NESTED":
                     case null:
-                        cls = "candidate"
+                        cls = "candidate";
                         break;
                 }
                 // Find text interval
@@ -265,9 +265,10 @@
                 // Update class
                 if (selection.length == 1) {
                     selection.addClass(cls);
+                    selection.click(function(event) { onTokenIntervalClick(event, entry.start, entry.end); });
                     selection.attr("data-decision", entry.decision);
                 } else {
-                    selection.wrapAll('<span class="wrapper ' + cls + '" onclick="onTokenIntervalClick(event, ' + entry.start +
+                    selection.wrapAll('<span class="wrapper ' + cls + '" onClick="onTokenIntervalClick(event, ' + entry.start +
                                       ' ,'+entry.end+')" data-start="' + entry.start + '" data-end="' + entry.end + 
                                       '" data-decision="' + entry.decision +'">');
                 }
