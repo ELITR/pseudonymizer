@@ -45,12 +45,12 @@ class Controller:
 
     def find_rule(self, evidence: Evidence) -> Optional[Rule]:
         """Finds rule in DB according to evidence"""
-        if evidence.type == RuleType.NE_TYPE:
+        if evidence.type == EvidenceType.NE_TYPE:
             self._cursor.execute("SELECT id FROM rule WHERE type = %s and condition = %s",
                                  (RuleType.NE_TYPE.value, evidence.value))
             row = self._cursor.fetchone()
             rule = Rule(row["id"]) if row else None
-        elif evidence.type == RuleType.WORD_TYPE:
+        elif evidence.type == EvidenceType.WORD_TYPE:
             self._cursor.execute("SELECT id, condition FROM rule WHERE type = %s and condition[1] = %s",
                                  (RuleType.WORD_TYPE.value, evidence.value[0]))
             # Find rule where condition match evidence

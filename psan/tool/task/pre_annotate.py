@@ -29,7 +29,7 @@ class PreAnnotationParser(AnnotationParser):
 
         # Token level decision
         nested = depth > 1
-        decision = AnnotationDecision.NESTED.value if nested else None
+        decision = AnnotationDecision.NESTED if nested else None
 
         # Add annotation to db
         self._ctl.annotate_with_rule(Interval(start, end), self._ne_types[ne_type], decision)

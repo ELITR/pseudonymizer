@@ -62,8 +62,8 @@ class AnnotationParser(xml.sax.ContentHandler):
     def _handleLookups(self, current_id: int) -> None:
         while len(self._lookup_events) > 0 and self._lookup_events[0].target_token_id == current_id:
             event = heappop(self._lookup_events)
-            words = self._word_list[event.sequence.start - self._word_list_first_token_id:
-                                    event.sequence.end - self._word_list_first_token_id + 1]
+            words = self._word_list[event.source_token_id - self._word_list_first_token_id:
+                                    event.target_token_id - self._word_list_first_token_id + 1]
             # Forward event
             self.onLookupEvent(event, words)
             # Tokens cleanup

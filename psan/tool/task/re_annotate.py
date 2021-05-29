@@ -30,10 +30,11 @@ class ReAnnotateParser(AnnotationParser):
         type, lookup = self._ctl.rule_lookup(word)
         if type != EvidenceType.NONE:
             target_id = self._last_token_id + lookup
-            self.registerLookup(self._last_token_id, target_id, type)
+            event = LookupEvent(target_id, self._last_token_id, type)
+            self.registerLookup(event)
 
     def onLookupEvent(self, event: LookupEvent, words: List[Word]) -> None:
-        super().onLookupEvent(event)
+        super().onLookupEvent(event, words)
         # Prepare evidence
         interval = Interval(event.source_token_id, event.target_token_id)
         if event.data == EvidenceType.WORD_TYPE:
