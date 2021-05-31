@@ -4,433 +4,434 @@
 {% block title %}{% trans %}Annotation interface{% endtrans %}{% endblock %}
 
 {% block content %}
-    <div class="d-flex">
-        <div class="row col-12">
-            <div class="col-12 col-lg-8 col-xl-9 non-selectable-ui">
-                <h2 class="mb-4">
-                    {% trans %}Annotation interface{% endtrans %}
-                </h2>
-                <div id="before-window-btn" class="load-ui font-weight-light font-italic text-center p-2 collapse">
-                    {% trans %}... load previous text ...{% endtrans %}
-                </div>
-                <div id="annotation-window">
-                    {% trans %}Loading...{% endtrans %}
-                </div>
-                <div id="after-window-btn" class="load-ui font-weight-light font-italic text-center p-2 collapse">
-                    {% trans %}... load following text ...{% endtrans %}
+<div class="d-flex">
+    <div class="row col-12">
+        <div class="col-12 col-lg-8 col-xl-9 non-selectable-ui">
+            <h2 class="mb-4">
+                {% trans %}Annotation interface{% endtrans %}
+            </h2>
+            <div id="before-window-btn" class="load-ui font-weight-light font-italic text-center p-2 collapse">
+                {% trans %}... load previous text ...{% endtrans %}
+            </div>
+            <div id="annotation-window">
+                {% trans %}Loading...{% endtrans %}
+            </div>
+            <div id="after-window-btn" class="load-ui font-weight-light font-italic text-center p-2 collapse">
+                {% trans %}... load following text ...{% endtrans %}
+            </div>
+        </div>
+
+        {# Annotation UI #}
+        <div class="col-12 col-lg-4 col-xl-3 annotation-ui">
+            {# Info card #}
+            <div class="card my-2 collapse" id="detail-card">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        {{ render_icon("info-square", size="1.25em") }}{% trans %}Decision detail{% endtrans %}
+                    </h5>
+                    {# Decision #}
+                    <p class="card-text mb-0">
+                        <b><span id="detail-status">{% trans %}Unknown{% endtrans %}</span></b>
+                    </p>
+                    {# Rules #}
+                    <div id="detail-rows">
+                        {% trans %}Loading...{% endtrans %}
+                    </div>
                 </div>
             </div>
 
-            {# Annotation UI #}
-            <div class="col-12 col-lg-4 col-xl-3 annotation-ui">
-                {# Info card #}
-                <div class="card my-2 collapse" id="info-card">
+            <form method="POST" id="annotationForm">
+                {{ form.csrf_token }}
+                {{ form.submission_id(value=submission_id) }}
+                {{ form.ref_start(value=ref_start) }}
+                {{ form.ref_end(value=ref_end) }}
+                {{ form.condition(value=token_code) }}
+                {{ form.ne_type(value=ne_type_code) }}
+
+                {# Lemma #}
+                <div class="card my-2">
                     <div class="card-body">
                         <h5 class="card-title">
-                            {{ render_icon("info-square", size="1.25em") }}{% trans %}Current decision{% endtrans %}
+                            {{ render_icon("vr", size="1.5em") }}{% trans %}By lemma{% endtrans %}
                         </h5>
-                        {# Decision #}
-                        <p class="card-text mb-0 d-flex">
-                            <b><span id="info-status">{% trans %}Unknown{% endtrans %}</span></b>
-                            <span id="info-author" class="small ml-auto"></span>
-                        </p>
-                        {# Rules #}
-                        <div id="info-detail">
-                            {% trans %}Loading...{% endtrans %}
+                        <h6 id="lemma" class="card-subtitle mb-2 text-muted">{% trans %}Loading...{% endtrans %}</h6>
+                        <div class="card-text d-flex justify-content-around">
+                            <button type="submit" name="lemma_public" class="btn btn-outline-success my-2" value="True">
+                                {{ render_icon("globe", size="1.5em") }}{% trans %}Public{% endtrans %}
+                            </button>
+                            <button type="submit" name="lemma_secret" class="btn btn-outline-danger my-2" value="True">
+                                {{ render_icon("lock", size="1.5em") }}{% trans %}Secret{% endtrans %}
+                            </button>
                         </div>
                     </div>
                 </div>
 
-                <form method="POST" id="annotationForm">
-                    {{ form.csrf_token }}
-                    {{ form.submission_id(value=submission_id) }}
-                    {{ form.ref_start(value=ref_start) }}
-                    {{ form.ref_end(value=ref_end) }}
-                    {{ form.condition(value=token_code) }}
-                    {{ form.ne_type(value=ne_type_code) }}
-                    
-                    {# Lemma #}
-                    <div class="card my-2">
-                        <div class="card-body">
-                            <h5 class="card-title">
-                                {{ render_icon("vr", size="1.5em") }}{% trans %}By lemma{% endtrans %}
-                            </h5>
-                            <h6 id="lemma" class="card-subtitle mb-2 text-muted">{% trans %}Loading...{% endtrans %}</h6>
-                            <div class="card-text d-flex justify-content-around">
-                                <button type="submit" name="lemma_public" class="btn btn-outline-success my-2" value="True">
-                                    {{ render_icon("globe", size="1.5em") }}{% trans %}Public{% endtrans %}
-                                </button>
-                                <button type="submit" name="lemma_secret" class="btn btn-outline-danger my-2" value="True">
-                                    {{ render_icon("lock", size="1.5em") }}{% trans %}Secret{% endtrans %}
-                                </button>
-                            </div>
+                {# Token #}
+                <div class="card my-2">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            {{ render_icon("text-paragraph", size="1.5em") }}{% trans %}By token{% endtrans %}
+                        </h5>
+                        <div class="card-text d-flex justify-content-around">
+                            <button type="submit" name="token_public" class="btn btn-outline-success my-2" value="True">
+                                {{ render_icon("globe", size="1.5em") }}{% trans %}Public{% endtrans %}
+                            </button>
+                            <button type="submit" name="token_secret" class="btn btn-outline-danger my-2" value="True">
+                                {{ render_icon("lock", size="1.5em") }}{% trans %}Secret{% endtrans %}
+                            </button>
                         </div>
                     </div>
+                </div>
 
-                    {# Token #}
-                    <div class="card my-2">
-                        <div class="card-body">
-                            <h5 class="card-title">
-                                {{ render_icon("text-paragraph", size="1.5em") }}{% trans %}By token{% endtrans %}
-                            </h5>
-                            <div class="card-text d-flex justify-content-around">
-                                <button type="submit" name="token_public" class="btn btn-outline-success my-2" value="True">
-                                    {{ render_icon("globe", size="1.5em") }}{% trans %}Public{% endtrans %}
-                                </button>
-                                <button type="submit" name="token_secret" class="btn btn-outline-danger my-2" value="True">
-                                    {{ render_icon("lock", size="1.5em") }}{% trans %}Secret{% endtrans %}
-                                </button>
-                            </div>
+                {# Category #}
+                <div class="card my-2 collapse" id="category-card">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            {{ render_icon("tag", size="1.5em") }}{% trans %}By category{% endtrans %}
+                        </h5>
+                        <h6 id="category" class="card-subtitle mb-2 text-muted">{% trans %}Loading...{% endtrans %}</h6>
+                        <div class="card-text d-flex justify-content-around">
+                            <button type="submit" name="ne_type_public" class="btn btn-outline-success my-2"
+                                value="True">
+                                {{ render_icon("globe", size="1.5em") }}{% trans %}Public{% endtrans %}
+                            </button>
+                            <button type="submit" name="ne_type_secret" class="btn btn-outline-danger my-2"
+                                value="True">
+                                {{ render_icon("lock", size="1.5em") }}{% trans %}Secret{% endtrans %}
+                            </button>
                         </div>
                     </div>
-                    
-                    {# Category #}
-                    <div class="card my-2 collapse" id="category-card">
-                        <div class="card-body">
-                            <h5 class="card-title">
-                                {{ render_icon("tag", size="1.5em") }}{% trans %}By category{% endtrans %}
-                            </h5>
-                            <h6 id="category" class="card-subtitle mb-2 text-muted">{% trans %}Loading...{% endtrans %}</h6>
-                            <div class="card-text d-flex justify-content-around">
-                                <button type="submit" name="ne_type_public" class="btn btn-outline-success my-2" value="True">
-                                    {{ render_icon("globe", size="1.5em") }}{% trans %}Public{% endtrans %}
-                                </button>
-                                <button type="submit" name="ne_type_secret" class="btn btn-outline-danger my-2" value="True">
-                                    {{ render_icon("lock", size="1.5em") }}{% trans %}Secret{% endtrans %}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </form>
+                </div>
+            </form>
 
-                <div class="input-group mb-3">
-                    <div class="input-group-prepend">
-                        <label class="input-group-text" for="inputGroupSelect01">{% trans %}Snap to{% endtrans %}</label>
-                    </div>
-                    <select class="custom-select" id="snapSelect">
-                        <option value="candidate">{% trans %}candidate{% endtrans %}</option>
-                        <option value="token">{% trans %}token{% endtrans %}</option>
-                    </select>
-                </div>    
+            <div class="input-group mb-3">
+                <div class="input-group-prepend">
+                    <label class="input-group-text" for="inputGroupSelect01">{% trans %}Snap to{% endtrans %}</label>
+                </div>
+                <select class="custom-select" id="snapSelect">
+                    <option value="candidate">{% trans %}candidate{% endtrans %}</option>
+                    <option value="token">{% trans %}token{% endtrans %}</option>
+                </select>
             </div>
         </div>
     </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
-    {{ super() }}
+{{ super() }}
 
-    <script type="text/javascript" src="{{ url_for('static', filename='consts.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='consts.js') }}"></script>
 
-    <script>
-        var highlight_start = {{highlight_start if highlight_start is not none else "null"}};
-        var highlight_end = {{highlight_end if highlight_end is not none else "null"}};
-        var win_start = {{win_start}};
-        var win_end = {{win_end}};
+<script>
+    var highlight_start = {{ highlight_start if highlight_start is not none else "null"}};
+    var highlight_end = {{ highlight_end if highlight_end is not none else "null"}};
+    var win_start = {{ win_start }};
+    var win_end = {{ win_end }};
 
-        function selectInterval(start, end) {
-            // Find first element (longest candidate or token)
-            best_end = start;
-            first_element = null;
-            $(".wrapper[data-start="+start+"]").each((index, dom_el) => {
-                jqeury_el = $(dom_el);
-                data_end = jqeury_el.data("end");
-                if(data_end <= end && best_end <= data_end) {
-                    best_end = data_end;
-                    first_element = jqeury_el;
-                }
-            })
-            if (!first_element) {
-                first_element = $("#token-"+start);
+    function findInterval(start, end) {
+        // Find first element (longest candidate or token)
+        best_end = start;
+        first_element = null;
+        $(".wrapper[data-start=" + start + "]").each((index, dom_el) => {
+            jqeury_el = $(dom_el);
+            data_end = jqeury_el.data("end");
+            if (data_end <= end && best_end <= data_end) {
+                best_end = data_end;
+                first_element = jqeury_el;
             }
-            // Select token objects including last one and spaces between them
-            matched = $.map(first_element, function (elem, i) {
-                list = [];
-                do {
-                    if (elem.nodeType === Node.ELEMENT_NODE || elem.nodeType === Node.TEXT_NODE) {
-                        list.push(elem);
-                        jqeury_el = $(elem);
-                        if (jqeury_el.is("#token-"+end)) {
-                            break;
-                        }
-                        if (jqeury_el.is(".wrapper") && jqeury_el.data("end") >= end) {
-                            break;
-                        }
+        })
+        if (!first_element) {
+            first_element = $("#token-" + start);
+        }
+        // Select token objects including last one and spaces between them
+        matched = $.map(first_element, function (elem, i) {
+            list = [];
+            do {
+                if (elem.nodeType === Node.ELEMENT_NODE || elem.nodeType === Node.TEXT_NODE) {
+                    list.push(elem);
+                    jqeury_el = $(elem);
+                    if (jqeury_el.is("#token-" + end)) {
+                        break;
                     }
-                } while ((elem = elem.nextSibling) && elem.nodeType !== Node.DOCUMENT_NODE);
-                return list;
-            });
-
-            return first_element.pushStack(matched).addBack();
-        }
-
-        function highlightInterval(ref_start, ref_end) {
-            // Discard previous highlighted
-            if (highlight_start != null) {
-                selection = selectInterval(highlight_start, highlight_end);
-                selection.unwrap();
-            }
-            // Highlight new interval
-            selection = selectInterval(ref_start, ref_end);
-            selection.wrapAll('<span class="highlight" />');
-            // Update inner state
-            highlight_start = ref_start;
-            highlight_end = ref_end;
-            // Update form data
-            $("#ref_start").val(ref_start);
-            $("#ref_end").val(ref_end);
-            // Tokens
-            token_list = [];
-            selection.children().addBack().filter(".token").each(function() {
-                token_list.push($(this).text());
-            });
-            $("#condition").val(JSON.stringify(token_list));
-
-            // Update UI
-            $("#lemma").html(selection.text());
-            if(selection.length == 1) {
-                // Process name entity type
-                if (selection.data("ne-type")) {
-                    category = selection.data("ne-type");
-                    $("#ne_type").val(category);
-                    if(NE_CODES[category])
-                        $("#category").html(NE_CODES[category]);
-                    else 
-                        $("#category").html(category);
-                    $("#category-card").show();
-                } else {
-                    $("#category-card").hide();
-                }   
-                // Process current annotation
-                loadAnnotation(ref_start, ref_end, selection.data("decision"));
-            } else {
-                $("#info-card").hide();
-                $("#category-card").hide();
-            }
-        }
-
-        function onTokenClick(event, token_id) {
-            // Don't use in snap to candidate (in candidates)
-            if ($("#snapSelect option:selected").val() == "candidate" && event.target.parentElement.classList.contains("candidate")) {
-                return;
-            }
-            // Extend interval with shift key
-            if (event.shiftKey) {
-                if(token_id < highlight_start) {
-                    highlightInterval(token_id, highlight_end);
-                } else {
-                    highlightInterval(highlight_start, token_id);
-                }
-            } else {
-                highlightInterval(token_id, token_id);
-            }
-       }
-
-        function onTokenIntervalClick(event, start_token_id, end_token_id) {
-            // Use only in snap to candidates mode
-            if ($("#snapSelect option:selected").val() == "token") {
-                return;
-            }
-            // Extend interval with shift key
-            if (event.shiftKey) {
-                if(end_token_id < highlight_start) {
-                    highlightInterval(start_token_id, highlight_end);
-                } else {
-                    highlightInterval(highlight_start, end_token_id);
-                }
-            } else {
-                highlightInterval(start_token_id, end_token_id);
-            }
-            // Stop event
-            event.stopPropagation();
-        }
-
-        function setDecision(decisions) {
-            decisions.forEach(entry => {
-                // Decide class according to decision
-                switch(entry.decision) {
-                    case "PUBLIC":
-                        cls = "candidate candidate-public";
+                    if (jqeury_el.is(".wrapper") && jqeury_el.data("end") >= end) {
                         break;
-                    case "SECRET":
-                        cls = "candidate candidate-secret";
-                        break;
-                    case "NESTED":
-                    case null:
-                        cls = "candidate";
-                        break;
+                    }
                 }
-                // Find text interval
-                selection = selectInterval(entry.start, entry.end);
-                // Update class
-                if (selection.length == 1) {
-                    selection.addClass(cls);
-                    selection.click(function(event) { onTokenIntervalClick(event, entry.start, entry.end); });
-                    selection.attr("data-decision", entry.decision);
-                } else {
-                    selection.wrapAll('<span class="wrapper ' + cls + '" onClick="onTokenIntervalClick(event, ' + entry.start +
-                                      ' ,'+entry.end+')" data-start="' + entry.start + '" data-end="' + entry.end + 
-                                      '" data-decision="' + entry.decision +'">');
-                }
-            })
+            } while ((elem = elem.nextSibling) && elem.nodeType !== Node.DOCUMENT_NODE);
+            return list;
+        });
+
+        return first_element.pushStack(matched).addBack();
+    }
+
+    function highlightInterval(ref_start, ref_end) {
+        // Discard previous highlighted
+        if (highlight_start != null) {
+            selection = findInterval(highlight_start, highlight_end);
+            selection.unwrap();
         }
+        // Highlight new interval
+        selection = findInterval(ref_start, ref_end);
+        selection.wrapAll('<span class="highlight" />');
+        // Update inner state
+        highlight_start = ref_start;
+        highlight_end = ref_end;
+        // Update form data
+        $("#ref_start").val(ref_start);
+        $("#ref_end").val(ref_end);
+        // Tokens
+        token_list = [];
+        selection.children().addBack().filter(".token").each(function () {
+            token_list.push($(this).text());
+        });
+        $("#condition").val(JSON.stringify(token_list));
 
-        function loadWindow(start, end) {
-            // Load text to annotation window
-            windowDeferred = $.Deferred();
-            $.ajax({
-                url: `{{ url_for("annotate.window", doc_id=submission_id) | safe }}&start=${start}&end=${end}`,
-                cache: true,
-                success: function(data) {
-                    $("#annotation-window").html(data);
-                    windowDeferred.resolve();
-                    {% if is_admin %}
-                        // Before button
-                        if(win_start > 0) {
-                            $("#before-window-btn").show();
-                        } else {
-                            $("#before-window-btn").hide();
-                        }
-                    {% endif %}
-                },
-                error: (responseTxt, statusTxt, xhr) => {
-                    $("#annotation-window").text("Error: " + xhr.status + ": " + xhr.statusText);
-                }
-            });
-
-            // Load decisions to annotation window
-            decisionsDeferred = $.Deferred();
-            $.get(`{{ url_for("annotate.decisions", doc_id=submission_id) | safe }}&start=${start}&end=${end}`, 
-                    (data) => decisionsDeferred.resolve(data));
-            $.when(windowDeferred, decisionsDeferred).done((window, decisions) => { 
-                setDecision(decisions);
-                if(highlight_start != null) {
-                    // Save values to tmp
-                    tmp_start = highlight_start;
-                    tmp_end = highlight_end;
-                    // Drop global highlight settings (as we have a new text)
-                    highlight_start = null;
-                    highlight_end = null;
-                    highlightInterval(tmp_start, tmp_end);
-                }
-            });
+        // Update UI
+        $("#lemma").html(selection.text());
+        // Process name entity type
+        ne_type = window_ne_types[`${ref_start}-${ref_end}`]
+        if (ne_type) {
+            $("#ne_type").val(ne_type);
+            if (NE_CODES[ne_type])
+                $("#category").html(NE_CODES[ne_type]);
+            else
+                $("#category").html(ne_type);
+            $("#category-card").show();
+        } else {
+            $("#category-card").hide();
         }
-
-        function addDecisionDetailRow(rootElement, condition, decision, author) {
-            rootElement.append('<small class="card-text mt-2">' + condition + ':</small> ' +
-                               '<small class="card-text mt-2">' + decision + '</small> ' +
-                               '<small class="card-text mt-2">' + (author ? author : "") + '</small> ');
+        if (selection.length == 1) {
+            // Process current annotation
+            loadDecisionDetail(ref_start, ref_end, selection.data("decision"));
+        } else {
+            $("#detail-card").hide();
         }
+    }
 
-        function loadAnnotation(start, end, decision) {
-            // Show decision
-            switch(decision) {
-                case "NESTED":
-                case undefined:
-                    $("#info-card").hide();
-                    return;
+    function onTokenClick(event, token_id) {
+        // Don't use in snap to candidate (in candidates)
+        if ($("#snapSelect option:selected").val() == "candidate" && event.target.parentElement.classList.contains("candidate")) {
+            return;
+        }
+        // Extend interval with shift key
+        if (event.shiftKey) {
+            if (token_id < highlight_start) {
+                highlightInterval(token_id, highlight_end);
+            } else {
+                highlightInterval(highlight_start, token_id);
+            }
+        } else {
+            highlightInterval(token_id, token_id);
+        }
+    }
+
+    function onTokenIntervalClick(event, start_token_id, end_token_id) {
+        // Use only in snap to candidates mode
+        if ($("#snapSelect option:selected").val() == "token") {
+            return;
+        }
+        // Extend interval with shift key
+        if (event.shiftKey) {
+            if (end_token_id < highlight_start) {
+                highlightInterval(start_token_id, highlight_end);
+            } else {
+                highlightInterval(highlight_start, end_token_id);
+            }
+        } else {
+            highlightInterval(start_token_id, end_token_id);
+        }
+        // Stop event
+        event.stopPropagation();
+    }
+
+    function setDecisions(decisions) {
+        decisions.forEach(entry => {
+            // Decide class according to decision
+            switch (entry.decision) {
                 case "PUBLIC":
-                    $("#info-status").html("{{_("Public")}}");
+                    cls = "candidate candidate-public";
                     break;
                 case "SECRET":
-                    $("#info-status").html("{{_("Secret")}}");
+                    cls = "candidate candidate-secret";
                     break;
-                default:
-                    $("#info-status").html("{{_("Unknown")}}");
-                    break;
-            }
-            // Load rule details
-            $.get(`{{ url_for("annotate.detail", doc_id=submission_id) | safe }}&start=${start}&end=${end}`, 
-                    (data) => {
-                        // Clean detail UI
-                        detail = $("#info-detail");
-                        detail.empty();
-                        // Info about token level
-                        if(data.token_level) {
-                            addDecisionDetailRow(detail, "{{_("Token") }}", data.token_level, data.token_author);
-                        }
-                        // Info about rule level
-                        data.rules.forEach(rule => {
-                            if(rule.type == "NE_TYPE" && NE_CODES[rule.condition]) {
-                                condition = NE_CODES[rule.condition];
-                            } else {
-                                condition = rule.condition.join(" "); 
-                            }
-                            addDecisionDetailRow(detail, condition, rule.confidence, rule.author);
-                        });
-                        // Show decision in UI
-                        $("#info-card").show();
-                    });
-        }
-
-        function shortcut(evt) {
-            key = String.fromCharCode(evt.charCode);
-            switch(key) {
-                case "h":
-                    highlightInterval(Math.max(highlight_start-1, win_start), highlight_end);
-                    break;
-                case "H":
-                    highlightInterval(Math.min(highlight_start+1, highlight_end), highlight_end);
-                    break;
-                case "j":
-                    highlightInterval(Math.max(highlight_start-1, win_start), Math.max(highlight_end-1, win_start));
-                    break;
-                case "k":
-                    highlightInterval(Math.min(highlight_start+1, win_end), Math.min(highlight_end+1, win_end));
-                    break;
-                case "l":
-                    highlightInterval(highlight_start, Math.min(highlight_end+1, win_end));
-                    break;
-                case "L":
-                    highlightInterval(highlight_start, Math.max(highlight_end-1, highlight_start));
+                case "NESTED":
+                case null:
+                    cls = "candidate";
                     break;
             }
-        }
+            // Find text interval
+            selection = findInterval(entry.start, entry.end);
+            // Update class
+            if (selection.length == 1) {
+                selection.addClass(cls);
+                selection.click(function (event) { onTokenIntervalClick(event, entry.start, entry.end); });
+                selection.attr("data-decision", entry.decision);
+            } else {
+                selection.wrapAll('<span class="wrapper ' + cls + '" onClick="onTokenIntervalClick(event, ' + entry.start +
+                    ' ,' + entry.end + ')" data-start="' + entry.start + '" data-end="' + entry.end +
+                    '" data-decision="' + entry.decision + '">');
+            }
+        })
+    }
 
-        // Load defaults windows
-        loadWindow(win_start, win_end);
-        // Key shortcuts
-        document.onkeypress = shortcut;
-
-        {% if is_admin %}
-            // Register callbacks
-            // Before
-            $("#before-window-btn").click(() => {
-                win_start = Math.max(0, win_start - 200);
-                loadWindow(win_start, win_end);
-            });
-            // After
-            var lastTokenId = null;
-            $("#after-window-btn").click(() => { 
-                win_end += 200; 
-                loadWindow(win_start, win_end);
-                // After button
-                currentLastTokenId = $(".token:last").attr('id');
-                if(lastTokenId != currentLastTokenId) {
-                    lastTokenId = currentLastTokenId;
-                    $("#after-window-btn").show();
+    function loadWindow(start, end) {
+        // Load text to annotation window
+        windowDeferred = $.Deferred();
+        $.ajax({
+            url: `{{ url_for("annotate.window", doc_id=submission_id) | safe }}&start=${start}&end=${end}`,
+            cache: true,
+            success: function (data) {
+                $("#annotation-window").html(data);
+                windowDeferred.resolve();
+                {% if is_admin %}
+                // Before button
+                if (win_start > 0) {
+                    $("#before-window-btn").show();
                 } else {
-                    $("#after-window-btn").hide();
-                } 
-            });
-            $("#after-window-btn").show();
-        {% endif %}
-
-        $("#annotationForm").submit(function (e) {
-            // Send form data using AJAX
-            $.ajax({
-                type: "POST",
-                url: "{{ url_for('.set') }}",
-                data: $('#annotationForm').serialize() + "&" + e.originalEvent.submitter.name + "=1",
-                success: (data) => {
-                    // Reload text window on success
-                    loadWindow(win_start, win_end);
-                },
-                error: (responseTxt, statusTxt, xhr) => {
-                    console.log("AJAX error: " + xhr.status + ": " + xhr.statusText);
+                    $("#before-window-btn").hide();
                 }
-            });
-            e.preventDefault(); // block the traditional submission of the form.
+                {% endif %}
+            },
+            error: (responseTxt, statusTxt, xhr) => {
+                $("#annotation-window").text("Error: " + xhr.status + ": " + xhr.statusText);
+            }
         });
-    </script>
+
+        // Load decisions to annotation window
+        decisionsDeferred = $.Deferred();
+        $.get(`{{ url_for("annotate.decisions", doc_id=submission_id) | safe }}&start=${start}&end=${end}`,
+            (data) => decisionsDeferred.resolve(data));
+        $.when(windowDeferred, decisionsDeferred).done((window, decisions) => {
+            setDecisions(decisions);
+            if (highlight_start != null) {
+                // Save values to tmp
+                tmp_start = highlight_start;
+                tmp_end = highlight_end;
+                // Drop global highlight settings (as we have a new text)
+                highlight_start = null;
+                highlight_end = null;
+                highlightInterval(tmp_start, tmp_end);
+            }
+        });
+    }
+
+    function loadDecisionDetail(start, end, decision) {
+        // Show decision
+        switch (decision) {
+            case "NESTED":
+            case undefined:
+                $("#detail-card").hide();
+                return;
+            case "PUBLIC":
+                $("#detail-status").html("{{_("Public")}}");
+                break;
+            case "SECRET":
+                $("#detail-status").html("{{_("Secret")}}");
+                break;
+            default:
+                $("#detail-status").html("{{_("Unknown")}}");
+                break;
+        }
+        // Load rule details
+        $.get(`{{ url_for("annotate.detail", doc_id=submission_id) | safe }}&start=${start}&end=${end}`,
+            (data) => {
+                // Clean detail UI
+                rows = $("#detail-rows");
+                rows.empty();
+                // Info about token level
+                if (data.token_level) {
+                    addDecisionDetailRow(rows, "{{_("Token") }}", data.token_level, data.token_author);
+                }
+                // Info about rule level
+                data.rules.forEach(rule => {
+                    if (rule.type == "NE_TYPE" && NE_CODES[rule.condition]) {
+                        condition = NE_CODES[rule.condition];
+                    } else {
+                        condition = rule.condition.join(" ");
+                    }
+                    addDecisionDetailRow(rows, condition, rule.confidence, rule.author);
+                });
+                // Show decision in UI
+                $("#detail-card").show();
+            });
+    }
+
+    function addDecisionDetailRow(rootElement, condition, decision, author) {
+        rootElement.append('<div class="d-row justify-content-between">' +
+            '<small class="card-text">' + condition + ':</small> ' +
+            '<small class="card-text">' + decision + '</small> ' +
+            '<small class="small">' + (author ? author : "") + '</small></div>');
+    }
+
+    function shortcut(evt) {
+        key = String.fromCharCode(evt.charCode);
+        switch (key) {
+            case "h":
+                highlightInterval(Math.max(highlight_start - 1, win_start), highlight_end);
+                break;
+            case "H":
+                highlightInterval(Math.min(highlight_start + 1, highlight_end), highlight_end);
+                break;
+            case "j":
+                highlightInterval(Math.max(highlight_start - 1, win_start), Math.max(highlight_end - 1, win_start));
+                break;
+            case "k":
+                highlightInterval(Math.min(highlight_start + 1, win_end), Math.min(highlight_end + 1, win_end));
+                break;
+            case "l":
+                highlightInterval(highlight_start, Math.min(highlight_end + 1, win_end));
+                break;
+            case "L":
+                highlightInterval(highlight_start, Math.max(highlight_end - 1, highlight_start));
+                break;
+        }
+    }
+
+    // Load defaults windows
+    loadWindow(win_start, win_end);
+    // Key shortcuts
+    document.onkeypress = shortcut;
+
+    {% if is_admin %}
+    // Register callbacks
+    // Before
+    $("#before-window-btn").click(() => {
+        win_start = Math.max(0, win_start - 200);
+        loadWindow(win_start, win_end);
+    });
+    // After
+    var lastTokenId = null;
+    $("#after-window-btn").click(() => {
+        win_end += 200;
+        loadWindow(win_start, win_end);
+        // After button
+        currentLastTokenId = $(".token:last").attr('id');
+        if (lastTokenId != currentLastTokenId) {
+            lastTokenId = currentLastTokenId;
+            $("#after-window-btn").show();
+        } else {
+            $("#after-window-btn").hide();
+        }
+    });
+    $("#after-window-btn").show();
+    {% endif %}
+
+    $("#annotationForm").submit(function (e) {
+        // Send form data using AJAX
+        $.ajax({
+            type: "POST",
+            url: "{{ url_for('.set') }}",
+            data: $('#annotationForm').serialize() + "&" + e.originalEvent.submitter.name + "=1",
+            success: (data) => {
+                // Reload text window on success
+                loadWindow(win_start, win_end);
+            },
+            error: (responseTxt, statusTxt, xhr) => {
+                console.log("AJAX error: " + xhr.status + ": " + xhr.statusText);
+            }
+        });
+        e.preventDefault(); // block the traditional submission of the form.
+    });
+</script>
 {% endblock %}

@@ -99,6 +99,7 @@ def window():
         filter.setContentHandler(generator)
         # Line has to be surrounded with XML tags
         sax.parse(filename, filter)
+        filter.appendNeTypes()
         # Prepare response
         response = make_response(output.getvalue())
         # Enable browser cache
@@ -249,23 +250,11 @@ class RecognizedTagFilter(XMLFilterBase):
         self._in_window = False
         self._real_start = -1
         self._real_end = -1
+        self._ne_types = {}
         # State of parser
         self._token_id = -1
         self._nested_depth = 0
         self._last_sentence = False
-
-    def _startCandidate(self, ref_start, ref_end, entity_type) -> None:
-        new_attrs = {"class": "wrapper",
-                     "data-ne-type": entity_type,
-                     "data-start": str(ref_start),
-                     "data-end": str(ref_end)}
-        # Return span element
-        self._nested_depth += 1
-        super().startElement("span", new_attrs)
-
-    def _endCandidate(self) -> None:
-        super().endElement("span")
-        self._nested_depth -= 1
 
     def _startToken(self) -> None:
         new_attrs = {"id": f"token-{self._token_id}",
@@ -296,8 +285,9 @@ class RecognizedTagFilter(XMLFilterBase):
                 start = int(attrs.get("start"))
                 end = int(attrs.get("end"))
                 entity_type = attrs.get("type")
-                # Transfroms to HTML
-                self._startCandidate(start, end, entity_type)
+                # Register ne_type
+                self._ne_types[f"{start}-{end}"] = entity_type
+
             elif name == "token":
                 self._startToken()
 
@@ -315,9 +305,8 @@ class RecognizedTagFilter(XMLFilterBase):
 
     def endElement(self, name):
         if self._in_window:
-            if name == "ne":
-                self._endCandidate()
-            elif name == "token":
+            # Parse tokens ignore "ne" tags
+            if name == "token":
                 super().endElement("span")
                 self._nested_depth -= 1
                 # Check end of reached end of text window
@@ -332,3 +321,8 @@ class RecognizedTagFilter(XMLFilterBase):
         elif self._last_sentence and name == "sentence":
             super().endElement("span")
             self._last_sentence = False
+
+    def appendNeTypes(self) -> None:
+        super().startElement("script", {})
+        super().characters(f"var window_ne_types = {json.JSONEncoder().encode(self._ne_types)};")
+        super().endElement("script")
