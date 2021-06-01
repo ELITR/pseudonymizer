@@ -93,7 +93,7 @@ $emp_stamp$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION rule_update_fn() RETURNS trigger AS $emp_stamp$
     BEGIN
-        CALL updater_rule(NEW.id, -OLD.confidence + NEW.confidence);
+        CALL update_rule(NEW.id, -OLD.confidence + NEW.confidence);
         RETURN NULL;
     END;
 $emp_stamp$ LANGUAGE plpgsql;

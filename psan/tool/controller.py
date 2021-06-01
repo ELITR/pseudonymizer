@@ -15,13 +15,12 @@ class Controller:
         self._cursor.execute("INSERT INTO rule (type, condition, confidence, author) VALUES (%s, %s, %s, %s) "
                              " ON CONFLICT (type, condition) DO UPDATE"
                              " SET confidence=EXCLUDED.confidence, author=EXCLUDED.author RETURNING id",
-
                              (rule_type.value, condition, confidence, self._user_id))
         return Rule(self._cursor.fetchone()["id"])
 
     def add_ne_type(self, ne_type: str) -> Rule:
         """Adds new NE type into db and returns it's ID (or return duplicate rule ID)"""
-        return self.add_rule(RuleType.NE_TYPE.value, [ne_type], Confidence.CANDIDATE)
+        return self.add_rule(RuleType.NE_TYPE, [ne_type], Confidence.CANDIDATE)
 
     def annotate(self, interval: Interval, token_level_decision: AnnotationDecision) -> None:
         """ Annotate text interval with token level decision """

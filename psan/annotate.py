@@ -1,6 +1,5 @@
 import json
 from io import StringIO
-from psan.tool.controller import Controller
 from xml import sax  # nosec
 from xml.sax import make_parser  # nosec
 from xml.sax.saxutils import XMLFilterBase, XMLGenerator  # nosec
@@ -12,8 +11,9 @@ from werkzeug.exceptions import BadRequest
 
 from psan.auth import login_required
 from psan.db import commit, get_cursor
-from psan.model import (AccountType, AnnotateForm, SubmissionStatus)
+from psan.model import AccountType, AnnotateForm, SubmissionStatus
 from psan.submission import get_submission_file
+from psan.tool.controller import Controller
 from psan.tool.model import AnnotationDecision, Interval, RuleType
 
 _ = gettext
@@ -32,8 +32,14 @@ def index():
         document = cursor.fetchone()
         if document:
             # Show first candadate of submission
-            cursor.execute("SELECT * FROM annotation WHERE submission = %s and token_level IS NULL LIMIT 1",
-                           (document["id"],))
+            cursor.execute("SELECT submission, ref_start, ref_end FROM annotation a"
+                           " LEFT JOIN annotation_rule ar ON ar.annotation = a.id"
+                           " JOIN rule r ON r.id = ar.rule"
+                           " WHERE submission = %s AND token_level IS NULL"
+                           " GROUP BY a.id"
+                           " HAVING ABS(SUM(r.confidence)) < %s"
+                           " LIMIT 1",
+                           (document["id"], current_app.config["RULE_AUTOAPPLY_CONFIDENCE"]))
             candidate = cursor.fetchone()
             return show_candidate(candidate["submission"], candidate["ref_start"], candidate["ref_end"])
         else:
@@ -124,9 +130,12 @@ def decisions():
     # Returns decision in defined interval
     decisions = []
     with get_cursor() as cursor:
-        cursor.execute("SELECT ref_start, ref_end, token_level, rule_level"
-                       " FROM annotation"
+        cursor.execute("SELECT ref_start, ref_end, token_level, SUM(r.confidence) as rule_level"
+                       " FROM annotation a"
+                       " LEFT JOIN annotation_rule ar ON ar.annotation = a.id"
+                       " JOIN rule r ON r.id = ar.rule"
                        " WHERE submission = %s and %s<=ref_start and ref_start<=%s"
+                       " GROUP BY a.id"
                        " ORDER BY ref_start",
                        (submission_id, window_start, window_end))
         for row in cursor:
