@@ -1,14 +1,15 @@
-Flask==1.1.2
-Bootstrap_Flask==1.5.1
-Flask_WTF==0.14.3
-Jinja2==2.11.3
+Flask==2.0.1 # test
+Bootstrap_Flask==1.6.0
+Flask_WTF==0.15.1
+Jinja2==3.0.1 # test
 WTForms==2.3.3
 email_validator==1.1.2
 Flask_Babel==2.0.0
-Babel==2.9.0
-Werkzeug==1.0.1
-itsdangerous==1.1.0
+Babel==2.9.1
+Werkzeug==2.0.1
+itsdangerous==2.0.1
 psycopg2-binary==2.8.6
-celery[redis]==5.0.5
+click==7.1.2
+celery[redis]==5.1.0
 ufal.nametag==1.1.2.1
-pytest==6.2.2
+pytest==6.2.4
