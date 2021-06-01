@@ -1,7 +1,7 @@
 from typing import List, Optional, Tuple
 
-from psan.tool.model import (AnnotationDecision, Confidence, Evidence, EvidenceType, Interval,
-                             Rule, RuleType, Word)
+from psan.tool.model import (AnnotationDecision, Confidence, Evidence,
+                             EvidenceType, Interval, Rule, RuleType, Word)
 
 
 class Controller:
@@ -24,15 +24,19 @@ class Controller:
 
     def annotate(self, interval: Interval, token_level_decision: AnnotationDecision) -> None:
         """ Annotate text interval with token level decision """
-        self._cursor.execute("INSERT INTO annotation (submission, ref_start, ref_end, token_level, author) VALUES (%s, %s, %s, %s, %s)"
+        self._cursor.execute("INSERT INTO annotation (submission, ref_start, ref_end, token_level, author)"
+                             " VALUES (%s, %s, %s, %s, %s)"
                              " ON CONFLICT (submission, ref_start, ref_end) DO UPDATE"
                              " SET token_level=EXCLUDED.token_level, author=EXCLUDED.author",
                              (self._document_id, interval.start, interval.end, token_level_decision.value, self._user_id))
 
-    def annotate_with_rule(self, interval: Interval, rule: Rule, token_level_decision: Optional[AnnotationDecision] = None) -> None:
+    def annotate_with_rule(self, interval: Interval,
+                           rule: Rule,
+                           token_level_decision: Optional[AnnotationDecision] = None) -> None:
         """ Annotate text interval with rule """
         token_decision_str = token_level_decision.value if token_level_decision else None
-        self._cursor.execute("INSERT INTO annotation (submission, ref_start, ref_end, token_level, author) VALUES (%s, %s, %s, %s, %s)"
+        self._cursor.execute("INSERT INTO annotation (submission, ref_start, ref_end, token_level, author)"
+                             " VALUES (%s, %s, %s, %s, %s)"
                              " ON CONFLICT (submission, ref_start, ref_end) DO UPDATE"
                              " SET token_level=EXCLUDED.token_level, author=EXCLUDED.author"
                              " RETURNING id",
