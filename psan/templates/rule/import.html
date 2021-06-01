@@ -4,34 +4,34 @@
 {% block title %}{% trans %}Import rules{% endtrans %}{% endblock %}
 
 {% block content %}
-    <h2 class="mb-4">
-        {% trans %}Import rules{% endtrans %}
-    </h2>
+<h2 class="mb-4">
+    {% trans %}Import rules{% endtrans %}
+</h2>
 
-    <form method="post" enctype="multipart/form-data">
-        {{ form.csrf_token }}
+<form method="post" enctype="multipart/form-data">
+    {{ form.csrf_token }}
 
-        <p>
-            {% trans %}You can either submit a text or upload a csv file...{% endtrans %}
-        </p>
-        <p>
-            {% trans %}Lines should follow pattern: {% endtrans %}
-            <code><pre>type,                       condition,                  decision
-(WORD_TYPE|LEMMA|NE_TYPE),  token1=token2=token3...,    (PUBLIC|SECRET)
+    <p>
+        {% trans %}You can either submit a text or upload a csv file...{% endtrans %}
+    </p>
+    <p>
+        {% trans %}Lines should follow pattern: {% endtrans %}
+        <code><pre>type,                       condition,                  decision
+(WORD_TYPE|LEMMA|NE_TYPE),  token1=token2=token3...,    number 
 ...
             </pre></code>
-        </p>
+    </p>
 
-        <div class="form-row">
-            <div class="form-group col-md-12">
-                {{ render_field(form.text, style="resize:vertical; height: 25em") }}
-            </div>
+    <div class="form-row">
+        <div class="form-group col-md-12">
+            {{ render_field(form.text, style="resize:vertical; height: 25em") }}
         </div>
+    </div>
 
-        {{ render_form_row([form.file]) }}
+    {{ render_form_row([form.file]) }}
 
-        <div class="form-row d-flex">
-            {{ render_field(form.submit, class="btn btn-primary ml-auto") }}
-        </div>
+    <div class="form-row d-flex">
+        {{ render_field(form.submit, class="btn btn-primary ml-auto") }}
+    </div>
 
-{% endblock %}
+    {% endblock %}

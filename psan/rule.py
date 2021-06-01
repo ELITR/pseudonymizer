@@ -12,7 +12,8 @@ from wtforms.fields.simple import TextAreaField
 
 from psan.auth import login_required
 from psan.db import commit, get_cursor
-from psan.model import AccountType, AnnotationDecision, RuleType
+from psan.model import AccountType
+from psan.tool.model import RuleType
 
 _ = lazy_gettext
 
@@ -48,7 +49,7 @@ def data():
             else:
                 condition_str = ' '.join(row["condition"])
             # Prepare output
-            rows.append({"id": row["id"], "type": row["type"], "condition": condition_str, "decision": row["decision"]})
+            rows.append({"id": row["id"], "type": row["type"], "condition": condition_str, "decision": row["confidence"]})
         # Return output
         return jsonify({"total": cursor.rowcount, "totalNotFiltered": not_filtered, "rows": rows})
 
@@ -57,16 +58,7 @@ def data():
 @login_required(role=AccountType.ADMIN)
 def remove(rule_id: int):
     with get_cursor() as cursor:
-        # Find rule type
-        cursor.execute("SELECT type FROM rule WHERE id = %s", (rule_id,))
-        rule_type = cursor.fetchone()["type"]
         # Remove already made annotation
-        if rule_type == RuleType.NE_TYPE.value:
-            cursor.execute("UPDATE annotation SET rule = NULL, decision = %s WHERE rule = %s",
-                           (AnnotationDecision.UNDECIDED.value, rule_id))
-        else:
-            cursor.execute("DELETE FROM annotation WHERE rule = %s", (rule_id,))
-        # Remove rule
         cursor.execute("DELETE FROM rule WHERE id = %s", (rule_id,))
         commit()
 
@@ -83,11 +75,11 @@ def export():
 
     # Prepare data
     with get_cursor() as cursor:
-        cursor.execute("SELECT rule.type, rule.condition, rule.decision, account.full_name FROM rule"
+        cursor.execute("SELECT rule.type, rule.condition, rule.confidence, account.full_name FROM rule"
                        " LEFT JOIN account ON rule.author = account.id")
         for row in cursor:
             cw.writerow({"type": row["type"], "condition": '='.join(row["condition"]),
-                         "decision": row["decision"], "author": row["full_name"]})
+                         "decision": row["confidence"], "author": row["full_name"]})
 
     # Prepare output
     output = make_response(si.getvalue())
@@ -134,8 +126,8 @@ def upload():
                         if row["type"] is None or row["condition"] is None or row["decision"] is None:
                             raise IndexError
                         # Import data
-                        cursor.execute("INSERT INTO rule (type, condition, decision) VALUES(%s, %s, %s)"
-                                       " ON CONFLICT (type, condition) DO UPDATE SET decision = EXCLUDED.decision",
+                        cursor.execute("INSERT INTO rule (type, condition, confidence) VALUES(%s, %s, %s)"
+                                       " ON CONFLICT (type, condition) DO UPDATE SET confidence = EXCLUDED.confidence",
                                        (row["type"], row["condition"].split('='), row["decision"]))
                     except (IndexError, DataError):
                         flash(_("Illegal format on line %(line_num)s.", line_num=line_num), category="error")
