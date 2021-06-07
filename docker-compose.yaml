@@ -14,7 +14,7 @@ services:
     ports:
       - 5000:5000
   db:
-    image: postgres:13.1-alpine
+    image: postgres:13.3-alpine
     volumes:
       - db_data:/var/lib/postgresql/data
       - ./db:/docker-entrypoint-initdb.d
@@ -23,7 +23,7 @@ services:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
   redis:
-    image: redis:6.0.9-alpine
+    image: redis:6.0.14-alpine
 
 volumes:
   db_data:
