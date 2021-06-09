@@ -15,4 +15,4 @@ USER flask
 
 # Run target
 EXPOSE 5000
-CMD ["./run_web.sh"]
+CMD ["./run_debug.sh"]

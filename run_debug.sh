@@ -2,7 +2,7 @@
 
 # Run config
 export FLASK_APP=psan 
-export FLASK_RUN_HOST=0.0.0.0
+export FLASK_RUN_HOST=::
 
 # Use venv
 source venv/bin/activate
