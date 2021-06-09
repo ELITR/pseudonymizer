@@ -20,7 +20,7 @@ services:
       ADMINER_NAME: ${DB_NAME-psan_db}
     logging:
       driver: "none" # Don't log anything
-    links:
+    depends_on:
       - db
     ports:
       - 5050:8080
