@@ -15,4 +15,5 @@ USER flask
 
 # Run target
 EXPOSE 5000
+HEALTHCHECK CMD curl --fail http://localhost:5000 
 CMD ["./run_debug.sh"]
