@@ -9,6 +9,7 @@ services:
       FLASK_ENV: debug 
       FLASK_DEBUG: 1
       ALLOW_TOKEN_REGISTRATION: 1
+    command: /srv/run_debug.sh
   adminer:
     image: michalhosna/adminer:4.8.0-en_v1
     environment:

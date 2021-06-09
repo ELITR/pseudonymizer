@@ -1,19 +1,18 @@
 FROM python:3.7
 
-# Prepare Python's venv
-COPY requirements.txt /srv
-COPY Makefile /srv
+# Configurate image
+RUN useradd -u 999 psan_user && apt update && apt upgrade -y && apt install -y uwsgi uwsgi-plugin-python3
+
+# Setup app
+COPY requirements.txt Makefile /srv/
 WORKDIR /srv
-RUN make setup
+RUN make setup 
 
 # Copy app source
 COPY . /srv
-
-# Run app as standard user
-RUN useradd flask && chown flask instance
-USER flask
+RUN chown psan_user instance
 
 # Run target
 EXPOSE 5000
 HEALTHCHECK CMD curl --fail http://localhost:5000 
-CMD ["./run_debug.sh"]
+CMD ["./run.sh"]

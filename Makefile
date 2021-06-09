@@ -48,6 +48,9 @@ test: setup
 	./run_web.sh
 
 # Docker
+docker-run:
+	docker-compose up
+
 docker-debug: instance
 	echo "COMMIT_REV = \"bind-mount\""  > ./instance/config.py
 	docker-compose -f docker-compose.yaml -f docker-compose.debug.yaml up --abort-on-container-exit
