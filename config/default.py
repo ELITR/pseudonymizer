@@ -9,4 +9,5 @@ COMMIT_REV = "unknown"
 SECRET_KEY = os.environ["APP_SECRET_KEY"]
 TOKEN_SECRET = os.environ["APP_SECRET_KEY"]
 # PSAN tool
+DATA_FOLDER = "./instance/"
 RULE_AUTOAPPLY_CONFIDENCE = 1
