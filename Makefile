@@ -59,7 +59,7 @@ docker-test: instance
 	echo "COMMIT_REV = \"bind-mount-testing\""  > ./instance/config.py
 	docker-compose -f docker-compose.yaml -f docker-compose.test.yaml up --abort-on-container-exit --exit-code-from flask
 
-docker-build: instance translate
+docker-build: setup translate
 	echo "COMMIT_REV= \"$(shell git rev-parse HEAD)\""  > ./instance/config.py
 	docker-compose build
 
@@ -79,4 +79,4 @@ clean: docker-clean
 	rm -r venv
 	rm -r instance
 
-.PHONY: venv, venv-debug, setup, run, test, docker-debug, docker-build, docker-test, docker-clean, lint, bandit, clean
+.PHONY: venv, venv-debug, setup, run, test, docker-run, docker-debug, docker-test, docker-build, docker-clean, lint, bandit, clean
