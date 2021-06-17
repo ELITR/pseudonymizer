@@ -266,7 +266,7 @@
             if (selection.length == 1) {
                 selection.addClass(cls);
                 selection.click(function (event) { onTokenIntervalClick(event, entry.start, entry.end); });
-                selection.attr("data-decision", entry.decision);
+                selection.data("decision", entry.decision);
             } else {
                 selection.wrapAll('<span class="wrapper ' + cls + '" onClick="onTokenIntervalClick(event, ' + entry.start +
                     ' ,' + entry.end + ')" data-start="' + entry.start + '" data-end="' + entry.end +
@@ -329,6 +329,7 @@
             case "SECRET":
                 $("#detail-status").html("{{_("Secret")}}");
                 break;
+            case null:
             default:
                 $("#detail-status").html("{{_("Unknown")}}");
                 break;
