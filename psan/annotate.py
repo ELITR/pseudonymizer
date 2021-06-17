@@ -206,12 +206,12 @@ def set():
     form = AnnotateForm(request.form)
     if form.validate():
         # Process decision
-        if form.token_public.data or form.lemma_public.data or form.ne_type_public.data:
+        if form.token_public.data or form.type_public.data or form.ne_type_public.data:
             decision = AnnotationDecision.PUBLIC
         else:
             decision = AnnotationDecision.SECRET
         # Process decision condition
-        if form.lemma_public.data or form.lemma_secret.data:
+        if form.type_public.data or form.type_secret.data:
             rule_type = RuleType.WORD_TYPE
             rule_condition = json.loads(form.condition.data)
         elif form.ne_type_public.data or form.ne_type_secret.data:

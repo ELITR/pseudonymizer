@@ -48,18 +48,19 @@
                 {{ form.condition(value=token_code) }}
                 {{ form.ne_type(value=ne_type_code) }}
 
-                {# Lemma #}
+                {# Type #}
                 <div class="card my-2">
                     <div class="card-body">
                         <h5 class="card-title">
-                            {{ render_icon("vr", size="1.5em") }}{% trans %}By lemma{% endtrans %}
+                            {{ render_icon("vr", size="1.5em") }}{% trans %}By type{% endtrans %}
                         </h5>
-                        <h6 id="lemma" class="card-subtitle mb-2 text-muted">{% trans %}Loading...{% endtrans %}</h6>
+                        <h6 id="word_type" class="card-subtitle mb-2 text-muted">{% trans %}Loading...{% endtrans %}
+                        </h6>
                         <div class="card-text d-flex justify-content-around">
-                            <button type="submit" name="lemma_public" class="btn btn-outline-success my-2" value="True">
+                            <button type="submit" name="type_public" class="btn btn-outline-success my-2" value="True">
                                 {{ render_icon("globe", size="1.5em") }}{% trans %}Public{% endtrans %}
                             </button>
-                            <button type="submit" name="lemma_secret" class="btn btn-outline-danger my-2" value="True">
+                            <button type="submit" name="type_secret" class="btn btn-outline-danger my-2" value="True">
                                 {{ render_icon("lock", size="1.5em") }}{% trans %}Secret{% endtrans %}
                             </button>
                         </div>
@@ -188,7 +189,7 @@
         $("#condition").val(JSON.stringify(token_list));
 
         // Update UI
-        $("#lemma").html(selection.text());
+        $("#word_type").html(selection.text());
         // Process name entity type
         ne_type = window_ne_types[`${ref_start}-${ref_end}`]
         if (ne_type) {
