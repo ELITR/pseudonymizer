@@ -63,7 +63,7 @@ def remove(rule_id: int):
         commit()
 
     # Return OK reply
-    return jsonify({"stutus": "ok"})
+    return jsonify({"status": "ok"})
 
 
 @bp.route('/export')

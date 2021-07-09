@@ -4,7 +4,7 @@
 {% block styles %}
 {{ super() }}
 
-<link href="https://unpkg.com/bootstrap-table@1.18.2/dist/bootstrap-table.min.css" rel="stylesheet">
+<link href="//unpkg.com/bootstrap-table@1.18.2/dist/bootstrap-table.min.css" rel="stylesheet">
 {% endblock %}
 
 {% block title %}{% trans %}Rule{% endtrans %}{% endblock %}
@@ -39,8 +39,8 @@
 {% block scripts %}
 {{ super() }}
 
-<script src="https://unpkg.com/bootstrap-table@1.18.2/dist/bootstrap-table.min.js"></script>
-<script src="https://unpkg.com/bootstrap-table@1.18.2/dist/locale/bootstrap-table-cs-CZ.min.js"></script>
+<script src="//unpkg.com/bootstrap-table@1.18.2/dist/bootstrap-table.min.js"></script>
+<script src="//unpkg.com/bootstrap-table@1.18.2/dist/locale/bootstrap-table-cs-CZ.min.js"></script>
 <script type="text/javascript" src="{{ url_for('static', filename='consts.js') }}"></script>
 
 <script>
