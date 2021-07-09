@@ -46,6 +46,12 @@ CREATE TABLE annotation (
     CHECK (ref_start <= ref_end)
 );
 
+CREATE TABLE label (
+    id              INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+    name            TEXT UNIQUE NOT NULL,
+    replacement     TEXT NOT NULL
+);
+
 CREATE TABLE rule (
     id              INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
     type            rule_type                   NOT NULL,

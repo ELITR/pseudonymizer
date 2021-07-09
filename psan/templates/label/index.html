@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+{% from 'bootstrap/form.html' import render_form, render_field %}
+
+{% block styles %}
+{{ super() }}
+
+<link href="//unpkg.com/bootstrap-table@1.18.2/dist/bootstrap-table.min.css" rel="stylesheet">
+<link href="//cdnjs.cloudflare.com/ajax/libs/x-editable/1.5.0/jquery-editable/css/jquery-editable.css"
+    rel="stylesheet" />
+{% endblock %}
+
+{% block title %}{% trans %}Labels{% endtrans %}{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center">
+    <h2 class="mr-auto">
+        {% trans %}Labels{% endtrans %}
+    </h2>
+    <a class="btn btn-outline-primary mr-3" href="{{ url_for('label.export') }}">
+        {{ render_icon("download") }}{% trans %}Export{% endtrans %}
+    </a>
+    <button class="btn btn-outline-primary" onclick="$('#newLabelModal').modal('show');">
+        {{ render_icon("plus") }}{% trans %}New label{% endtrans %}
+    </button>
+</div>
+
+<table id="table" data-toggle="table" data-ajax="ajaxRequest" data-search="true" data-pagination="true"
+    data-id-field="id" data-editable-emptytext="{{ _('Empty string') }}" data-editable-url="/label/update">
+    <thead>
+        <tr>
+            <th data-field="id">{% trans %}ID{% endtrans %}</th>
+            <th data-field="label" data-editable="true">{% trans %}Label{% endtrans %}</th>
+            <th data-field="replacement" data-editable="true">{% trans %}Replacement{% endtrans %}</th>
+            <th data-field="operate" data-formatter="actionFormatter" data-align="center">{% trans %}Actions{% endtrans
+                %}</th>
+        </tr>
+    </thead>
+</table>
+
+{% include '/label/dialog.html' %}
+
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+
+<script src="//unpkg.com/bootstrap-table@1.18.2/dist/bootstrap-table.min.js"></script>
+<script src="//unpkg.com/bootstrap-table@1.18.2/dist/extensions/editable/bootstrap-table-editable.js"></script>
+<script src="//unpkg.com/bootstrap-table@1.18.2/dist/locale/bootstrap-table-cs-CZ.min.js"></script>
+<script
+    src="//cdnjs.cloudflare.com/ajax/libs/x-editable/1.5.0/jquery-editable/js/jquery-editable-poshytip.min.js"></script>
+
+<script>
+    $.fn.editable.defaults.mode = 'inline';
+    $.fn.editable.defaults.ajaxOptions = {
+        headers: {
+            'X-CSRF-TOKEN': "{{ csrf_token() }}"
+        }
+    };
+    $.ajaxSetup({
+        beforeSend: function (xhr, settings) {
+            if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                xhr.setRequestHeader("X-CSRFToken", "{{ csrf_token() }}");
+            }
+        }
+    });
+
+    function ajaxRequest(params) {
+        var url = '/label/data'
+        $.get(url + '?' + $.param(params.data)).then(function (res) {
+            params.success(res)
+        })
+    }
+
+    function actionFormatter(value, row, index) {
+        return [
+            '<button class="btn btn-outline-danger" onclick="remove(' + row.id + ')" title="Remove">',
+            '{% trans %}Remove{% endtrans %}',
+            '</button>'
+        ].join('')
+    }
+
+    var $table = $('#table')
+
+    function remove(row_id) {
+        $.ajax({
+            type: "POST", url: "/label/remove/" + row_id, success: function (result) {
+                $table.bootstrapTable('remove', {
+                    field: 'id',
+                    values: [row_id]
+                })
+            }
+        });
+    }
+
+    document.querySelector("#newLabelForm").addEventListener("newLabel", function (e) {
+        $table.bootstrapTable('refresh');
+    });
+</script>
+{% endblock %}

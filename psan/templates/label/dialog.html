@@ -1,0 +1,68 @@
+<div class="modal fade" id="newLabelModal" tabindex="-1" role="dialog" aria-labelledby="newLabelModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="newLabelModalLabel">{% trans %}New label{% endtrans %}</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="newLabelForm" action="#">
+                    <div class="form-group">
+                        <label for="recipient-name" class="col-form-label">{% trans %}Label{% endtrans
+                            %}</label>
+                        <input type="text" class="form-control" name="label" id="newLabel" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="message-text" class="col-form-label">{% trans %}Replacement{% endtrans
+                            %}</label>
+                        <input type="text" class="form-control" name="replacement">
+                    </div>
+                    <button type="submit" hidden>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" onclick="document.forms['newLabelForm'].requestSubmit();">
+                    {% trans %}Add label{% endtrans %}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Event for new labels
+    const newLabelEvent = new Event("newLabel");
+
+    // Submit event
+    document.querySelector("#newLabelForm").addEventListener("submit", function (e) {
+        // Send form data using AJAX
+        $.ajax({
+            type: "POST",
+            url: "{{ url_for('label.new') }}",
+            contentType: "application/x-www-form-urlencoded",
+            data: $("#newLabelForm").serialize(),
+            success: (data) => {
+                // Send new label event
+                document.querySelector("#newLabelForm").dispatchEvent(newLabelEvent);
+                // Hide modal dialog on succeed
+                $('#newLabelModal').modal('hide');
+                document.forms['newLabelForm'].reset();
+            },
+            error: (responseTxt, statusTxt, xhr) => {
+                console.log("AJAX error: " + xhr.status + ": " + xhr.statusText);
+            }
+        });
+        // block the traditional submission of the forms
+        e.preventDefault();
+    });
+
+    // Autofocus
+    document.addEventListener("DOMContentLoaded", function () {
+        $("#newLabelModal").on("shown.bs.modal", function () {
+            document.querySelector("#newLabel").focus();
+        });
+    });
+</script>
