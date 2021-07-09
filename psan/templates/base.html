@@ -17,14 +17,14 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     {% endblock %}
 
-    <title>{% block title %}{% trans %}Pseudo-anonymize tool{% endtrans %}{% endblock %}</title>
+    <title>{% block title %}{% trans %}Pseudonymization tool{% endtrans %}{% endblock %}</title>
     {% endblock %}
 </head>
 
 <body class="d-flex flex-column min-vh-100">
     {# Render Navbar #}
     <nav class="navbar navbar-expand-sm navbar-light bg-light">
-        <a class="navbar-brand" href="{{ url_for('index') }}">{% trans %}Pseudo-anonymize tool{% endtrans %}</a>
+        <a class="navbar-brand" href="{{ url_for('index') }}">{% trans %}Pseudonymization tool{% endtrans %}</a>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
             aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
