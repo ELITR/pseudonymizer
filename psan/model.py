@@ -24,11 +24,6 @@ class SubmissionStatus(Enum):
     DONE = "DONE"
 
 
-class AnnotationSource(Enum):
-    RULE = "RULE"
-    USER = "USER"
-
-
 def strip_whitespace(text: str):
     return text.strip()
 

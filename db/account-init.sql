@@ -38,6 +38,7 @@ CREATE TABLE annotation (
     submission      INT REFERENCES submission(id) ON DELETE CASCADE    NOT NULL,
     token_level     annotation_decision,
     rule_level      INT,
+    label           INT REFERENCES label(id) ON DELETE SET NULL,
     source          annotation_source                                  NOT NULL DEFAULT 'RULE',
     ref_start       INT                                                NOT NULL,
     ref_end         INT                                                NOT NULL,    
@@ -58,7 +59,7 @@ CREATE TABLE rule (
     condition       TEXT[]                      NOT NULL,
     confidence      INT                         NOT NULL,
     author          INT REFERENCES account(id)  ON DELETE SET NULL,
-    parent          INT REFERENCES rule(id)     ON DELETE CASCADE, -- cleanup rules from NER+
+    label           INT REFERENCES label(id)    ON DELETE SET NULL,
     source          INT REFERENCES annotation(id) ON DELETE CASCADE, -- cleanup from auto rules
     UNIQUE (type, condition)
 );

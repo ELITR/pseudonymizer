@@ -8,6 +8,11 @@ class AnnotationDecision(Enum):
     NESTED = "NESTED"
 
 
+class AnnotationSource(Enum):
+    RULE = "RULE"
+    USER = "USER"
+
+
 class RuleType(Enum):
     WORD_TYPE = "WORD_TYPE"
     LEMMA = "LEMMA"

@@ -44,4 +44,4 @@ class ReAnnotateParser(AnnotationParser):
             rule = self._ctl.find_rule(evidence)
             # Pass updated rule
             if rule:
-                self._ctl.annotate_with_rule(evidence.interval, rule)
+                self._ctl.annotate_from_rule(evidence.interval, rule)

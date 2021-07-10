@@ -32,7 +32,7 @@ class PreAnnotationParser(AnnotationParser):
         decision = AnnotationDecision.NESTED if nested else None
 
         # Add annotation to db
-        self._ctl.annotate_with_rule(Interval(start, end), self._ne_types[ne_type], decision)
+        self._ctl.annotate_from_rule(Interval(start, end), self._ne_types[ne_type], decision)
 
     def onLookupEvent(self, event: LookupEvent, words: List[Word]) -> None:
         # TODO create rule for NER+
