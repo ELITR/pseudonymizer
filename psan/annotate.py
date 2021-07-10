@@ -21,6 +21,16 @@ _ = gettext
 bp = Blueprint("annotate", __name__, url_prefix="/annotate")
 
 
+def _check_permissinns(start: int, end: int, doc_id: int) -> None:
+    # Check params presence
+    if start is None or end is None or doc_id is None:
+        raise BadRequest(f"Missing required parameters ref_start, ref_end or document_id")
+    # Check window permission
+    is_admin = (g.account["type"] == AccountType.ADMIN.value)
+    if (session["permitted_win_start"] != start or session["permitted_win_end"] != end) and not is_admin:
+        raise BadRequest("Insufficient permissions for this window")
+
+
 @bp.route("/")
 @login_required()
 def index():
@@ -81,12 +91,7 @@ def window():
     submission_id = request.args.get("doc_id", type=int)
     start = request.args.get("start", type=int)
     end = request.args.get("end", type=int)
-    if submission_id is None or start is None or end is None:
-        raise BadRequest(f"Missing required parameters {submission_id}, {start}, {end}")
-    # Check window permission
-    is_admin = (g.account["type"] == AccountType.ADMIN.value)
-    if (session["permitted_win_start"] != start or session["permitted_win_end"] != end) and not is_admin:
-        raise BadRequest("Insufficient permissions for this window")
+    _check_permissinns(start, end, submission_id)
 
     # Don't generate text window each time (use cache instead)
     if request.if_none_match and f"{submission_id}-{start}-{end}" in request.if_none_match:
@@ -120,12 +125,7 @@ def decisions():
     submission_id = request.args.get("doc_id", type=int)
     window_start = request.args.get("start", type=int)
     window_end = request.args.get("end", type=int)
-    if submission_id is None or window_start is None or window_end is None:
-        raise BadRequest(f"Missing required parameters {submission_id}, {window_start}, {window_end}")
-    # Check window permission
-    is_admin = (g.account["type"] == AccountType.ADMIN.value)
-    if (session["permitted_win_start"] != window_start or session["permitted_win_end"] != window_end) and not is_admin:
-        raise BadRequest("Insufficient permissions for this window")
+    _check_permissinns(window_start, window_end, submission_id)
 
     # Returns decision in defined interval
     decisions = []
@@ -166,12 +166,7 @@ def detail():
     submission_id = request.args.get("doc_id", type=int)
     start = request.args.get("start", type=int)
     end = request.args.get("end", type=int)
-    if submission_id is None or start is None or end is None:
-        raise BadRequest(f"Missing required parameters {submission_id}, {start}, {end}")
-    # Check window permission
-    is_admin = (g.account["type"] == AccountType.ADMIN.value)
-    if (session["permitted_win_start"] != start or session["permitted_win_end"] != end) and not is_admin:
-        raise BadRequest("Insufficient permissions for this window")
+    _check_permissinns(start, end, submission_id)
 
     # Returns decision in defined interval
     with get_cursor() as cursor:
@@ -200,26 +195,20 @@ def detail():
         return jsonify(response)
 
 
-@bp.route("/set", methods=['POST'])
+@bp.route("/decision", methods=['POST'])
 @login_required()
-def set():
-    form = AnnotateForm(request.form)
-    if form.validate():
-        # Process decision
-        if form.token_public.data or form.type_public.data or form.ne_type_public.data:
-            decision = AnnotationDecision.PUBLIC
-        else:
-            decision = AnnotationDecision.SECRET
-        # Process decision condition
-        if form.type_public.data or form.type_secret.data:
-            rule_type = RuleType.WORD_TYPE
-            rule_condition = json.loads(form.condition.data)
-        elif form.ne_type_public.data or form.ne_type_secret.data:
-            rule_type = RuleType.NE_TYPE
-            rule_condition = [form.ne_type.data]
-        else:
-            rule_type = None
-            rule_condition = None
+def decision():
+    # Window detail
+    doc_id = request.form.get("doc_id", type=int)
+    ref_start = request.form.get("ref_start", type=int)
+    ref_end = request.form.get("ref_end", type=int)
+    _check_permissinns(ref_start, ref_end, doc_id)
+
+    # Process decision
+    if request.form["decision"] == "PUBLIC":
+        decision = AnnotationDecision.PUBLIC
+    else:
+        decision = AnnotationDecision.SECRET
 
         # Save result to db
         interval = Interval(form.ref_start.data, form.ref_end.data)
@@ -250,6 +239,17 @@ def set():
 @bp.route("/label", methods=['POST'])
 @login_required()
 def label():
+    # Window detail
+    doc_id = request.form.get("doc_id", type=int)
+    ref_start = request.form.get("ref_start", type=int)
+    ref_end = request.form.get("ref_end", type=int)
+    _check_permissinns(ref_start, ref_end, doc_id)
+
+    interval = Interval(ref_start, ref_end)
+    with get_cursor() as cursor:
+        ctl = Controller(cursor, doc_id, g.account["id"])
+        #ctl.label(interval, request.form["label"])
+        commit()
     return jsonify({"status": "ok"})
 
 

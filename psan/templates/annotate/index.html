@@ -47,70 +47,59 @@
                 </div>
             </div>
 
-            <form method="POST" id="annotationForm">
-                {{ form.csrf_token }}
-                {{ form.submission_id(value=submission_id) }}
-                {{ form.ref_start(value=ref_start) }}
-                {{ form.ref_end(value=ref_end) }}
-                {{ form.condition(value=token_code) }}
-                {{ form.ne_type(value=ne_type_code) }}
-
-                {# Type #}
-                <div class="card my-2">
-                    <div class="card-body">
-                        <h5 class="card-title">
-                            {{ render_icon("vr", size="1.5em") }}{% trans %}By type{% endtrans %}
-                        </h5>
-                        <h6 id="word_type" class="card-subtitle mb-2 text-muted">{% trans %}Loading...{% endtrans %}
-                        </h6>
-                        <div class="card-text d-flex justify-content-around">
-                            <button type="submit" name="type_public" class="btn btn-outline-success my-2" value="True">
-                                {{ render_icon("globe", size="1.5em") }}{% trans %}Public{% endtrans %}
-                            </button>
-                            <button type="submit" name="type_secret" class="btn btn-outline-danger my-2" value="True">
-                                {{ render_icon("lock", size="1.5em") }}{% trans %}Secret{% endtrans %}
-                            </button>
-                        </div>
+            {# Type #}
+            <div class="card my-2">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        {{ render_icon("vr", size="1.5em") }}{% trans %}By type{% endtrans %}
+                    </h5>
+                    <h6 id="word_type" class="card-subtitle mb-2 text-muted">{% trans %}Loading...{% endtrans %}
+                    </h6>
+                    <div class="card-text d-flex justify-content-around">
+                        <button type="submit" class="btn btn-outline-success my-2" onclick="onDecision('WORD_TYPE', 'PUBLIC')">
+                            {{ render_icon("globe", size="1.5em") }}{% trans %}Public{% endtrans %}
+                        </button>
+                        <button type="submit" class="btn btn-outline-danger my-2" onclick="onDecision('WORD_TYPE', 'SECRET')">
+                            {{ render_icon("lock", size="1.5em") }}{% trans %}Secret{% endtrans %}
+                        </button>
                     </div>
                 </div>
+            </div>
 
-                {# Token #}
-                <div class="card my-2">
-                    <div class="card-body">
-                        <h5 class="card-title">
-                            {{ render_icon("text-paragraph", size="1.5em") }}{% trans %}By token{% endtrans %}
-                        </h5>
-                        <div class="card-text d-flex justify-content-around">
-                            <button type="submit" name="token_public" class="btn btn-outline-success my-2" value="True">
-                                {{ render_icon("globe", size="1.5em") }}{% trans %}Public{% endtrans %}
-                            </button>
-                            <button type="submit" name="token_secret" class="btn btn-outline-danger my-2" value="True">
-                                {{ render_icon("lock", size="1.5em") }}{% trans %}Secret{% endtrans %}
-                            </button>
-                        </div>
+            {# Token #}
+            <div class="card my-2">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        {{ render_icon("text-paragraph", size="1.5em") }}{% trans %}By token{% endtrans %}
+                    </h5>
+                    <div class="card-text d-flex justify-content-around">
+                        <button type="submit" class="btn btn-outline-success my-2" onclick="onDecision('TOKEN', 'PUBLIC')">
+                            {{ render_icon("globe", size="1.5em") }}{% trans %}Public{% endtrans %}
+                        </button>
+                        <button type="submit" class="btn btn-outline-danger my-2" onclick="onDecision('TOKEN', 'SECRET')">
+                            {{ render_icon("lock", size="1.5em") }}{% trans %}Secret{% endtrans %}
+                        </button>
                     </div>
                 </div>
+            </div>
 
-                {# Category #}
-                <div class="card my-2 collapse" id="category-card">
-                    <div class="card-body">
-                        <h5 class="card-title">
-                            {{ render_icon("tag", size="1.5em") }}{% trans %}By category{% endtrans %}
-                        </h5>
-                        <h6 id="category" class="card-subtitle mb-2 text-muted">{% trans %}Loading...{% endtrans %}</h6>
-                        <div class="card-text d-flex justify-content-around">
-                            <button type="submit" name="ne_type_public" class="btn btn-outline-success my-2"
-                                value="True">
-                                {{ render_icon("globe", size="1.5em") }}{% trans %}Public{% endtrans %}
-                            </button>
-                            <button type="submit" name="ne_type_secret" class="btn btn-outline-danger my-2"
-                                value="True">
-                                {{ render_icon("lock", size="1.5em") }}{% trans %}Secret{% endtrans %}
-                            </button>
-                        </div>
+            {# Category #}
+            <div class="card my-2 collapse" id="category-card">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        {{ render_icon("tag", size="1.5em") }}{% trans %}By category{% endtrans %}
+                    </h5>
+                    <h6 id="category" class="card-subtitle mb-2 text-muted">{% trans %}Loading...{% endtrans %}</h6>
+                    <div class="card-text d-flex justify-content-around">
+                        <button type="submit" class="btn btn-outline-success my-2" onclick="onDecision('NE_TYPE', 'PUBLIC')">
+                            {{ render_icon("globe", size="1.5em") }}{% trans %}Public{% endtrans %}
+                        </button>
+                        <button type="submit" class="btn btn-outline-danger my-2" onclick="onDecision('NE_TYPE', 'SECRET')">
+                            {{ render_icon("lock", size="1.5em") }}{% trans %}Secret{% endtrans %}
+                        </button>
                     </div>
                 </div>
-            </form>
+            </div>
 
             <div class="input-group mb-3">
                 <div class="input-group-prepend">
@@ -137,12 +126,14 @@
             </div>
             <div class="modal-body">
                 <form id="labelForm">
-                    <div class="form-group">
-                        <select class="selectpicker" data-live-search="true" id="labelSelect">
-                            <option>Martin</option>
-                            <option>Ondřej</option>
+                    <input type="hidden" name="ref_start">
+                    <input type="hidden" name="ref_end">
+                    <input type="hidden" name="doc_id" value="{{ submission_id }}">
+                    <div class=" form-group">
+                        <select name="label" class="selectpicker" data-live-search="true" id="labelSelect" required>
                         </select>
-                        <button type="submit" hidden>
+                    </div>
+                    <button type="submit" hidden>
                 </form>
             </div>
             <div class="modal-footer">
@@ -178,8 +169,16 @@
     })
 
     // Window details
-    var highlight_start = {{ highlight_start if highlight_start is not none else "null"}};
-    var highlight_end = {{ highlight_end if highlight_end is not none else "null"}};
+    var mainInterval = {
+        ref_start: {{ highlight_start if highlight_start is not none else "null" }},
+        ref_end: {{ highlight_end if highlight_end is not none else "null" }},
+        ne_type: null,
+        text: null,
+        types: null,
+        label: null,
+        rules: null,
+    };
+    var document_id = {{ submission_id }};
     var win_start = {{ win_start }};
     var win_end = {{ win_end }};
 
@@ -221,45 +220,52 @@
 
     function highlightInterval(ref_start, ref_end) {
         // Discard previous highlighted
-        if (highlight_start != null) {
-            selection = findInterval(highlight_start, highlight_end);
+        if (mainInterval.ref_start != null) {
+            selection = findInterval(mainInterval.ref_start, mainInterval.ref_end);
             selection.unwrap();
         }
         // Highlight new interval
         selection = findInterval(ref_start, ref_end);
         selection.wrapAll('<span class="highlight" />');
-        // Update inner state
-        highlight_start = ref_start;
-        highlight_end = ref_end;
-        // Update form data
-        $("#ref_start").val(ref_start);
-        $("#ref_end").val(ref_end);
+
+        // Update data about highlighted interval
+        mainInterval.ref_start = ref_start;
+        mainInterval.ref_end = ref_end;
         // Tokens
         token_list = [];
         selection.children().addBack().filter(".token").each(function () {
             token_list.push($(this).text());
         });
-        $("#condition").val(JSON.stringify(token_list));
+        mainInterval.tokens = token_list;
+        mainInterval.text = selection.text();
+        // Name entity type
+        mainInterval.ne_type = window_ne_types[`${ref_start}-${ref_end}`];
+        // Current decision
+        if(selection.length == 1) {
+            mainInterval.decision = selection.data("decision");
+        } else {
+            mainInterval.decision = null;
+        }
+        // Label
+        mainInterval.label = selection.data("label");
 
         // Update UI
-        $("#word_type").html(selection.text());
-        // Process name entity type
-        ne_type = window_ne_types[`${ref_start}-${ref_end}`]
-        if (ne_type) {
-            $("#ne_type").val(ne_type);
-            if (NE_CODES[ne_type])
-                $("#category").html(NE_CODES[ne_type]);
+        refreshDecisionUI();
+        refreshDecisionDetail();
+   }
+
+    function refreshDecisionUI() {
+        // Word type
+        $("#word_type").html(mainInterval.text);
+        // Name entity type
+        if (mainInterval.ne_type) {
+            if (NE_CODES[mainInterval.ne_type])
+                $("#category").html(NE_CODES[mainInterval.ne_type]);
             else
-                $("#category").html(ne_type);
+                $("#category").html(mainInterval.ne_type);
             $("#category-card").show();
         } else {
             $("#category-card").hide();
-        }
-        if (selection.length == 1) {
-            // Process current annotation
-            loadDecisionDetail(ref_start, ref_end, selection.data("decision"));
-        } else {
-            $("#detail-card").hide();
         }
     }
 
@@ -270,10 +276,10 @@
         }
         // Extend interval with shift key
         if (event.shiftKey) {
-            if (token_id < highlight_start) {
-                highlightInterval(token_id, highlight_end);
+            if (token_id < mainInterval.ref_start) {
+                highlightInterval(token_id, mainInterval.ref_end);
             } else {
-                highlightInterval(highlight_start, token_id);
+                highlightInterval(mainInterval.ref_start, token_id);
             }
         } else {
             highlightInterval(token_id, token_id);
@@ -287,10 +293,10 @@
         }
         // Extend interval with shift key
         if (event.shiftKey) {
-            if (end_token_id < highlight_start) {
-                highlightInterval(start_token_id, highlight_end);
+            if (end_token_id < mainInterval.ref_start) {
+                highlightInterval(start_token_id, mainInterval.ref_end);
             } else {
-                highlightInterval(highlight_start, end_token_id);
+                highlightInterval(mainInterval.ref_start, end_token_id);
             }
         } else {
             highlightInterval(start_token_id, end_token_id);
@@ -358,21 +364,22 @@
             (data) => decisionsDeferred.resolve(data));
         $.when(windowDeferred, decisionsDeferred).done((window, decisions) => {
             setDecisions(decisions);
-            if (highlight_start != null) {
+            if (mainInterval.ref_start != null) {
                 // Save values to tmp
-                tmp_start = highlight_start;
-                tmp_end = highlight_end;
+                tmp_start = mainInterval.ref_start;
+                tmp_end = mainInterval.ref_end;
                 // Drop global highlight settings (as we have a new text)
-                highlight_start = null;
-                highlight_end = null;
+                mainInterval.ref_start = null;
+                mainInterval.ref_end = null;
                 highlightInterval(tmp_start, tmp_end);
             }
         });
     }
 
-    function loadDecisionDetail(start, end, decision) {
+    function refreshDecisionDetail() {
         // Show decision
-        switch (decision) {
+        switch (mainInterval.decision) {
+            case null:
             case "NESTED":
             case undefined:
                 $("#detail-card").hide();
@@ -383,13 +390,12 @@
             case "SECRET":
                 $("#detail-status").html("{{_('Secret')}}");
                 break;
-            case null:
             default:
                 $("#detail-status").html("{{_('Unknown')}}");
                 break;
         }
         // Load rule details
-        $.get(`{{ url_for("annotate.detail", doc_id=submission_id) | safe }}&start=${start}&end=${end}`,
+        $.get(`{{ url_for("annotate.detail", doc_id=submission_id) | safe }}&start=${mainInterval.ref_start}&end=${mainInterval.ref_end}`,
             (data) => {
                 // Clean detail UI
                 rows = $("#detail-rows");
@@ -423,22 +429,22 @@
         key = String.fromCharCode(evt.charCode);
         switch (key) {
             case "H":
-                highlightInterval(Math.max(highlight_start - 1, win_start), highlight_end);
+                highlightInterval(Math.max(mainInterval.ref_start - 1, win_start), mainInterval.ref_end);
                 break;
             case "J":
-                highlightInterval(Math.min(highlight_start + 1, highlight_end), highlight_end);
+                highlightInterval(Math.min(mainInterval.ref_start + 1, mainInterval.ref_end), mainInterval.ref_end);
                 break;
             case "h":
-                highlightInterval(Math.max(highlight_start - 1, win_start), Math.max(highlight_end - 1, win_start));
+                highlightInterval(Math.max(mainInterval.ref_start - 1, win_start), Math.max(mainInterval.ref_end - 1, win_start));
                 break;
             case "l":
-                highlightInterval(Math.min(highlight_start + 1, win_end), Math.min(highlight_end + 1, win_end));
+                highlightInterval(Math.min(mainInterval.ref_start + 1, win_end), Math.min(mainInterval.ref_end + 1, win_end));
                 break;
             case "L":
-                highlightInterval(highlight_start, Math.min(highlight_end + 1, win_end));
+                highlightInterval(mainInterval.ref_start, Math.min(mainInterval.ref_end + 1, win_end));
                 break;
             case "K":
-                highlightInterval(highlight_start, Math.max(highlight_end - 1, highlight_start));
+                highlightInterval(mainInterval.ref_start, Math.max(mainInterval.ref_end - 1, mainInterval.ref_start));
                 break;
         }
     }
@@ -472,12 +478,23 @@
     $("#after-window-btn").show();
     {% endif %}
 
-    $("#annotationForm").submit(function (e) {
-        // Send form data using AJAX
+    function onDecision(type, decision) {
+        // Prepare results
+        data = {
+            doc_id: document_id,
+            ref_start: mainInterval.ref_start,
+            ref_end: mainInterval.ref_end,
+            kind: type,
+            tokens: JSON.stringify(mainInterval.tokens),
+            ne_type: mainInterval.ne_type,
+            decision: decision
+        };
+        mainInterval.decision = decision;
+        // Send data using AJAX
         $.ajax({
             type: "POST",
-            url: "{{ url_for('.set') }}",
-            data: $('#annotationForm').serialize() + "&" + e.originalEvent.submitter.name + "=1",
+            url: "{{ url_for('.decision') }}",
+            data: data,
             success: (data) => {
                 // Reload text window on success
                 loadWindow(win_start, win_end);
@@ -486,11 +503,25 @@
                 console.log("AJAX error: " + xhr.status + ": " + xhr.statusText);
             }
         });
-        e.preventDefault(); // block the traditional submission of the form.
-    });
+        // Check for label
+        if (!mainInterval.label && mainInterval.decision == "SECRET") {
+            showLabelModal();
+        }
+    }
 
     // Event for new labels
     const labelUpdateEvent = new Event("labelUpdate");
+
+    function selectLabel(newLabel) {
+        if (newLabel) {
+            for (var i = 0; i < selectEl.options.length; i++) {
+                if (selectEl.options[i].label == newLabel) {
+                    $("#labelSelect").selectpicker('val', selectEl.options[i].value);
+                    break;
+                }
+            }
+        }
+    }
 
     function refreshLabels() {
         selectEl = document.getElementById("labelSelect");
@@ -507,15 +538,7 @@
                 });
                 $("#labelSelect").selectpicker('refresh');
                 // Select default label
-                newLabel = $("#labelSelect").data("new-label")
-                if (newLabel) {
-                    for (var i = 0; i < selectEl.options.length; i++) {
-                        if (selectEl.options[i].label == newLabel) {
-                            $("#labelSelect").selectpicker('val', selectEl.options[i].value);
-                            break;
-                        }
-                    }
-                }
+                selectLabel(document.getElementById("labelSelect").dataset["select-label"]);
             },
             error: (responseTxt, statusTxt, xhr) => {
                 console.log("AJAX error: " + xhr.status + ": " + xhr.statusText);
@@ -524,6 +547,16 @@
     }
     refreshLabels();
 
+    function showLabelModal(label = null) {
+        // Position
+        document.forms['labelForm'].elements['ref_start'].value = mainInterval.ref_start;
+        document.forms['labelForm'].elements['ref_end'].value = mainInterval.ref_end;
+        // Default label
+        selectLabel(label);
+
+        $("#labelModal").modal("show");
+    }
+
     // Submit event
     document.getElementById("labelForm").addEventListener("submit", function (e) {
         // Send form data using AJAX
@@ -531,10 +564,10 @@
             type: "POST",
             url: "{{ url_for('annotate.label') }}",
             contentType: "application/x-www-form-urlencoded",
-            data: $("#newLabelForm").serialize(),
+            data: $("#labelForm").serialize(),
             success: (data) => {
                 // Send new label event
-                document.querySelector("#labelForm").dispatchEvent(labelUpdateEvent);
+                document.getElementById("labelForm").dispatchEvent(labelUpdateEvent);
                 // Hide modal dialog on succeed
                 $('#labelModal').modal('hide');
                 document.forms['labelForm'].reset();
@@ -548,7 +581,7 @@
     });
 
     document.getElementById("newLabelForm").addEventListener("newLabel", function (e) {
-        $("#labelSelect").data("new-label", e.detail);
+        document.getElementById("labelSelect").dataset["select-label"] = e.detail;
         refreshLabels();
     })
 </script>
