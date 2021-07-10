@@ -130,12 +130,10 @@ def decisions():
     # Returns decision in defined interval
     decisions = []
     with get_cursor() as cursor:
-        cursor.execute("SELECT ref_start, ref_end, token_level, SUM(r.confidence) as rule_level"
+        cursor.execute("SELECT ref_start, ref_end, token_level, rule_level, l.name as label"
                        " FROM annotation a"
-                       " LEFT JOIN annotation_rule ar ON ar.annotation = a.id"
-                       " JOIN rule r ON r.id = ar.rule"
+                       " LEFT JOIN label l ON a.label = l.id"
                        " WHERE submission = %s and %s<=ref_start and ref_start<=%s"
-                       " GROUP BY a.id"
                        " ORDER BY ref_start",
                        (submission_id, window_start, window_end))
         for row in cursor:
@@ -154,7 +152,7 @@ def decisions():
                 else:
                     decision = None
             # Output
-            decisions.append({"start": row["ref_start"], "end": row["ref_end"], "decision": decision})
+            decisions.append({"start": row["ref_start"], "end": row["ref_end"], "decision": decision, "label": row["label"]})
 
     return jsonify(decisions)
 
@@ -210,30 +208,45 @@ def decision():
     else:
         decision = AnnotationDecision.SECRET
 
-        # Save result to db
-        interval = Interval(form.ref_start.data, form.ref_end.data)
-        with get_cursor() as cursor:
-            ctl = Controller(cursor, form.submission_id.data, g.account["id"])
-            if rule_type:
-                # Decision connected with rules
-                rule_confidence = 1 if decision == AnnotationDecision.PUBLIC else -1
-                rule = ctl.add_rule(rule_type, rule_condition, rule_confidence)
-                ctl.annotate_with_rule(interval, rule, decision)
-            else:
-                # Decision without rule
-                ctl.annotate(interval, decision)
-            commit()
+    # Rule type
+    rule_type = None
+    condition = None
+    if request.form["kind"] == "NE_TYPE":
+        rule_type = RuleType.NE_TYPE
+        condition = [request.form["ne_type"]]
+    elif request.form["kind"] == "WORD_TYPE":
+        rule_type = RuleType.WORD_TYPE
+        condition = json.loads(request.form["tokens"])
 
-            if rule_type:
-                # Annotate rest using background task
-                from psan.celery import re_annotate
-                re_annotate.re_annotate.delay(form.submission_id.data)
+    # Save result to db
+    interval = Interval(ref_start, ref_end)
+    rule_confidence = 1 if decision == AnnotationDecision.PUBLIC else -1
 
-        # Send OK reply
-        return jsonify({"status": "ok"})
-    else:
-        # Send error
-        return make_response(jsonify({"status": "Invalid form data"}), 400)
+    with get_cursor() as cursor:
+        ctl = Controller(cursor, doc_id, g.account["id"])
+        # Decision connected with rules
+        if rule_type:
+            rule = ctl.set_rule(rule_type, condition, rule_confidence)
+        # Token level annotation
+        annotation_id = ctl.token_annotation(interval, decision)
+        # Improved search for candidates
+        candidate = None
+        if decision == AnnotationDecision.SECRET and rule_type != RuleType.NE_TYPE:
+            candidate = ctl.add_candidate_rule(json.loads(request.form["tokens"]), annotation_id)
+        # (Pre) connect rule to annotation
+        if rule_type:
+            ctl.connect(annotation_id, rule)
+
+        # Commit changes to database
+        commit()
+
+    if rule_type or candidate:
+        # Annotate rest using background task
+        from psan.celery import re_annotate
+        re_annotate.re_annotate.delay(doc_id)
+
+    # Send OK reply
+    return jsonify({"status": "ok"})
 
 
 @bp.route("/label", methods=['POST'])
@@ -248,7 +261,7 @@ def label():
     interval = Interval(ref_start, ref_end)
     with get_cursor() as cursor:
         ctl = Controller(cursor, doc_id, g.account["id"])
-        #ctl.label(interval, request.form["label"])
+        ctl.set_label(interval, request.form.get("label", type=int))
         commit()
     return jsonify({"status": "ok"})
 
