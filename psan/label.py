@@ -1,7 +1,7 @@
 import csv
 from io import StringIO
 
-from flask import (Blueprint, jsonify, make_response,
+from flask import (Blueprint, g, jsonify, make_response,
                    render_template, request)
 from flask_babel import lazy_gettext
 
@@ -21,7 +21,7 @@ def index():
 
 
 @bp.route("/data")
-@login_required(role=AccountType.ADMIN)
+@login_required()
 def data():
     # GET params
     search = request.args.get("search", type=str)
@@ -38,12 +38,16 @@ def data():
         rows = []
         for row in cursor:
             # Prepare output
-            rows.append({"id": row["id"], "label": row["name"], "replacement": row["replacement"]})
+            data = {"id": row["id"], "label": row["name"]}
+            if g.account["type"] == AccountType.ADMIN.value:
+                data["replacement"] = row["replacement"]
+            rows.append(data)
         # Return output
         return jsonify({"total": cursor.rowcount, "totalNotFiltered": not_filtered, "rows": rows})
 
 
 @bp.route("/new",  methods=['POST'])
+@login_required()
 def new():
     # Prepare requests
     label = request.form["label"]
