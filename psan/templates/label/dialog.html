@@ -33,9 +33,6 @@
 </div>
 
 <script>
-    // Event for new labels
-    const newLabelEvent = new Event("newLabel");
-
     // Submit event
     document.querySelector("#newLabelForm").addEventListener("submit", function (e) {
         // Send form data using AJAX
@@ -46,7 +43,9 @@
             data: $("#newLabelForm").serialize(),
             success: (data) => {
                 // Send new label event
-                document.querySelector("#newLabelForm").dispatchEvent(newLabelEvent);
+                document.querySelector("#newLabelForm").dispatchEvent(
+                    new CustomEvent("newLabel", { detail: document.forms['newLabelForm'].elements['label'].value })
+                );
                 // Hide modal dialog on succeed
                 $('#newLabelModal').modal('hide');
                 document.forms['newLabelForm'].reset();
@@ -59,9 +58,10 @@
         e.preventDefault();
     });
 
-    // Autofocus
+    // Events
     document.addEventListener("DOMContentLoaded", function () {
-        $("#newLabelModal").on("shown.bs.modal", function () {
+        // Autofocus
+        $("#newLabelModal").on("shown.bs.modal", function (e) {
             document.querySelector("#newLabel").focus();
         });
     });

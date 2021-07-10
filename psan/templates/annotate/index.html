@@ -3,6 +3,13 @@
 
 {% block title %}{% trans %}Annotation interface{% endtrans %}{% endblock %}
 
+{% block styles %}
+{{ super() }}
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/bootstrap-select@1.13.14/dist/css/bootstrap-select.min.css">
+
+{% endblock %}
+
 {% block content %}
 <div class="d-flex">
     <div class="row col-12">
@@ -117,14 +124,60 @@
         </div>
     </div>
 </div>
+
+<div class="modal fade" id="labelModal" tabindex="-1" role="dialog" aria-labelledby="labelModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="labelModalLabel">{% trans %}Select label{% endtrans %}</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="labelForm">
+                    <div class="form-group">
+                        <select class="selectpicker" data-live-search="true" id="labelSelect">
+                            <option>Martin</option>
+                            <option>Ondřej</option>
+                        </select>
+                        <button type="submit" hidden>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" onclick="$('#newLabelModal').modal('show');">
+                    {% trans %}Add missing label{% endtrans %}
+                </button>
+                <button type="button" class="btn btn-primary" onclick="document.forms['labelForm'].requestSubmit();">
+                    {% trans %}Save{% endtrans %}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% include '/label/dialog.html' %}
+
 {% endblock %}
 
 {% block scripts %}
 {{ super() }}
 
+<script src="//cdn.jsdelivr.net/npm/bootstrap-select@1.13.14/dist/js/bootstrap-select.min.js"></script>
 <script type="text/javascript" src="{{ url_for('static', filename='consts.js') }}"></script>
 
 <script>
+    // CSRF protection
+    $.ajaxSetup({
+        beforeSend: function (xhr, settings) {
+            if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                xhr.setRequestHeader("X-CSRFToken", "{{ csrf_token() }}");
+            }
+        }
+    })
+
+    // Window details
     var highlight_start = {{ highlight_start if highlight_start is not none else "null"}};
     var highlight_end = {{ highlight_end if highlight_end is not none else "null"}};
     var win_start = {{ win_start }};
@@ -325,14 +378,14 @@
                 $("#detail-card").hide();
                 return;
             case "PUBLIC":
-                $("#detail-status").html("{{_("Public")}}");
+                $("#detail-status").html("{{_('Public')}}");
                 break;
             case "SECRET":
-                $("#detail-status").html("{{_("Secret")}}");
+                $("#detail-status").html("{{_('Secret')}}");
                 break;
             case null:
             default:
-                $("#detail-status").html("{{_("Unknown")}}");
+                $("#detail-status").html("{{_('Unknown')}}");
                 break;
         }
         // Load rule details
@@ -343,7 +396,7 @@
                 rows.empty();
                 // Info about token level
                 if (data.token_level) {
-                    addDecisionDetailRow(rows, "{{_("Token") }}", data.token_level, data.token_author);
+                    addDecisionDetailRow(rows, "{{_('Token') }}", data.token_level, data.token_author);
                 }
                 // Info about rule level
                 data.rules.forEach(rule => {
@@ -435,5 +488,68 @@
         });
         e.preventDefault(); // block the traditional submission of the form.
     });
+
+    // Event for new labels
+    const labelUpdateEvent = new Event("labelUpdate");
+
+    function refreshLabels() {
+        selectEl = document.getElementById("labelSelect");
+        // Clear previous options
+        selectEl.options.length = 0;
+        // Load a new ones
+        $.ajax({
+            type: "GET",
+            url: "{{ url_for('label.data') }}",
+            success: (data) => {
+                // Update labels
+                data.rows.forEach(row => {
+                    selectEl.add(new Option(row.label, row.id));
+                });
+                $("#labelSelect").selectpicker('refresh');
+                // Select default label
+                newLabel = $("#labelSelect").data("new-label")
+                if (newLabel) {
+                    for (var i = 0; i < selectEl.options.length; i++) {
+                        if (selectEl.options[i].label == newLabel) {
+                            $("#labelSelect").selectpicker('val', selectEl.options[i].value);
+                            break;
+                        }
+                    }
+                }
+            },
+            error: (responseTxt, statusTxt, xhr) => {
+                console.log("AJAX error: " + xhr.status + ": " + xhr.statusText);
+            }
+        });
+    }
+    refreshLabels();
+
+    // Submit event
+    document.getElementById("labelForm").addEventListener("submit", function (e) {
+        // Send form data using AJAX
+        $.ajax({
+            type: "POST",
+            url: "{{ url_for('annotate.label') }}",
+            contentType: "application/x-www-form-urlencoded",
+            data: $("#newLabelForm").serialize(),
+            success: (data) => {
+                // Send new label event
+                document.querySelector("#labelForm").dispatchEvent(labelUpdateEvent);
+                // Hide modal dialog on succeed
+                $('#labelModal').modal('hide');
+                document.forms['labelForm'].reset();
+            },
+            error: (responseTxt, statusTxt, xhr) => {
+                console.log("AJAX error: " + xhr.status + ": " + xhr.statusText);
+            }
+        });
+        // block the traditional submission of the forms
+        e.preventDefault();
+    });
+
+    document.getElementById("newLabelForm").addEventListener("newLabel", function (e) {
+        $("#labelSelect").data("new-label", e.detail);
+        refreshLabels();
+    })
 </script>
 {% endblock %}

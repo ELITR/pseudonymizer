@@ -247,6 +247,12 @@ def set():
         return make_response(jsonify({"status": "Invalid form data"}), 400)
 
 
+@bp.route("/label", methods=['POST'])
+@login_required()
+def label():
+    return jsonify({"status": "ok"})
+
+
 class RecognizedTagFilter(XMLFilterBase):
     """Transform `ne` tags to `mark` tags. Highlight tag with `id==candidate_id`."""
 
