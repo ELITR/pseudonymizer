@@ -95,17 +95,3 @@ class UploadForm(FlaskForm):
 class RemoveSubmissionForm(FlaskForm):
     uid = HiddenField(validators=[validators.UUID()])
     submit = SubmitField(_("Remove"))
-
-
-class AnnotateForm(FlaskForm):
-    submission_id = HiddenField(validators=[validators.regexp(r"^\d+$")])
-    ref_start = HiddenField(validators=[validators.regexp(r"^\d+$")])
-    ref_end = HiddenField(validators=[validators.regexp(r"^\d+$")])
-    condition = HiddenField()
-    ne_type = HiddenField()
-    token_public = SubmitField()
-    token_secret = SubmitField()
-    type_public = SubmitField()
-    type_secret = SubmitField()
-    ne_type_public = SubmitField()
-    ne_type_secret = SubmitField()

@@ -11,7 +11,7 @@ from werkzeug.exceptions import BadRequest
 
 from psan.auth import login_required
 from psan.db import commit, get_cursor
-from psan.model import AccountType, AnnotateForm, SubmissionStatus
+from psan.model import AccountType, SubmissionStatus
 from psan.submission import get_submission_file
 from psan.tool.controller import Controller
 from psan.tool.model import AnnotationDecision, Interval, RuleType
@@ -76,11 +76,9 @@ def show_candidate(submission_id: int, ref_start: int, ref_end: int):
     # Add permission
     session["permitted_win_start"] = win_start
     session["permitted_win_end"] = win_end
-    # Prepare web page
-    form = AnnotateForm(request.form)
 
     is_admin = (g.account["type"] == AccountType.ADMIN.value)
-    return render_template("annotate/index.html", form=form, submission_id=submission_id,  win_start=win_start, win_end=win_end,
+    return render_template("annotate/index.html", submission_id=submission_id,  win_start=win_start, win_end=win_end,
                            highlight_start=ref_start, highlight_end=ref_end, is_admin=is_admin)
 
 
