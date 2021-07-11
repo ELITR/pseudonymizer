@@ -3,7 +3,7 @@
 -- Table
 CREATE TYPE account_type AS ENUM ('USER', 'ADMIN');
 
-CREATE TYPE submission_status AS ENUM ('NEW', 'RECOGNIZED', 'PRE_ANNOTATED', 'ANNOTATED', 'DONE'); 
+CREATE TYPE submission_status AS ENUM ('NEW', 'RECOGNIZED', 'PRE_ANNOTATED', 'DONE'); 
 
 CREATE TYPE annotation_decision AS ENUM ('PUBLIC', 'SECRET', 'NESTED');
 

@@ -36,28 +36,29 @@ def _check_permissinns(start: int, end: int, doc_id: int) -> None:
 def index():
     # Find longest submission from db
     with get_cursor() as cursor:
-        cursor.execute("SELECT submission.id, COUNT(annotation.id) AS candidates FROM submission "
-                       "JOIN annotation ON submission.id = annotation.submission and token_level IS NULL "
-                       "WHERE status = %s GROUP BY submission.id", (SubmissionStatus.PRE_ANNOTATED.value,))
+        min_confidence = current_app.config["RULE_AUTOAPPLY_CONFIDENCE"]
+        cursor.execute("SELECT submission.id as id, COUNT(annotation.id) AS candidates FROM submission "
+                       "JOIN annotation ON submission.id=annotation.submission and"
+                       " (token_level IS NULL and ABS(rule_level) < %s)"
+                       " WHERE status = %s GROUP BY submission.id",
+                       (min_confidence, SubmissionStatus.PRE_ANNOTATED.value))
         document = cursor.fetchone()
         if document:
             # Show first candadate of submission
             cursor.execute("SELECT submission, ref_start, ref_end FROM annotation a"
                            " LEFT JOIN annotation_rule ar ON ar.annotation = a.id"
-                           " JOIN rule r ON r.id = ar.rule"
-                           " WHERE submission = %s AND token_level IS NULL"
-                           " GROUP BY a.id"
-                           " HAVING ABS(SUM(r.confidence)) < %s"
+                           " LEFT JOIN rule r ON r.id = ar.rule AND r.label IS NOT NULL"
+                           " WHERE submission = %s AND (token_level IS NULL and ABS(rule_level) < %s)"
                            " LIMIT 1",
-                           (document["id"], current_app.config["RULE_AUTOAPPLY_CONFIDENCE"]))
+                           (document["id"], min_confidence))
             candidate = cursor.fetchone()
             return show_candidate(candidate["submission"], candidate["ref_start"], candidate["ref_end"])
         else:
             return render_template("annotate/empty.html")
 
 
-@bp.route("/show")
-@login_required(role=AccountType.ADMIN)
+@ bp.route("/show")
+@ login_required(role=AccountType.ADMIN)
 def show():
     # Parse input params
     doc_id = request.args.get("doc_id", type=int)
@@ -82,8 +83,8 @@ def show_candidate(submission_id: int, ref_start: int, ref_end: int):
                            highlight_start=ref_start, highlight_end=ref_end, is_admin=is_admin)
 
 
-@bp.route("/window")
-@login_required()
+@ bp.route("/window")
+@ login_required()
 def window():
     # Parse input params
     submission_id = request.args.get("doc_id", type=int)
@@ -116,8 +117,8 @@ def window():
         return response
 
 
-@bp.route("/decisions")
-@login_required()
+@ bp.route("/decisions")
+@ login_required()
 def decisions():
     # Parse input params
     submission_id = request.args.get("doc_id", type=int)
@@ -135,8 +136,8 @@ def decisions():
     return jsonify(decisions)
 
 
-@bp.route("/detail")
-@login_required()
+@ bp.route("/detail")
+@ login_required()
 def detail():
     # Parse input params
     submission_id = request.args.get("doc_id", type=int)
@@ -171,8 +172,8 @@ def detail():
         return jsonify(response)
 
 
-@bp.route("/decision", methods=['POST'])
-@login_required()
+@ bp.route("/decision", methods=['POST'])
+@ login_required()
 def decision():
     # Window detail
     doc_id = request.form.get("doc_id", type=int)
@@ -227,8 +228,8 @@ def decision():
     return jsonify({"status": "ok"})
 
 
-@bp.route("/label", methods=['POST'])
-@login_required()
+@ bp.route("/label", methods=['POST'])
+@ login_required()
 def label():
     # Window detail
     doc_id = request.form.get("doc_id", type=int)

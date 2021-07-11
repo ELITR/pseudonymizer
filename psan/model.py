@@ -20,7 +20,6 @@ class SubmissionStatus(Enum):
     NEW = "NEW"
     RECOGNIZED = "RECOGNIZED"
     PRE_ANNOTATED = "PRE_ANNOTATED"
-    ANNOTATED = "ANNOTATED"
     DONE = "DONE"
 
 
