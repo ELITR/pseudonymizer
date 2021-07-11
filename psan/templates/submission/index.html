@@ -37,6 +37,9 @@
                         </button>
                         <div class="dropdown-menu" aria-labelledby="downloadMenuButton">
                             <a class="dropdown-item" href="{{ url_for(".download", doc_uid=submission["uid"], type=SubmissionStatus.NEW.value) }}" download>{% trans %}Input file{% endtrans %}</a>
+                        {% if submission["status"] not in [SubmissionStatus.NEW.value, SubmissionStatus.RECOGNIZED.value]   %}
+                            <a class="dropdown-item" href="{{ url_for("generate.output", doc_uid=submission["uid"]) }}" download>{% trans %}Output file{% endtrans %}</a>
+                        {% endif %}
                         </div>
                         {% if submission["status"]!=SubmissionStatus.NEW.value %}
                             <a href="{{ url_for("annotate.show", doc_id=submission["id"], ref_start=0, ref_end=0) }}" class="btn btn-outline-secondary mr-2" title="{{_("Annotate")}}">{{ render_icon("pencil-square") }}</a>

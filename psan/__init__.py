@@ -64,6 +64,8 @@ def build_app() -> Flask:
     app.register_blueprint(rule.bp)
     from psan import label
     app.register_blueprint(label.bp)
+    from psan import generate
+    app.register_blueprint(generate.bp)
 
     # Create register token
     if os.environ.get("ALLOW_TOKEN_REGISTRATION", default="0") == "1":
