@@ -35,16 +35,14 @@ def test_reset(client: FlaskClient) -> None:
     assert b"Having trouble logging in?" in response.data
 
 
-def test_restricted(client: FlaskClient) -> None:
-    for page in ["auth.register", "auth.users", "account.index", "account.delete_account", "account.change_password",
-                 "annotate.index", "annotate.detail", "annotate.decisions", "annotate.show", "submission.index", "submission.new",
-                 "submission.download", "rule.index", "rule.export", "rule.upload", "label.index", "label.data", "label.export"]:
-        with app.app_context():
-            login_redirect(url_for(page), client)
-
-
-def login_redirect(page: str, client: FlaskClient) -> None:
-    response = client.get(page)
-    print(f"Testing page {page}")
-    assert response.status_code == 302
-    assert response.location == url_for("auth.login", _external=True)
+@pytest.mark.parametrize("page_name",  ["auth.register", "auth.users", "account.index", "account.delete_account", "account.change_password",
+                                        "annotate.index", "annotate.detail", "annotate.decisions", "annotate.show", "submission.index", "submission.new",
+                                        "submission.download", "rule.index", "rule.export", "rule.upload", "label.index", "label.data", "label.export",
+                                        "generate.output"])
+def test_restricted(client: FlaskClient, page_name) -> None:
+    with app.app_context():
+        page = url_for(page_name)
+        response = client.get(page)
+        print(f"Testing page {page}")
+        assert response.status_code == 302
+        assert response.location == url_for("auth.login", _external=True)

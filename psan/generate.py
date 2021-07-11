@@ -1,10 +1,9 @@
-from io import StringIO
-from typing import Dict, List
 import xml  # nosec - parse only internal XML
 import xml.sax  # nosec - parse only internal XML
+from io import StringIO
+from typing import Dict, List
 
-from flask import (Blueprint, current_app, g, make_response,
-                   request)
+from flask import Blueprint, current_app, g, make_response, request
 from flask_babel import gettext
 
 from psan.auth import login_required
@@ -91,7 +90,8 @@ class OutputTagFilter(xml.sax.ContentHandler):
     def characters(self, content):
         if(self._token_id >= 0):
             decision = self._current_decision
-            if decision and ((decision["start"] <= self._token_id < decision["end"]) or (decision["start"] <= self._token_id <= decision["end"] and self._in_token)):
+            if decision and ((decision["start"] <= self._token_id < decision["end"]) or
+                             (decision["start"] <= self._token_id <= decision["end"] and self._in_token)):
                 if not self._replacement_printed:
                     if decision["replacement"]:
                         self._output.write(decision["replacement"])
