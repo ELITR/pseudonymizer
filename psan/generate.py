@@ -1,7 +1,7 @@
 from io import StringIO
-from xml import sax  # nosec
-from xml.sax import make_parser  # nosec
-from xml.sax.saxutils import XMLFilterBase, XMLGenerator  # nosec
+from typing import Dict, List
+import xml  # nosec - parse only internal XML
+import xml.sax  # nosec - parse only internal XML
 
 from flask import (Blueprint, current_app, g, make_response,
                    request)
@@ -44,32 +44,36 @@ def output():
 
     # Transform output
     output = StringIO()
-    generator = XMLGenerator(output)
-    filter = OutputTagFilter(decisions, make_parser())
-    filter.setContentHandler(generator)
-    # Find submission file
+
+    parser = xml.sax.make_parser()  # nosec - parse only internal XML
+    parser.setFeature(xml.sax.handler.feature_namespaces, 0)
+    handler = OutputTagFilter(decisions, output)
+    parser.setContentHandler(handler)
     filename = get_submission_file(submission_uid, SubmissionStatus.RECOGNIZED)
-    # Line has to be surrounded with XML tags
-    sax.parse(filename, filter)
+    parser.parse(filename)
+
     # Prepare response
-    output = make_response(output.getvalue())
-    output.headers["Content-Disposition"] = f"attachment; filename={submission_name}.out.txt"
-    output.headers["Content-type"] = "text/plain"
-    return output
+    response = make_response(output.getvalue())
+    response.headers["Content-Disposition"] = f"attachment; filename={submission_name}.out.txt"
+    response.headers["Content-type"] = "text/plain"
+    return response
 
 
-class OutputTagFilter(XMLFilterBase):
+class OutputTagFilter(xml.sax.ContentHandler):
     """Replace private tokens with replacement"""
 
-    def __init__(self, decisions, parent):
-        super().__init__(parent)
+    def __init__(self, decisions: List[Dict[str, str]], output: StringIO):
+        super().__init__()
 
         # State of parser
         self._token_id = -1
         self._in_token = True
-        self._decisions = decisions
         self._decision_index = 0
+        self._current_decision = None
         self._replacement_printed = False
+        # External data
+        self._decisions = decisions
+        self._output = output
 
     def startElement(self, name, attrs):
         if name == "token":
@@ -77,6 +81,7 @@ class OutputTagFilter(XMLFilterBase):
             self._token_id = int(attrs.get("id"))
             while self._decision_index < len(self._decisions)-1 and self._decisions[self._decision_index]["end"] < self._token_id:
                 self._decision_index += 1
+                self._current_decision = self._decisions[self._decision_index]
                 self._replacement_printed = False
 
     def endElement(self, name):
@@ -84,10 +89,12 @@ class OutputTagFilter(XMLFilterBase):
             self._in_token = False
 
     def characters(self, content):
-        decision = self._decisions[self._decision_index]
-        if decision["start"] <= self._token_id < decision["end"] or (decision["start"] <= self._token_id <= decision["end"] and self._in_token):
-            if not self._replacement_printed:
-                super().characters(decision["replacement"])
-                self._replacement_printed = True
-        else:
-            super().characters(content)
+        if(self._token_id >= 0):
+            decision = self._current_decision
+            if decision and ((decision["start"] <= self._token_id < decision["end"]) or (decision["start"] <= self._token_id <= decision["end"] and self._in_token)):
+                if not self._replacement_printed:
+                    if decision["replacement"]:
+                        self._output.write(decision["replacement"])
+                    self._replacement_printed = True
+            else:
+                self._output.write(content)
