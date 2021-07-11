@@ -47,6 +47,23 @@
                 </div>
             </div>
 
+            {# Token #}
+            <div class="card my-2">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        {{ render_icon("text-paragraph", size="1.5em") }}{% trans %}By token{% endtrans %}
+                    </h5>
+                    <div class="card-text d-flex justify-content-around">
+                        <button type="submit" class="btn btn-outline-success my-2" onclick="onDecision('TOKEN', 'PUBLIC')">
+                            {{ render_icon("globe", size="1.5em") }}{% trans %}Public{% endtrans %}
+                        </button>
+                        <button type="submit" class="btn btn-outline-danger my-2" onclick="onDecision('TOKEN', 'SECRET')">
+                            {{ render_icon("lock", size="1.5em") }}{% trans %}Secret{% endtrans %}
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
             {# Type #}
             <div class="card my-2">
                 <div class="card-body">
@@ -60,23 +77,6 @@
                             {{ render_icon("globe", size="1.5em") }}{% trans %}Public{% endtrans %}
                         </button>
                         <button type="submit" class="btn btn-outline-danger my-2" onclick="onDecision('WORD_TYPE', 'SECRET')">
-                            {{ render_icon("lock", size="1.5em") }}{% trans %}Secret{% endtrans %}
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            {# Token #}
-            <div class="card my-2">
-                <div class="card-body">
-                    <h5 class="card-title">
-                        {{ render_icon("text-paragraph", size="1.5em") }}{% trans %}By token{% endtrans %}
-                    </h5>
-                    <div class="card-text d-flex justify-content-around">
-                        <button type="submit" class="btn btn-outline-success my-2" onclick="onDecision('TOKEN', 'PUBLIC')">
-                            {{ render_icon("globe", size="1.5em") }}{% trans %}Public{% endtrans %}
-                        </button>
-                        <button type="submit" class="btn btn-outline-danger my-2" onclick="onDecision('TOKEN', 'SECRET')">
                             {{ render_icon("lock", size="1.5em") }}{% trans %}Secret{% endtrans %}
                         </button>
                     </div>
@@ -168,7 +168,7 @@
         }
     })
 
-    // Window details
+    // Constants
     var mainInterval = {
         ref_start: {{ highlight_start if highlight_start is not none else "null" }},
         ref_end: {{ highlight_end if highlight_end is not none else "null" }},
@@ -258,7 +258,7 @@
         // Update UI
         refreshDecisionUI();
         refreshDecisionDetail();
-   }
+    }
 
     function refreshDecisionUI() {
         // Word type
@@ -461,37 +461,11 @@
             case "K":
                 highlightInterval(mainInterval.ref_start, Math.max(mainInterval.ref_end - 1, mainInterval.ref_start));
                 break;
+            case "e":
+                showLabelModal(mainInterval.label);
+                break;
         }
     }
-
-    // Load defaults windows
-    loadWindow(win_start, win_end);
-    // Key shortcuts
-    document.onkeypress = shortcut;
-
-    {% if is_admin %}
-    // Register callbacks
-    // Before
-    $("#before-window-btn").click(() => {
-        win_start = Math.max(0, win_start - 200);
-        loadWindow(win_start, win_end);
-    });
-    // After
-    var lastTokenId = null;
-    $("#after-window-btn").click(() => {
-        win_end += 200;
-        loadWindow(win_start, win_end);
-        // After button
-        currentLastTokenId = $(".token:last").attr('id');
-        if (lastTokenId != currentLastTokenId) {
-            lastTokenId = currentLastTokenId;
-            $("#after-window-btn").show();
-        } else {
-            $("#after-window-btn").hide();
-        }
-    });
-    $("#after-window-btn").show();
-    {% endif %}
 
     function onDecision(type, decision) {
         // Prepare results
@@ -550,16 +524,18 @@
                 });
                 $("#labelSelect").selectpicker('refresh');
                 // Select default label
-                selectLabel(document.getElementById("labelSelect").dataset["select-label"]);
+                selectLabel(document.getElementById("labelSelect").dataset.label);
             },
             error: (responseTxt, statusTxt, xhr) => {
                 console.log("AJAX error: " + xhr.status + ": " + xhr.statusText);
             }
         });
     }
-    refreshLabels();
 
     function showLabelModal(label = null) {
+        // Disable some features
+        document.onkeypress = null;
+        $('[data-toggle="tooltip"]').tooltip("hide");
         // Position
         document.forms['labelForm'].elements['ref_start'].value = mainInterval.ref_start;
         document.forms['labelForm'].elements['ref_end'].value = mainInterval.ref_end;
@@ -568,6 +544,10 @@
 
         $("#labelModal").modal("show");
     }
+
+    $("#labelModal").on("hidden.bs.modal", function (e) {
+        document.onkeypress = shortcut;
+    })
 
     // Submit event
     document.getElementById("labelForm").addEventListener("submit", function (e) {
@@ -593,8 +573,42 @@
     });
 
     document.getElementById("newLabelForm").addEventListener("newLabel", function (e) {
-        document.getElementById("labelSelect").dataset["select-label"] = e.detail;
+        document.getElementById("labelSelect").dataset.label = e.detail;
         refreshLabels();
-    })
+    });
+
+    // Key shortcuts
+    document.onkeypress = shortcut;
+
+    // Main code block
+
+    // Load defaults 
+    loadWindow(win_start, win_end);
+    refreshLabels();
+
+    {% if is_admin %}
+        // Admin window expanding
+        // Before
+        $("#before-window-btn").click(() => {
+            win_start = Math.max(0, win_start - 200);
+            loadWindow(win_start, win_end);
+        });
+        // After
+        var lastTokenId = null;
+        $("#after-window-btn").click(() => {
+            win_end += 200;
+            loadWindow(win_start, win_end);
+            // After button
+            currentLastTokenId = $(".token:last").attr('id');
+            if (lastTokenId != currentLastTokenId) {
+                lastTokenId = currentLastTokenId;
+                $("#after-window-btn").show();
+            } else {
+                $("#after-window-btn").hide();
+            }
+        });
+        $("#after-window-btn").show();
+    {% endif %}
+
 </script>
 {% endblock %}
