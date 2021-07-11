@@ -40,11 +40,15 @@
     background-color:rgb(81, 228, 62, 0.5);
 }
 
+.candidate-label {
+    background-color:rgba(255, 170, 11, 0.5);
+}
+
 .candidate-secret {
     background-color:rgba(240, 80, 80, 0.5);
 }
 
-.highlight, .highlight .candidate-secret, .highlight .candidate-public {
+.highlight, .highlight .candidate-secret, .highlight .candidate-public, .highlight .candidate-label{
     background-color:rgb(255, 253, 163);
 }
 
