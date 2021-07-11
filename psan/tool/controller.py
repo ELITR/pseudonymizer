@@ -24,7 +24,7 @@ class Controller:
         self._cursor.execute("INSERT INTO rule (type, condition, confidence, author, source) VALUES (%s, %s, %s, %s, %s) "
                              " ON CONFLICT (type, condition) DO NOTHING"
                              " RETURNING id",
-                             (RuleType.NE_TYPE.value, tokens, Confidence.CANDIDATE, self._user_id, token_annotation_id))
+                             (RuleType.WORD_TYPE.value, tokens, Confidence.CANDIDATE, self._user_id, token_annotation_id))
         data = self._cursor.fetchone()
         if data:
             rule = Rule(data["id"])
@@ -57,13 +57,16 @@ class Controller:
                            token_level_decision: Optional[AnnotationDecision] = None) -> None:
         """ Annotate text interval with rule """
         token_decision_str = token_level_decision.value if token_level_decision else None
-        self._cursor.execute("INSERT INTO annotation (submission, ref_start, ref_end, token_level, author)"
-                             " VALUES (%s, %s, %s, %s, %s)"
-                             " ON CONFLICT (submission, ref_start, ref_end) DO UPDATE"
-                             " SET token_level=EXCLUDED.token_level, author=EXCLUDED.author"
-                             " RETURNING id",
-                             (self._document_id, interval.start, interval.end, token_decision_str, self._user_id))
-        annotation_id = self._cursor.fetchone()["id"]
+        self._cursor.execute("SELECT id FROM annotation WHERE submission = %s and ref_start = %s and ref_end = %s",
+                             (self._document_id, interval.start, interval.end))
+        data = self._cursor.fetchone()
+        if not data:
+            self._cursor.execute("INSERT INTO annotation (submission, ref_start, ref_end, token_level, author)"
+                                 " VALUES (%s, %s, %s, %s, %s)"
+                                 " RETURNING id",
+                                 (self._document_id, interval.start, interval.end, token_decision_str, self._user_id))
+            data = self._cursor.fetchone()
+        annotation_id = data["id"]
         self.connect(annotation_id, rule)
 
     def connect(self, annotation_id, rule: Rule) -> None:
