@@ -27,7 +27,7 @@ def _check_permissinns(start: int, end: int, doc_id: int) -> None:
         raise BadRequest(f"Missing required parameters ref_start, ref_end or document_id")
     # Check window permission
     is_admin = (g.account["type"] == AccountType.ADMIN.value)
-    if (session["permitted_win_start"] != start or session["permitted_win_end"] != end) and not is_admin:
+    if (start < session["permitted_win_start"] or session["permitted_win_end"] < end) and not is_admin:
         raise BadRequest("Insufficient permissions for this window")
 
 
