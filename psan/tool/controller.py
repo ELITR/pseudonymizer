@@ -1,4 +1,5 @@
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
+
 
 from psan.tool.model import (AnnotationDecision, AnnotationSource, Confidence,
                              Evidence, EvidenceType, Interval, Rule, RuleType,
@@ -113,3 +114,42 @@ class Controller:
             return EvidenceType.WORD_TYPE, row["length"] - 1
         else:
             return EvidenceType.NONE, 0
+
+    def get_decisions(self, interval: Optional[Interval], min_confidence, with_replacement=False) -> List[Dict[str, str]]:
+        """Return list of annotation decisions and labels withing selected interval"""
+        decisions = []
+        # Query - where part
+        if interval:
+            where_cls = " WHERE submission = %s and %s<=ref_start and ref_start<=%s"
+            where_args = (self._document_id, interval.start, interval.end)
+        else:
+            where_cls = " WHERE submission = %s"
+            where_args = (self._document_id,)
+        self._cursor.execute("SELECT ref_start, ref_end, token_level, rule_level, l.name as label, l.replacement as replacement"
+                             " FROM annotation a"
+                             " LEFT JOIN label l ON a.label = l.id"
+                             + where_cls +
+                             " ORDER BY ref_start",
+                             where_args)
+        # Prepare decisions
+        for row in self._cursor:
+            # Decision sum-up
+            if row["token_level"]:
+                # Token level decision
+                decision = row["token_level"]
+            else:
+                # Rule level decision
+                rule_level = row["rule_level"]
+                if rule_level <= -min_confidence:
+                    decision = AnnotationDecision.SECRET.value
+                elif min_confidence <= rule_level:
+                    decision = AnnotationDecision.PUBLIC.value
+                else:
+                    decision = None
+            # Decision row
+            decision = {"start": row["ref_start"], "end": row["ref_end"], "decision": decision, "label": row["label"]}
+            if with_replacement:
+                decision["replacement"] = row["replacement"]
+            decisions.append(decision)
+
+        return decisions

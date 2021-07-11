@@ -125,33 +125,13 @@ def decisions():
     window_end = request.args.get("end", type=int)
     _check_permissinns(window_start, window_end, submission_id)
 
+    min_confidence = current_app.config["RULE_AUTOAPPLY_CONFIDENCE"]
+
     # Returns decision in defined interval
     decisions = []
     with get_cursor() as cursor:
-        cursor.execute("SELECT ref_start, ref_end, token_level, rule_level, l.name as label"
-                       " FROM annotation a"
-                       " LEFT JOIN label l ON a.label = l.id"
-                       " WHERE submission = %s and %s<=ref_start and ref_start<=%s"
-                       " ORDER BY ref_start",
-                       (submission_id, window_start, window_end))
-        for row in cursor:
-            # Decision sum-up
-            if row["token_level"]:
-                # Token level decision
-                decision = row["token_level"]
-            else:
-                # Rule level decision
-                rule_level = row["rule_level"]
-                min_confidence = current_app.config["RULE_AUTOAPPLY_CONFIDENCE"]
-                if rule_level <= -min_confidence:
-                    decision = AnnotationDecision.SECRET.value
-                elif min_confidence <= rule_level:
-                    decision = AnnotationDecision.PUBLIC.value
-                else:
-                    decision = None
-            # Output
-            decisions.append({"start": row["ref_start"], "end": row["ref_end"], "decision": decision, "label": row["label"]})
-
+        ctl = Controller(cursor, submission_id, g.account["id"])
+        decisions = ctl.get_decisions(Interval(window_start, window_end), min_confidence)
     return jsonify(decisions)
 
 
