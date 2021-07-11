@@ -90,9 +90,15 @@ AS $$
 DELETE FROM annotation AS a WHERE a.token_level IS NULL AND a.rule_level = 0 AND NOT EXISTS (SELECT 1 FROM annotation_rule AS ar WHERE a.id = ar.annotation);
 $$;
 
-CREATE OR REPLACE FUNCTION rule_deletion_fnc() RETURNS trigger AS $emp_stamp$
+CREATE OR REPLACE FUNCTION before_rule_deletion_fnc() RETURNS trigger AS $emp_stamp$
     BEGIN
         CALL update_rule(OLD.id, -OLD.confidence);
+        RETURN OLD;
+    END;
+$emp_stamp$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION after_rule_deletion_fnc() RETURNS trigger AS $emp_stamp$
+    BEGIN
         CALL annotatation_cleanup();
         RETURN NULL;
     END;
@@ -121,10 +127,15 @@ CREATE OR REPLACE FUNCTION annotation_rule_insert_fn() RETURNS trigger AS $emp_s
    END;
 $emp_stamp$ LANGUAGE plpgsql;
 
-CREATE TRIGGER rule_deletion_trigger AFTER DELETE 
+CREATE TRIGGER before_rule_deletion_trigger BEFORE DELETE 
     ON rule
     FOR EACH ROW
-    EXECUTE PROCEDURE rule_deletion_fnc();
+    EXECUTE PROCEDURE before_rule_deletion_fnc();
+
+CREATE TRIGGER after_rule_deletion_trigger AFTER DELETE 
+    ON rule
+    FOR EACH ROW
+    EXECUTE PROCEDURE after_rule_deletion_fnc();
 
 CREATE TRIGGER rule_update_trigger AFTER UPDATE 
     OF confidence ON rule
