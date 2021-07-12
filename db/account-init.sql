@@ -33,11 +33,17 @@ CREATE TABLE submission (
     CHECK (0 <= num_tokens)
 );
 
+CREATE TABLE label (
+    id              INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+    name            TEXT UNIQUE NOT NULL,
+    replacement     TEXT NOT NULL
+);
+
 CREATE TABLE annotation (
     id              INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
     submission      INT REFERENCES submission(id) ON DELETE CASCADE    NOT NULL,
     token_level     annotation_decision,
-    rule_level      INT,
+    rule_level      INT                                                NOT NULL DEFAULT 0,
     label           INT REFERENCES label(id) ON DELETE SET NULL,
     source          annotation_source                                  NOT NULL DEFAULT 'RULE',
     ref_start       INT                                                NOT NULL,
@@ -45,12 +51,6 @@ CREATE TABLE annotation (
     author          INT REFERENCES account(id) ON DELETE SET NULL,
     UNIQUE (submission, ref_start, ref_end),
     CHECK (ref_start <= ref_end)
-);
-
-CREATE TABLE label (
-    id              INT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-    name            TEXT UNIQUE NOT NULL,
-    replacement     TEXT NOT NULL
 );
 
 CREATE TABLE rule (

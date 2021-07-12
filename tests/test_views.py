@@ -35,10 +35,11 @@ def test_reset(client: FlaskClient) -> None:
     assert b"Having trouble logging in?" in response.data
 
 
-@pytest.mark.parametrize("page_name",  ["auth.register", "auth.users", "account.index", "account.delete_account", "account.change_password",
-                                        "annotate.index", "annotate.detail", "annotate.decisions", "annotate.show", "submission.index", "submission.new",
-                                        "submission.download", "rule.index", "rule.export", "rule.upload", "label.index", "label.data", "label.export",
-                                        "generate.output"])
+@pytest.mark.parametrize("page_name",
+                         ["auth.register", "auth.users", "account.index", "account.delete_account", "account.change_password",
+                          "annotate.index", "annotate.detail", "annotate.decisions", "annotate.show", "submission.index",
+                          "submission.new", "submission.download", "rule.index", "rule.export", "rule.upload", "label.index",
+                          "label.data", "label.export", "generate.output"])
 def test_restricted(client: FlaskClient, page_name) -> None:
     with app.app_context():
         page = url_for(page_name)

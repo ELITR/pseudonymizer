@@ -128,7 +128,7 @@ class Controller:
         self._cursor.execute("SELECT ref_start, ref_end, token_level, rule_level, l.name as label, l.replacement as replacement"
                              " FROM annotation a"
                              " LEFT JOIN label l ON a.label = l.id"
-                             + where_cls +
+                             + where_cls +  # nosec
                              " ORDER BY ref_start",
                              where_args)
         # Prepare decisions
