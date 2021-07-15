@@ -129,10 +129,17 @@
                     <input type="hidden" name="ref_start">
                     <input type="hidden" name="ref_end">
                     <input type="hidden" name="doc_id" value="{{ submission_id }}">
+                    <input type="hidden" name="types">
                     <div class=" form-group">
                         <select name="label" class="selectpicker" data-live-search="true" id="labelSelect" required>
                         </select>
                     </div>
+                    <div class="form-check">
+                        <input class="form-check-input" name="rule" type="checkbox" value="" id="labelRuleCheckBox">
+                        <label class="form-check-label" for="labelRuleCheckBox">
+                          {% trans %}Always use for{% endtrans %} <mark id="labelRuleText">{% trans %}loading...{% endtrans %}</mark>
+                        </label>
+                      </div>
                     <button type="submit" hidden>
                 </form>
             </div>
@@ -466,7 +473,19 @@
                 highlightInterval(mainInterval.ref_start, Math.max(mainInterval.ref_end - 1, mainInterval.ref_start));
                 break;
             case "e":
-                showLabelModal(mainInterval.label);
+                showLabelModal();
+                break;
+            case "s":
+                onDecision('WORD_TYPE', 'SECRET');
+                break;
+            case "S":
+                onDecision('NE_TYPE', 'SECRET');
+                break;
+            case "p":
+                onDecision('WORD_TYPE', 'PUBLIC');
+                break;
+            case "P":
+                onDecision('NE_TYPE', 'PUBLIC');
                 break;
         }
     }
@@ -498,7 +517,7 @@
         });
         // Check for label
         if (!mainInterval.label && mainInterval.decision == "SECRET") {
-            showLabelModal();
+            showLabelModal(type == 'NE_TYPE');
         }
     }
 
@@ -536,15 +555,18 @@
         });
     }
 
-    function showLabelModal(label = null) {
+    function showLabelModal(ruleBocChecked = false) {
         // Disable some features
         document.onkeypress = null;
         $('[data-toggle="tooltip"]').tooltip("hide");
         // Position
         document.forms['labelForm'].elements['ref_start'].value = mainInterval.ref_start;
         document.forms['labelForm'].elements['ref_end'].value = mainInterval.ref_end;
+        document.forms['labelForm'].elements['types'].value = JSON.stringify(mainInterval.tokens);
+        document.forms['labelForm'].elements['rule'].checked = ruleBocChecked;
         // Default label
-        selectLabel(label);
+        selectLabel(mainInterval.label);
+        document.getElementById('labelRuleText').innerHTML = mainInterval.text;
 
         $("#labelModal").modal("show");
     }
