@@ -69,9 +69,15 @@ def build_app() -> Flask:
 
     # Create register token
     if os.environ.get("ALLOW_TOKEN_REGISTRATION", default="0") == "1":
-        with app.app_context():
+        if app.config.get("SERVER_NAME"):
+            with app.app_context():
+                path = url_for('auth.register', token=generate_auth_token(REGISTER_TOKEN_NAME), _external=True)
+        else:
+            with app.test_request_context("localhost"):  # workaround for missing SERVER_NAME
+                path = "http://localhost:5000" + \
+                    url_for('auth.register', token=generate_auth_token(REGISTER_TOKEN_NAME))
             app.logger.info(
-                f"You can register new user at {url_for('auth.register', token=generate_auth_token(REGISTER_TOKEN_NAME))}")
+                f"You can register new user at {path}")
 
     return app
 
