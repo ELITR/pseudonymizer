@@ -6,15 +6,20 @@ services:
       - ./instance:/srv/instance
       - ./config:/srv/config
       - ./tests:/srv/tests
-      - .pytest_cache/:/srv/.pytest_cache/
     environment:
       DB_NAME: ${DB_NAME:-psan_db_test}
-    command: /srv/run_tests.sh
+    command: ["wait-for-it", "db:5432", "--", "/srv/run_tests.sh"]
   db:
-    logging:
-      driver: "none" # Don't log anything
     environment:
       POSTGRES_DB: ${DB_NAME:-psan_db_test}
+    volumes:
+      - db_tmp:/var/lib/postgresql/data
+    container_name: "db-test"
   redis:
     logging:
       driver: "none" # Don't log anything
+volumes:
+  db_tmp:
+    driver_opts:
+      type: tmpfs
+      device: tmpfs

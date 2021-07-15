@@ -1,7 +1,7 @@
 FROM python:3.7
 
 # Configurate image
-RUN useradd -u 999 psan_user && apt update && apt upgrade -y && apt install -y uwsgi uwsgi-plugin-python3
+RUN useradd -u 999 psan_user && apt update && apt upgrade -y && apt install -y uwsgi uwsgi-plugin-python3 wait-for-it
 
 # Setup app
 COPY requirements.txt Makefile /srv/

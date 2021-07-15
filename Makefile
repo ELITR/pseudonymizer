@@ -56,8 +56,10 @@ docker-debug: instance
 	docker-compose -f docker-compose.yaml -f docker-compose.debug.yaml up --abort-on-container-exit
 	
 docker-test: instance
+	docker-compose down
 	echo "COMMIT_REV = \"bind-mount-testing\""  > ./instance/config.py
 	docker-compose -f docker-compose.yaml -f docker-compose.test.yaml up --abort-on-container-exit --exit-code-from flask
+	docker-compose down
 
 docker-build: setup translate
 	echo "COMMIT_REV= \"$(shell git rev-parse HEAD)\""  > ./instance/config.py
