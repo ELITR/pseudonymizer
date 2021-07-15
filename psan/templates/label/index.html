@@ -25,7 +25,8 @@
 </div>
 
 <table id="table" data-toggle="table" data-ajax="ajaxRequest" data-search="true" data-pagination="true"
-    data-id-field="id" data-editable-emptytext="{{ _('Empty string') }}" data-editable-url="/label/update">
+    data-locale="{{ g.lang }}" data-id-field="id" data-editable-emptytext="{{ _('Empty string') }}" 
+    data-editable-url="/label/update">
     <thead>
         <tr>
             <th data-field="id">{% trans %}ID{% endtrans %}</th>
