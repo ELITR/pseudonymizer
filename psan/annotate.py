@@ -45,12 +45,16 @@ def index():
         document = cursor.fetchone()
         if document:
             # Show first candadate of submission
-            cursor.execute("SELECT submission, ref_start, ref_end FROM annotation a"
+            cursor.execute("SELECT submission, ref_start, ref_end"
+                           " FROM annotation a"
                            " LEFT JOIN annotation_rule ar ON ar.annotation = a.id"
-                           " LEFT JOIN rule r ON r.id = ar.rule AND r.label IS NOT NULL"
-                           " WHERE submission = %s AND (token_level IS NULL and ABS(rule_level) < %s)"
+                           " LEFT JOIN rule r ON r.id = ar.rule AND r.label IS NOT NULL AND r.confidence < 0"
+                           " WHERE submission=%s and ((token_level IS NULL AND ABS(rule_level) < %s)"  # not decided
+                           " OR ((token_level = %s OR (token_level IS NULL AND rule_level < %s))"  # or (secret
+                           " and COALESCE(a.label, r.label) IS NULL))"  # and missing label)
+                           " ORDER BY ref_start"
                            " LIMIT 1",
-                           (document["id"], min_confidence))
+                           (document["id"], min_confidence, AnnotationDecision.SECRET.value, min_confidence))
             candidate = cursor.fetchone()
             return show_candidate(candidate["submission"], candidate["ref_start"], candidate["ref_end"])
         else:

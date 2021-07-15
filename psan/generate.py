@@ -95,6 +95,8 @@ class OutputTagFilter(xml.sax.ContentHandler):
                 if not self._replacement_printed:
                     if decision["replacement"]:
                         self._output.write(decision["replacement"])
+                    else:
+                        self._output.write("[xxx]")
                     self._replacement_printed = True
             else:
                 self._output.write(content)

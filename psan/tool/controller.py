@@ -127,7 +127,9 @@ class Controller:
             where_args = (self._document_id,)
         self._cursor.execute("SELECT ref_start, ref_end, token_level, rule_level, l.name as label, l.replacement as replacement"
                              " FROM annotation a"
-                             " LEFT JOIN label l ON a.label = l.id"
+                             " LEFT JOIN annotation_rule ar ON ar.annotation = a.id"
+                             " LEFT JOIN rule r ON r.id = ar.rule AND r.label IS NOT NULL AND r.confidence < 0"
+                             " LEFT JOIN label l ON COALESCE(a.label, r.label) = l.id"
                              + where_cls +  # nosec
                              " ORDER BY ref_start",
                              where_args)
