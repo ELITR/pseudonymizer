@@ -33,16 +33,17 @@
             {# Info card #}
             <div class="card my-2 collapse" id="detail-card">
                 <div class="card-body">
-                    <h5 class="card-title">
-                        {{ render_icon("info-square", size="1.25em") }}{% trans %}Decision detail{% endtrans %}
+                    <h5 class="card-title mb-0">
+                        {{ render_icon("code-slash", size="1.5em") }}<span id="detail-status">{% trans %}Unknown{% endtrans %}</span>
                     </h5>
-                    {# Decision #}
-                    <p class="card-text mb-0">
-                        <b><span id="detail-status">{% trans %}Unknown{% endtrans %}</span></b>
-                    </p>
                     {# Rules #}
-                    <div id="detail-rows">
-                        {% trans %}Loading...{% endtrans %}
+                    <table id="myTable" class="table table-borderless mb-0 p-0">
+                    </table>
+                    {# Label #}
+                    <div class="d-flex">
+                        <button class="btn btn-outline-secondary mx-auto" id="detail-label" onclick="showLabelModal()">
+                            {% trans %}Unknown{% endtrans %}
+                        </button>
                     </div>
                 </div>
             </div>
@@ -351,9 +352,11 @@
             // onClick event
             result.click(function (event) { onTokenIntervalClick(event, entry.start, entry.end); });
             // Label
-            result.attr('data-toggle', 'tooltip');
-            result.attr('data-placement', 'top');
-            result.attr('title', entry.label);
+            if(entry.decision != "PUBLIC") {
+                result.attr('data-toggle', 'tooltip');
+                result.attr('data-placement', 'top');
+                result.attr('title', entry.label);
+            }
             // Inner data
             result.data("decision", entry.decision);
             result.data("label", entry.label)
@@ -412,9 +415,18 @@
                 return;
             case "PUBLIC":
                 $("#detail-status").html("{{_('Public')}}");
+                document.getElementById('detail-label').hidden = true;
                 break;
             case "SECRET":
                 $("#detail-status").html("{{_('Secret')}}");
+                // Show label
+                if (mainInterval.label) {
+                    text = mainInterval.label;
+                } else {
+                    text = "{{ _('Missing label') }}";
+                }
+                document.getElementById('detail-label').innerHTML = text;
+                document.getElementById('detail-label').hidden = false;
                 break;
             default:
                 $("#detail-status").html("{{_('Unknown')}}");
@@ -424,11 +436,11 @@
         $.get(`{{ url_for("annotate.detail", doc_id=submission_id) | safe }}&start=${mainInterval.ref_start}&end=${mainInterval.ref_end}`,
             (data) => {
                 // Clean detail UI
-                rows = $("#detail-rows");
-                rows.empty();
+                table = document.getElementById("myTable");
+                table.innerHTML = "";
                 // Info about token level
                 if (data.token_level) {
-                    addDecisionDetailRow(rows, "{{_('Token') }}", data.token_level, data.token_author);
+                    addDecisionDetailRow(table, "{{_('Token') }}", data.token_level[0], data.token_author);
                 }
                 // Info about rule level
                 data.rules.forEach(rule => {
@@ -437,18 +449,31 @@
                     } else {
                         condition = rule.condition.join(" ");
                     }
-                    addDecisionDetailRow(rows, condition, rule.confidence, rule.author);
+                    if(rule.confidence < 0) {
+                        decision = "S"
+                    } else if(rule.confidence == 1) {
+                        decision = "C"
+                    } else {
+                        decision = "P"
+                    }
+                    addDecisionDetailRow(table, condition, decision, rule.author);
                 });
                 // Show decision in UI
+                $('[data-toggle="tooltip"]').tooltip();
                 $("#detail-card").show();
             });
     }
 
-    function addDecisionDetailRow(rootElement, condition, decision, author) {
-        rootElement.append('<div class="d-row justify-content-between">' +
-            '<small class="card-text">' + condition + ':</small> ' +
-            '<small class="card-text">' + decision + '</small> ' +
-            '<small class="small">' + (author ? author : "") + '</small></div>');
+    function addDecisionDetailRow(table, condition, decision, author) {
+        row = table.insertRow(); 
+        row.insertCell().innerHTML = condition;
+        row.insertCell().innerHTML = decision;
+
+        if(author) {
+            $(row).attr('data-toggle', 'tooltip');
+            $(row).attr('data-placement', 'right');
+            $(row).attr('title', author);
+        }
     }
 
     function shortcut(evt) {
@@ -476,16 +501,16 @@
                 showLabelModal();
                 break;
             case "s":
-                onDecision('WORD_TYPE', 'SECRET');
+                onDecision('TOKEN', 'SECRET');
                 break;
             case "S":
-                onDecision('NE_TYPE', 'SECRET');
+                onDecision('WORD_TYPE', 'SECRET');
                 break;
             case "p":
-                onDecision('WORD_TYPE', 'PUBLIC');
+                onDecision('TOKEN', 'PUBLIC');
                 break;
             case "P":
-                onDecision('NE_TYPE', 'PUBLIC');
+                onDecision('WORD_TYPE', 'PUBLIC');
                 break;
         }
     }
@@ -555,7 +580,7 @@
         });
     }
 
-    function showLabelModal(ruleBocChecked = false) {
+    function showLabelModal(ruleBoxChecked = false) {
         // Disable some features
         document.onkeypress = null;
         $('[data-toggle="tooltip"]').tooltip("hide");
@@ -563,56 +588,59 @@
         document.forms['labelForm'].elements['ref_start'].value = mainInterval.ref_start;
         document.forms['labelForm'].elements['ref_end'].value = mainInterval.ref_end;
         document.forms['labelForm'].elements['types'].value = JSON.stringify(mainInterval.tokens);
-        document.forms['labelForm'].elements['rule'].checked = ruleBocChecked;
+        document.forms['labelForm'].elements['rule'].checked = ruleBoxChecked;
         // Default label
         selectLabel(mainInterval.label);
         document.getElementById('labelRuleText').innerHTML = mainInterval.text;
 
         $("#labelModal").modal("show");
     }
+    
+    $('document').ready(() => {
 
-    $("#labelModal").on("hidden.bs.modal", function (e) {
-        document.onkeypress = shortcut;
-    })
+        $("#labelModal").on("hidden.bs.modal", function (e) {
+            document.onkeypress = shortcut;
+        })
 
-    // Submit event
-    document.getElementById("labelForm").addEventListener("submit", function (e) {
-        // Send form data using AJAX
-        $.ajax({
-            type: "POST",
-            url: "{{ url_for('annotate.label') }}",
-            contentType: "application/x-www-form-urlencoded",
-            data: $("#labelForm").serialize(),
-            success: (data) => {
-                // Reload text window on success
-                loadWindow(win_start, win_end);
-                // Hide modal dialog on succeed
-                $('#labelModal').modal('hide');
-                document.forms['labelForm'].reset();
-            },
-            error: (responseTxt, statusTxt, xhr) => {
-                console.log("AJAX error: " + xhr.status + ": " + xhr.statusText);
-            }
+        // Submit event
+        document.getElementById("labelForm").addEventListener("submit", function (e) {
+            // Send form data using AJAX
+            $.ajax({
+                type: "POST",
+                url: "{{ url_for('annotate.label') }}",
+                contentType: "application/x-www-form-urlencoded",
+                data: $("#labelForm").serialize(),
+                success: (data) => {
+                    // Reload text window on success
+                    loadWindow(win_start, win_end);
+                    // Hide modal dialog on succeed
+                    $('#labelModal').modal('hide');
+                    document.forms['labelForm'].reset();
+                },
+                error: (responseTxt, statusTxt, xhr) => {
+                    console.log("AJAX error: " + xhr.status + ": " + xhr.statusText);
+                }
+            });
+            // block the traditional submission of the forms
+            e.preventDefault();
         });
-        // block the traditional submission of the forms
-        e.preventDefault();
-    });
 
-    document.getElementById("newLabelForm").addEventListener("newLabel", function (e) {
-        document.getElementById("labelSelect").dataset.label = e.detail;
+        document.getElementById("newLabelForm").addEventListener("newLabel", function (e) {
+            document.getElementById("labelSelect").dataset.label = e.detail;
+            refreshLabels();
+        });
+
+
+        // Key shortcuts
+        document.onkeypress = shortcut;
+
+        // Main code block
+
+        // Load defaults 
+        loadWindow(win_start, win_end);
         refreshLabels();
-    });
 
-    // Key shortcuts
-    document.onkeypress = shortcut;
-
-    // Main code block
-
-    // Load defaults 
-    loadWindow(win_start, win_end);
-    refreshLabels();
-
-    {% if is_admin %}
+        {% if is_admin %}
         // Admin window expanding
         // Before
         $("#before-window-btn").click(() => {
@@ -634,7 +662,8 @@
             }
         });
         $("#after-window-btn").show();
-    {% endif %}
+        {% endif %}
+    });
 
 </script>
 {% endblock %}
