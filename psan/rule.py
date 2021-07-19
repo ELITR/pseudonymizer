@@ -1,6 +1,7 @@
 import csv
 from io import StringIO, TextIOWrapper
 
+from celery_once import AlreadyQueued
 from flask import (Blueprint, flash, jsonify, make_response, redirect,
                    render_template, request, url_for)
 from flask_babel import lazy_gettext
@@ -135,7 +136,18 @@ def upload():
                 commit()
 
             flash(_("%(num)s rules imported", num=csv_input.line_num), category="message")
+
+            _call_re_annotate()
+
             return redirect(url_for(".index"))
 
     # Prepare output
     return render_template("rule/import.html", form=form)
+
+
+def _call_re_annotate() -> None:
+    try:
+        from psan.celery import re_annotate
+        re_annotate.re_annotate_all.apply_async((-1,))
+    except AlreadyQueued:
+        pass

@@ -4,6 +4,7 @@ from xml import sax  # nosec
 from xml.sax import make_parser  # nosec
 from xml.sax.saxutils import XMLFilterBase, XMLGenerator  # nosec
 
+from celery_once import AlreadyQueued
 from flask import (Blueprint, Response, current_app, g, jsonify, make_response,
                    render_template, request, session)
 from flask_babel import gettext
@@ -30,6 +31,17 @@ def _check_permissinns(start: int, end: int, doc_id: int) -> None:
     if (start < session["permitted_win_start"] or session["permitted_win_end"] < end
             or session["permitted_doc_id"] != doc_id) and not is_admin:
         raise BadRequest("Insufficient permissions for this window")
+
+
+def _call_re_annotate(doc_id: int) -> None:
+    # Annotate rest using background task
+    from psan.celery import re_annotate
+    re_annotate.re_annotate.delay(doc_id)
+    # Annotate other documents after 120
+    try:
+        re_annotate.re_annotate_all.apply_async((doc_id,), countdown=120)
+    except AlreadyQueued:
+        pass
 
 
 @bp.route("/")
@@ -248,8 +260,7 @@ def decision():
 
     if rule_type or candidate:
         # Annotate rest using background task
-        from psan.celery import re_annotate
-        re_annotate.re_annotate.delay(doc_id)
+        _call_re_annotate(doc_id)
 
     # Send OK reply
     return jsonify({"status": "ok"})
@@ -281,6 +292,10 @@ def label():
         if as_rule:
             ctl.set_rule_label(types, label)
         commit()
+        # Annotate rest of file using new candidate
+        if candidate:
+            _call_re_annotate()
+
     return jsonify({"status": "ok"})
 
 

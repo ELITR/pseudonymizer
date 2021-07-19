@@ -11,5 +11,6 @@ itsdangerous==2.0.1
 psycopg2-binary==2.8.6
 click==7.1.2 # Solve dependency issues with never version of Flask and Jinja2
 celery[redis]==5.1.0
+celery_once==3.0.1
 ufal.nametag==1.1.2.1
 pytest==6.2.4

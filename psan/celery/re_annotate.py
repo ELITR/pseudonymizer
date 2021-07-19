@@ -20,3 +20,23 @@ def re_annotate(doc_id: int) -> None:
         apply_rules(submission_file, ctl)
 
         commit()
+
+
+@celery.task(base=celery.QueueOnce, once={'keys': []})
+def re_annotate_all(skip_doc_id: int) -> None:
+    with get_cursor() as cursor:
+        # Get submission file
+        cursor.execute("SELECT id,uid FROM submission WHERE status = %s", (SubmissionStatus.PRE_ANNOTATED.value,))
+        for row in cursor:
+            id = row["id"]
+            uid = row["uid"]
+            if skip_doc_id == id:
+                continue
+
+            submission_file = get_submission_file(uid, SubmissionStatus.RECOGNIZED)
+            with get_cursor() as cur:
+                ctl = controller.Controller(cur, id)
+
+                # Parse file and apply rules
+                apply_rules(submission_file, ctl)
+                commit()
