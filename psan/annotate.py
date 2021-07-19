@@ -242,12 +242,24 @@ def label():
     doc_id = request.form.get("doc_id", type=int)
     ref_start = request.form.get("ref_start", type=int)
     ref_end = request.form.get("ref_end", type=int)
+    types = json.loads(request.form.get("types", type=str))
+    label = request.form.get("label", type=int)
+    as_rule = request.form.get("rule", type=bool)
+
     _check_permissinns(ref_start, ref_end, doc_id)
 
     interval = Interval(ref_start, ref_end)
     with get_cursor() as cursor:
         ctl = Controller(cursor, doc_id, g.account["id"])
-        ctl.set_label(interval, request.form.get("label", type=int))
+        # Token level annotation
+        annotation_id = ctl.token_annotation(interval, AnnotationDecision.SECRET)
+        # Update label
+        ctl.set_label(interval, label)
+        # Improved search for candidates
+        candidate = ctl.add_candidate_rule(types, annotation_id)
+        # Set rule label
+        if as_rule:
+            ctl.set_rule_label(types, label)
         commit()
     return jsonify({"status": "ok"})
 

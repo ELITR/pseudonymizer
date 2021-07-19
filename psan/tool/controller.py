@@ -92,6 +92,12 @@ class Controller:
                              " WHERE submission = %s and ref_start = %s and ref_end = %s",
                              (label_id, self._user_id, self._document_id, interval.start, interval.end))
 
+    def set_rule_label(self, types: List[str], label_id: int) -> None:
+        """ Sets label for type rule """
+        self._cursor.execute("UPDATE rule SET label = %s, author = %s"
+                             " WHERE type = %s and condition = %s",
+                             (label_id, self._user_id, RuleType.WORD_TYPE.value, types))
+
     def find_rule(self, evidence: Evidence) -> Optional[Rule]:
         """Finds rule in DB according to evidence"""
         if evidence.type == EvidenceType.NE_TYPE:
