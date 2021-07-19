@@ -87,7 +87,7 @@ $$;
 CREATE OR REPLACE PROCEDURE annotatation_cleanup()
 LANGUAGE SQL
 AS $$
-DELETE FROM annotation AS a WHERE a.token_level IS NULL AND a.rule_level = 0 AND NOT EXISTS (SELECT 1 FROM annotation_rule AS ar WHERE a.id = ar.annotation);
+DELETE FROM annotation AS a WHERE (a.token_level IS NULL OR a.token_level = 'NESTED') AND a.rule_level = 0 AND NOT EXISTS (SELECT 1 FROM annotation_rule AS ar WHERE a.id = ar.annotation);
 $$;
 
 CREATE OR REPLACE FUNCTION before_rule_deletion_fnc() RETURNS trigger AS $emp_stamp$

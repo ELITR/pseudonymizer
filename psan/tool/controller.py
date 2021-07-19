@@ -55,6 +55,13 @@ class Controller:
                              " WHERE submission = %s and source = %s"
                              " and %s <= ref_start and ref_end <= %s and (ref_end - ref_start) < %s",
                              (self._document_id, user_annotation, interval.start, interval.end, interval.end - interval.start))
+        # Set nested RULE annotation as NESTED
+        self._cursor.execute("UPDATE annotation SET token_level = %s, author = %s"
+                             " WHERE submission = %s and source = %s and token_level is null"
+                             " and %s <= ref_start and ref_end <= %s and (ref_end - ref_start) < %s",
+                             (AnnotationDecision.NESTED.value, self._user_id,
+                              self._document_id, AnnotationSource.RULE.value,
+                              interval.start, interval.end, interval.end - interval.start))
         # Insert or update annotation
         self._cursor.execute("INSERT INTO annotation (submission, ref_start, ref_end, token_level, source, author)"
                              " VALUES (%s, %s, %s, %s, %s, %s)"
