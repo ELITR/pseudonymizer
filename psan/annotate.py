@@ -27,7 +27,8 @@ def _check_permissinns(start: int, end: int, doc_id: int) -> None:
         raise BadRequest("Missing required parameters ref_start, ref_end or document_id")
     # Check window permission
     is_admin = (g.account["type"] == AccountType.ADMIN.value)
-    if (start < session["permitted_win_start"] or session["permitted_win_end"] < end) and not is_admin:
+    if (start < session["permitted_win_start"] or session["permitted_win_end"] < end
+            or session["permitted_doc_id"] != doc_id) and not is_admin:
         raise BadRequest("Insufficient permissions for this window")
 
 
@@ -37,18 +38,36 @@ def index():
     # Find longest submission from db
     with get_cursor() as cursor:
         min_confidence = current_app.config["RULE_AUTOAPPLY_CONFIDENCE"]
-        cursor.execute("SELECT submission.id as id, COUNT(annotation.id) AS candidates FROM submission "
-                       "JOIN annotation ON submission.id=annotation.submission and"
-                       " (token_level IS NULL and ABS(rule_level) < %s)"
-                       " WHERE status = %s GROUP BY submission.id",
-                       (min_confidence, SubmissionStatus.PRE_ANNOTATED.value))
+        # Faster method
+        cursor.execute("SELECT submission.id as id FROM submission "
+                       " WHERE status = %s AND EXISTS ( SELECT 1 FROM"
+                       " annotation WHERE submission.id=annotation.submission and"
+                       " (token_level IS NULL and ABS(rule_level) < %s))"
+                       " ORDER BY random() LIMIT 1",
+                       (SubmissionStatus.PRE_ANNOTATED.value, min_confidence))
         document = cursor.fetchone()
+        if not document:
+            # Much slower method for missing labels
+            cursor.execute("SELECT s.id as id FROM submission s "
+                           " WHERE s.status = %s AND EXISTS ("
+                           " SELECT 1 FROM annotation a"
+                           " LEFT JOIN (annotation_rule ar "
+                           " INNER JOIN rule r ON r.id = ar.rule AND r.label IS NOT NULL AND r.confidence < 0)"
+                           " ON ar.annotation = a.id"
+                           " WHERE a.submission = s.id and ((token_level IS NULL AND ABS(rule_level) < %s)"  # not decided
+                           " OR ((token_level = %s OR (token_level IS NULL AND rule_level < %s))"  # or (secret
+                           " and COALESCE(a.label, r.label) IS NULL)))"
+                           " ORDER BY random() LIMIT 1",
+                           (SubmissionStatus.PRE_ANNOTATED.value, min_confidence, AnnotationDecision.SECRET.value,
+                            min_confidence))
+            document = cursor.fetchone()
         if document:
             # Show first candadate of submission
             cursor.execute("SELECT submission, ref_start, ref_end"
                            " FROM annotation a"
-                           " LEFT JOIN annotation_rule ar ON ar.annotation = a.id"
-                           " LEFT JOIN rule r ON r.id = ar.rule AND r.label IS NOT NULL AND r.confidence < 0"
+                           " LEFT JOIN (annotation_rule ar "
+                           " INNER JOIN rule r ON r.id = ar.rule AND r.label IS NOT NULL AND r.confidence < 0)"
+                           " ON ar.annotation = a.id"
                            " WHERE submission=%s and ((token_level IS NULL AND ABS(rule_level) < %s)"  # not decided
                            " OR ((token_level = %s OR (token_level IS NULL AND rule_level < %s))"  # or (secret
                            " and COALESCE(a.label, r.label) IS NULL))"  # and missing label)
@@ -79,6 +98,7 @@ def show_candidate(submission_id: int, ref_start: int, ref_end: int):
     win_start = max(ref_start - g.account["window_size"], 0)
     win_end = ref_start + g.account["window_size"]
     # Add permission
+    session["permitted_doc_id"] = submission_id
     session["permitted_win_start"] = win_start
     session["permitted_win_end"] = win_end
 
