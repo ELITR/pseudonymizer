@@ -106,8 +106,8 @@
                 <div class="input-group-prepend">
                     <label class="input-group-text" for="inputGroupSelect01">{% trans %}Snap to{% endtrans %}</label>
                 </div>
-                <select class="custom-select" id="snapSelect">
-                    <option value="candidate">{% trans %}candidate{% endtrans %}</option>
+                <select class="custom-select" id="snapSelect" onchange="loadWindow(win_start, win_end)">
+                    <option value="candidate">{% trans %}annotation{% endtrans %}</option>
                     <option value="token">{% trans %}token{% endtrans %}</option>
                 </select>
             </div>
@@ -186,6 +186,7 @@
         label: null,
         rules: null,
     };
+    var decision_table = {};
     var document_id = {{ submission_id }};
     var win_start = {{ win_start }};
     var win_end = {{ win_end }};
@@ -252,15 +253,18 @@
         // Name entity type
         mainInterval.ne_type = window_ne_types[`${ref_start}-${ref_end}`];
         // Current decision
-        if(selection.length == 1) {
-            mainInterval.decision = selection.data("decision");
+        if(decision_table[`${ref_start}-${ref_end}`]) {
+            mainInterval.decision = decision_table[`${ref_start}-${ref_end}`].decision;
+            mainInterval.label = decision_table[`${ref_start}-${ref_end}`].label;
         } else {
             mainInterval.decision = null;
+            mainInterval.label = null;
         }
         // Label
-        mainInterval.label = selection.data("label");
         if(mainInterval.label) {
-            selection.tooltip("show");
+            try {
+                selection.tooltip("show");
+            } catch(e) {}
         }
 
         // Update UI
@@ -320,48 +324,58 @@
     }
 
     function setDecisions(decisions) {
+        decision_table = {};
         decisions.forEach(entry => {
-            // Decide class according to decision
-            switch (entry.decision) {
-                case "PUBLIC":
-                    cls = "candidate candidate-public";
-                    break;
-                case "SECRET":
-                    if(entry.label) {
-                        cls = "candidate candidate-secret";
-                    } else {
-                        cls = "candidate candidate-label";
-                    }
-                    break;
-                case "NESTED":
-                case null:
-                    cls = "candidate";
-                    break;
-            }
-
-            // Find text interval
-            selection = findInterval(entry.start, entry.end);
-            // Change class
-            if (selection.length == 1) {
-                selection.addClass(cls);
-                result = selection;
+            if($("#snapSelect option:selected").val() == "candidate") {
+                selection = findInterval(entry.start, entry.end);
+                setDecision(selection, entry);
             } else {
-                result = selection.wrapAll('<span class="wrapper ' + cls + '" data-start="' + entry.start + '" data-end="' + entry.end +
-                    '">').parent();
+                for(let position = entry.start; position <= entry.end; position++) {
+                    selection = findInterval(position, position);
+                    setDecision(selection, entry);
+                }
             }
-            // onClick event
-            result.click(function (event) { onTokenIntervalClick(event, entry.start, entry.end); });
-            // Label
-            if(entry.decision != "PUBLIC") {
-                result.attr('data-toggle', 'tooltip');
-                result.attr('data-placement', 'top');
-                result.attr('title', entry.label);
-            }
-            // Inner data
-            result.data("decision", entry.decision);
-            result.data("label", entry.label)
+            // Update decision
+            decision_table[`${entry.start}-${entry.end}`] = {decision: entry.decision, label: entry.label}
         });
         $('[data-toggle="tooltip"]').tooltip();
+    }
+
+    function setDecision(selection, entry) {
+        // Decide class according to decision
+        switch (entry.decision) {
+            case "PUBLIC":
+                cls = "candidate candidate-public";
+                break;
+            case "SECRET":
+                if(entry.label) {
+                    cls = "candidate candidate-secret";
+                } else {
+                    cls = "candidate candidate-label";
+                }
+                break;
+            case "NESTED":
+            case null:
+                cls = "candidate";
+                break;
+        }
+        
+        // Change class
+        if (selection.length == 1) {
+            selection.addClass(cls);
+            result = selection;
+        } else {
+            spanCode = '<span class="wrapper ' + cls + '" data-start="' + entry.start + '" data-end="' + entry.end + '">'
+            result = selection.wrapAll(spanCode).parent();
+        }
+        // onClick event
+        result.click(function (event) { onTokenIntervalClick(event, entry.start, entry.end); });
+        // Label
+        if(entry.decision != "PUBLIC") {
+            result.attr('data-toggle', 'tooltip');
+            result.attr('data-placement', 'top');
+            result.attr('title', entry.label);
+        }
     }
 
     function loadWindow(start, end) {
@@ -540,6 +554,10 @@
             success: (data) => {
                 // Reload text window on success
                 loadWindow(win_start, win_end);
+                // Reload results from auto rules
+                if (type == 'NE_TYPE' || decision == 'SECRET') {
+                    setTimeout(() => loadWindow(win_start, win_end), 3000);
+                }
             },
             error: (responseTxt, statusTxt, xhr) => {
                 console.log("AJAX error: " + xhr.status + ": " + xhr.statusText);
