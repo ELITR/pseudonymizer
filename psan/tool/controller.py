@@ -44,13 +44,19 @@ class Controller:
 
     def token_annotation(self, interval: Interval, decision: AnnotationDecision) -> int:
         """ Annotate text interval using token level decision"""
+        user_annotation = AnnotationSource.USER.value
+        # Delete nested USER annotations
+        self._cursor.execute("DELETE FROM annotation"
+                             " WHERE submission = %s and source = %s"
+                             " and %s <= ref_start and ref_end <= %s and (ref_end - ref_start) < %s",
+                             (self._document_id, user_annotation, interval.start, interval.end, interval.end - interval.start))
+        # Insert or update annotation
         self._cursor.execute("INSERT INTO annotation (submission, ref_start, ref_end, token_level, source, author)"
                              " VALUES (%s, %s, %s, %s, %s, %s)"
                              " ON CONFLICT (submission, ref_start, ref_end) DO UPDATE"
-                             " SET token_level=EXCLUDED.token_level, author=EXCLUDED.author, source=EXCLUDED.source"
+                             " SET token_level=EXCLUDED.token_level, author=EXCLUDED.author"
                              " RETURNING id",
-                             (self._document_id, interval.start, interval.end, decision.value,
-                              AnnotationSource.USER.value, self._user_id))
+                             (self._document_id, interval.start, interval.end, decision.value, user_annotation, self._user_id))
         return self._cursor.fetchone()["id"]
 
     def annotate_from_rule(self, interval: Interval,
