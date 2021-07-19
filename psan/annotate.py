@@ -214,8 +214,11 @@ def decision():
         annotation_id = ctl.token_annotation(interval, decision)
         # Improved search for candidates
         candidate = None
-        if decision == AnnotationDecision.SECRET and rule_type != RuleType.NE_TYPE:
-            candidate = ctl.add_candidate_rule(json.loads(request.form["tokens"]), annotation_id)
+        if rule_type != RuleType.NE_TYPE:
+            if decision == AnnotationDecision.SECRET:
+                candidate = ctl.add_candidate_rule(json.loads(request.form["tokens"]), annotation_id)
+            else:
+                ctl.drop_candidate_rule(annotation_id)
         # (Pre) connect rule to annotation
         if rule_type:
             ctl.connect(annotation_id, rule)

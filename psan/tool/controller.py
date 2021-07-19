@@ -34,6 +34,11 @@ class Controller:
         else:
             return None
 
+    def drop_candidate_rule(self, token_annotation_id: int) -> None:
+        """Drops candidates rule connected to annotation"""
+        self._cursor.execute("DELETE FROM rule WHERE type = %s and source = %s and confidence >= %s",
+                             (RuleType.WORD_TYPE.value, token_annotation_id, Confidence.CANDIDATE))
+
     def add_ne_type(self, ne_type: str) -> Rule:
         """Adds new NE type into db and returns it's ID (or return duplicate rule ID)"""
         self._cursor.execute("INSERT INTO rule (type, condition, confidence, author) VALUES (%s, %s, %s, %s) "
