@@ -371,28 +371,25 @@
             url: `{{ url_for("annotate.window", doc_id=submission_id) | safe }}&start=${start}&end=${end}`,
             cache: true,
             success: function (data) {
-                $("#annotation-window").html(data);
-                windowDeferred.resolve();
-                {% if is_admin %}
-                // Before button
-                if (win_start > 0) {
-                    $("#before-window-btn").show();
-                } else {
-                    $("#before-window-btn").hide();
-                }
-                {% endif %}
+                windowDeferred.resolve(data);
             },
             error: (responseTxt, statusTxt, xhr) => {
                 $("#annotation-window").text("Error: " + xhr.status + ": " + xhr.statusText);
             }
         });
-
         // Load decisions to annotation window
         decisionsDeferred = $.Deferred();
         $.get(`{{ url_for("annotate.decisions", doc_id=submission_id) | safe }}&start=${start}&end=${end}`,
             (data) => decisionsDeferred.resolve(data));
+        
+        // Update UI
         $.when(windowDeferred, decisionsDeferred).done((window, decisions) => {
+            // Update text window
+            $('[data-toggle="tooltip"]').tooltip('hide');
+            $('#annotation-window').html(window);
+            // Update annotations
             setDecisions(decisions);
+            // Selection interval
             if (mainInterval.ref_start != null) {
                 // Save values to tmp
                 tmp_start = mainInterval.ref_start;
@@ -402,6 +399,14 @@
                 mainInterval.ref_end = null;
                 highlightInterval(tmp_start, tmp_end);
             }
+            {% if is_admin %}
+            // Window movement for admin
+            if (win_start > 0) {
+                $("#before-window-btn").show();
+            } else {
+                $("#before-window-btn").hide();
+            }
+            {% endif %}
         });
     }
 
