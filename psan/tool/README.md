@@ -1,21 +1,19 @@
-Pseudomize tool
+Pseudonymization tool library
 ===============
 
-This package provides background logic for psedomize task. The task consists of these steps:
+This package provides background logic for pseudonymization tasks. The task consists of these steps:
 
-1. Recognize named entities using Named entity recognizer (NER). These named entities are than called candidates.
-2. Every candidate is annotated. User decides if a candidate is private or not.
-3. Private candidates are hashed.
+1. Segmentation and tokenization of text.
+2. Recognize named entities using Named entity recognizer (NER).
+3. Make automatic rules from recognized named entities.
+4. Apply known rules to document
+
+You can also use helping APIs in the `controller` module.
 
 NER interface
 -------------
 
-Application supports two NER algorithms:
-
-- Regex NER
-- NameTag2 NER
-- External tool NER
-- or any class that implements `Ner` from `psan.tool` package
+The application supports any NER using an API in the `ner` module. An adapter for NameTag2 NER is part of the library.
 
 ### NameTag2 NER ###
 
@@ -25,8 +23,8 @@ NameTag2 adapter uses `ufal.nametag` Python bindings to [NameTag library](https:
 
 #### Configuration ####
 
-You have to add this variable to `.env` file.
+You have to add the path to a valid model using an environmental variable in the `.env` file in the project root.
 
 ```
-NER_MODEL=./model.ner # Location of NER language model
+NER_MODEL=./instance/model.ner # Location of NER language model
 ```

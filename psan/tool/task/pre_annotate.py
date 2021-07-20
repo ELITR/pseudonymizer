@@ -17,6 +17,8 @@ def detect_recognized_name_entries(recognized_file: str, controller: Controller)
 
 
 class PreAnnotationParser(AnnotationParser):
+    """Make rules from named entities in provided XML file"""
+
     def __init__(self, controller: Controller) -> None:
         super().__init__()
         self._ctl = controller
@@ -35,5 +37,4 @@ class PreAnnotationParser(AnnotationParser):
         self._ctl.annotate_from_rule(Interval(start, end), self._ne_types[ne_type], decision)
 
     def onLookupEvent(self, event: LookupEvent, words: List[Word]) -> None:
-        # TODO create rule for NER+
         pass

@@ -10,7 +10,7 @@ Requirements
 
 - [Install WSL](https://docs.microsoft.com/en-us/windows/wsl/install-win10)
 - Install [Windows Terminal](https://github.com/microsoft/terminal) (optional, needs Windows 10.0.18362.0 or higher)
-- Install Python 3.9 (to Windows)
+- Install Python 3.7 (to Windows)
 - Install IDE (optional)
     - VSCode
     - [PyCharm with WSL interpret](https://www.jetbrains.com/help/pycharm/using-wsl-as-a-remote-interpreter.html) (works only in PyCharm Professional)
@@ -20,9 +20,9 @@ Requirements
 
 - make
 - docker and docker-compose
-- Python 3.6 or newer
+- Python 3.7
 
-PsAn tool uses Flask framework and runs in Python's venv. The venv is usually auto created by make, but you can also create it manually using `make venv`.
+Pseudonymization tool uses Flask framework and runs in Python's venv. The venv is usually auto created by make, but you can also create it manually using `make venv`.
 
 Configuration
 -------------
@@ -44,19 +44,19 @@ CELERY_REDIS=redis://localhost:6379
 Runtime
 -------
 
-The application expects an `.env` file in project root that contains configuration.
+The application expects the `.env` file in the project root that contains the configuration.
 
 - PSAN tool is available on http://localhost:5000/
 - SQL adminer is available on http://localhost:5050/ (only in debug)
 
 ### Debug runtime
 
-You can start application in debug mode (with PostreSQL and Redis) in Docker containers using `make docker-debug`. This configuration enables debug mode in flask and sets runtime code updates using bind mount.
+You can start the application in debug mode (with PostreSQL and Redis) in Docker containers using `make docker-debug`. This configuration enables debug mode in flask and sets runtime code updates using bind mount.
 
 ### Tests
 
-Repository has some unit tests in folder `tests`. These tests could be executed using `make docker-test` or without docker (in _venv_) using `run_tests.sh` in project root.
+The repository has some unit tests in folder `tests`. These tests could be executed using `make docker-test` or without docker (in _venv_) using `run_tests.sh` in the project root.
 
 ### Production
 
-You can start application (with PostreSQL and Redis) in Docker containers using `docker-compose up` in project root. You can also start the app without using docker (in _venv_) using `run_web.sh`.
+You can start the application (with PostreSQL and Redis) in Docker containers using `docker-compose up` in the project root. You can also start the app without using docker (in _venv_) using `run.sh`.
