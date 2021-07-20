@@ -95,7 +95,7 @@ def init_translations(app: Flask) -> None:
 
         if language is None:
             # Try autodetect language
-            g.lang = request.accept_languages.best_match(["en", "cs"], default="en")
+            g.lang = request.accept_languages.best_match(["en"], default="en")
 
             # Save detected value as a cookie
             @after_this_request

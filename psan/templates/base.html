@@ -30,7 +30,7 @@
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
-            <a href="{{ url_for('switch_lang') }}" class="btn-sm btn-outline-secondary mr-auto">{{ _("cs") }}</a>
+            <a href="{{ url_for('switch_lang') }}" class="btn-sm btn-outline-secondary mr-auto">{# _("cs") #}</a> 
             <div class="navbar-nav">
                 {%- if g.account %}
                 {% if g.account["type"]=="ADMIN" %}
