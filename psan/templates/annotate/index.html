@@ -111,6 +111,10 @@
                     <option value="token">{% trans %}token{% endtrans %}</option>
                 </select>
             </div>
+
+            <div class="d-flex">
+                <a href="{{ url_for('.next') }}" class="btn btn-outline-secondary mx-auto">{% trans %}Next annotation window{% endtrans %}</a>
+            </div>
         </div>
     </div>
 </div>
@@ -530,6 +534,9 @@
                 break;
             case "P":
                 onDecision('WORD_TYPE', 'PUBLIC');
+                break;
+            case "w":
+                window.location.href = "{{ url_for('.next') }}";
                 break;
         }
     }

@@ -1,12 +1,15 @@
 import json
+import sys
 from io import StringIO
+from typing import Tuple
 from xml import sax  # nosec
 from xml.sax import make_parser  # nosec
 from xml.sax.saxutils import XMLFilterBase, XMLGenerator  # nosec
 
 from celery_once import AlreadyQueued
-from flask import (Blueprint, Response, current_app, g, jsonify, make_response,
-                   render_template, request, session)
+from flask import (Blueprint, Response, current_app, flash, g, jsonify,
+                   make_response, redirect, render_template, request, session,
+                   url_for)
 from flask_babel import gettext
 from werkzeug.exceptions import BadRequest
 
@@ -47,6 +50,69 @@ def _call_re_annotate(doc_id: int) -> None:
 @bp.route("/")
 @login_required()
 def index():
+    if "permitted_doc_id" in session:
+        # Window
+        doc_id = session["permitted_doc_id"]
+        win_start = session["permitted_win_start"]
+        win_end = session["permitted_win_end"]
+        # Selection
+        with get_cursor() as cursor:
+            ref_start, ref_end = _next_annotation_for_window(cursor, doc_id)
+
+        # Show window if next selection is withing window
+        if ref_end <= win_end:
+            # Permissions
+            is_admin = (g.account["type"] == AccountType.ADMIN.value)
+            return render_template("annotate/index.html", submission_id=doc_id,  win_start=win_start, win_end=win_end,
+                                   highlight_start=ref_start, highlight_end=ref_end, is_admin=is_admin)
+
+    return _next_window()
+
+
+@bp.route("/show")
+@login_required(role=AccountType.ADMIN)
+def show():
+    # Parse input params
+    doc_id = request.args.get("doc_id", type=int)
+    ref_start = request.args.get("ref_start", type=int)
+    ref_end = request.args.get("ref_end", type=int)
+    if doc_id is None or ref_start is None or ref_end is None:
+        raise BadRequest("Missing required parameters")
+    # Show annotation page
+    return _show_window(doc_id, ref_start, ref_end)
+
+
+@bp.route("/next")
+@login_required()
+def next():
+    if "permitted_doc_id" in session:
+        # Window info
+        doc_id = session["permitted_doc_id"]
+        win_start = session["permitted_win_start"]
+        win_end = session["permitted_win_end"]
+
+        # Number of anntations from user
+        with get_cursor() as cursor:
+            cursor.execute("SELECT count(*) as done FROM annotation"
+                           " WHERE author = %s and submission=%s and %s <= ref_start and ref_end <= %s",
+                           (g.account["id"], doc_id, win_start, win_end))
+            done = cursor.fetchone()["done"]
+        # Number of annotation missing in window
+        missing = session['permitted_missing']
+
+        if (missing < 3) or (done > 0):
+            session.pop("permitted_doc_id")
+            session.pop("permitted_win_start")
+            session.pop("permitted_win_end")
+            session.pop("permitted_missing")
+        else:
+            flash(_("You should annotate more to move to the next window."), category="error")
+
+    # Show another window
+    return redirect(url_for(".index"))
+
+
+def _next_window():
     # Find longest submission from db
     with get_cursor() as cursor:
         min_confidence = current_app.config["RULE_AUTOAPPLY_CONFIDENCE"]
@@ -74,38 +140,36 @@ def index():
                             min_confidence))
             document = cursor.fetchone()
         if document:
+            doc_id = document["id"]
             # Show first candadate of submission
-            cursor.execute("SELECT submission, ref_start, ref_end"
-                           " FROM annotation a"
-                           " LEFT JOIN (annotation_rule ar "
-                           " INNER JOIN rule r ON r.id = ar.rule AND r.label IS NOT NULL AND r.confidence < 0)"
-                           " ON ar.annotation = a.id"
-                           " WHERE submission=%s and ((token_level IS NULL AND ABS(rule_level) < %s)"  # not decided
-                           " OR ((token_level = %s OR (token_level IS NULL AND rule_level < %s))"  # or (secret
-                           " and COALESCE(a.label, r.label) IS NULL))"  # and missing label)
-                           " ORDER BY ref_start"
-                           " LIMIT 1",
-                           (document["id"], min_confidence, AnnotationDecision.SECRET.value, min_confidence))
-            candidate = cursor.fetchone()
-            return show_candidate(candidate["submission"], candidate["ref_start"], candidate["ref_end"])
+            ref_start, ref_end = _next_annotation_for_window(cursor, doc_id)
+            return _show_window(doc_id, ref_start, ref_end)
         else:
             return render_template("annotate/empty.html")
 
 
-@ bp.route("/show")
-@ login_required(role=AccountType.ADMIN)
-def show():
-    # Parse input params
-    doc_id = request.args.get("doc_id", type=int)
-    ref_start = request.args.get("ref_start", type=int)
-    ref_end = request.args.get("ref_end", type=int)
-    if doc_id is None or ref_start is None or ref_end is None:
-        raise BadRequest("Missing required parameters")
-    # Show annotation page
-    return show_candidate(doc_id, ref_start, ref_end)
+def _next_annotation_for_window(cursor, doc_id) -> Tuple[int, int]:
+    min_confidence = current_app.config["RULE_AUTOAPPLY_CONFIDENCE"]
+    # Show first candadate of submission
+    cursor.execute("SELECT submission, ref_start, ref_end"
+                   " FROM annotation a"
+                   " LEFT JOIN (annotation_rule ar "
+                   " INNER JOIN rule r ON r.id = ar.rule AND r.label IS NOT NULL AND r.confidence < 0)"
+                   " ON ar.annotation = a.id"
+                   " WHERE submission=%s and ((token_level IS NULL AND ABS(rule_level) < %s)"  # not decided
+                   " OR ((token_level = %s OR (token_level IS NULL AND rule_level < %s))"  # or (secret
+                   " and COALESCE(a.label, r.label) IS NULL))"  # and missing label)
+                   " ORDER BY ref_start"
+                   " LIMIT 1",
+                   (doc_id, min_confidence, AnnotationDecision.SECRET.value, min_confidence))
+    row = cursor.fetchone()
+    if row:
+        return row["ref_start"], row["ref_end"]
+    else:
+        return sys.maxint, sys.maxint
 
 
-def show_candidate(submission_id: int, ref_start: int, ref_end: int):
+def _show_window(submission_id: int, ref_start: int, ref_end: int):
     # Prepare window size
     win_start = max(ref_start - g.account["window_size"], 0)
     win_end = ref_start + g.account["window_size"]
@@ -113,6 +177,8 @@ def show_candidate(submission_id: int, ref_start: int, ref_end: int):
     session["permitted_doc_id"] = submission_id
     session["permitted_win_start"] = win_start
     session["permitted_win_end"] = win_end
+    if "permitted_missing" in session:
+        session.pop("permitted_missing")
 
     is_admin = (g.account["type"] == AccountType.ADMIN.value)
     return render_template("annotate/index.html", submission_id=submission_id,  win_start=win_start, win_end=win_end,
@@ -169,6 +235,11 @@ def decisions():
     with get_cursor() as cursor:
         ctl = Controller(cursor, submission_id, g.account["id"])
         decisions = ctl.get_decisions(Interval(window_start, window_end), min_confidence)
+
+    # Window annotations missing
+    session["permitted_missing"] = sum(1 for d in decisions if d["decision"] == None
+                                       or (d["decision"] == AnnotationDecision.SECRET.value and d["label"] == None))
+
     return jsonify(decisions)
 
 
