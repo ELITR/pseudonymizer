@@ -237,8 +237,8 @@ def decisions():
         decisions = ctl.get_decisions(Interval(window_start, window_end), min_confidence)
 
     # Window annotations missing
-    session["permitted_missing"] = sum(1 for d in decisions if d["decision"] == None
-                                       or (d["decision"] == AnnotationDecision.SECRET.value and d["label"] == None))
+    session["permitted_missing"] = sum(1 for d in decisions if d["decision"] is None
+                                       or (d["decision"] == AnnotationDecision.SECRET.value and d["label"] is None))
 
     return jsonify(decisions)
 
