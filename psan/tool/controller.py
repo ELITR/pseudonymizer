@@ -163,6 +163,9 @@ class Controller:
             if row["token_level"]:
                 # Token level decision
                 decision = row["token_level"]
+                # Nested private annotations should still propagate
+                if decision == AnnotationDecision.NESTED.value and row["rule_level"] <= -min_confidence:
+                    decision = AnnotationDecision.SECRET.value
             else:
                 # Rule level decision
                 rule_level = row["rule_level"]

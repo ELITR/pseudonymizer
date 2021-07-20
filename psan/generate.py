@@ -66,9 +66,12 @@ class OutputTagFilter(xml.sax.ContentHandler):
 
         # State of parser
         self._token_id = -1
-        self._in_token = True
+        self._in_token = False
         self._decision_index = 0
-        self._current_decision = None
+        if len(decisions) > 0:
+            self._current_decision = decisions[self._decision_index]
+        else:
+            self._current_decision = None
         self._replacement_printed = False
         # External data
         self._decisions = decisions
